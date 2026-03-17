@@ -4,6 +4,11 @@ Frontend UI components for G5-AAFS Risk Assessment Application
 
 import streamlit as st
 from typing import Optional
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from src.core.orchestrator import create_workflow
 
 
 def setup_page_config():
@@ -110,6 +115,19 @@ def render_company_input() -> tuple[str, bool]:
                 st.session_state.company_name = company_input.strip()
                 st.session_state.analysis_started = True
                 st.success(f"✅ Analysis started for: **{st.session_state.company_name}**")
+                
+                # Execute LangGraph
+                with st.spinner("Running Multi-Agent Analysis Pipeline..."):
+                    try:
+                        app = create_workflow()
+                        initial_state = {"company_name": st.session_state.company_name}
+                        final_state = app.invoke(initial_state)
+                        st.session_state.final_report = final_state.get("final_report", "No report generated.")
+                        st.session_state.final_state = final_state
+                        st.session_state.analysis_complete = True
+                    except Exception as e:
+                        st.error(f"Error during analysis: {str(e)}")
+                        st.session_state.analysis_complete = False
     
     return company_input.strip() if company_input else "", submit_button
 
@@ -173,16 +191,29 @@ def render_analysis_scoring():
 def render_results():
     """Render results and report tab."""
     st.markdown("### Results & Report")
-    st.info("Final report will be displayed here once analysis completes")
     
-    st.markdown("""
-        **Report will include:**
-        - Executive Summary
-        - Key Risk Factors
-        - Risk Scores & Ratings
-        - Data Source Attribution
-        - Recommendations
-    """)
+    if st.session_state.get("analysis_complete", False):
+        st.success("Analysis Complete!")
+        # Use text area to output markdown exactly or raw text
+        st.text_area("Generated Risk Report", st.session_state.get("final_report", ""), height=400)
+        
+        st.markdown("### 🔍 Raw API Data")
+        with st.expander("View Financial Data (Yahoo Finance)", expanded=False):
+            st.json(st.session_state.final_state.get("financial_data", []))
+            
+        with st.expander("View News Data (NewsAPI)", expanded=False):
+            st.json(st.session_state.final_state.get("news_data", []))
+    else:
+        st.info("Final report will be displayed here once analysis completes")
+        
+        st.markdown("""
+            **Report will include:**
+            - Executive Summary
+            - Key Risk Factors
+            - Risk Scores & Ratings
+            - Data Source Attribution
+            - Recommendations
+        """)
 
 
 def render_analysis_pipeline():
