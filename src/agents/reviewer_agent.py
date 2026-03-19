@@ -15,6 +15,7 @@ def reviewer_agent(state: AgentState) -> dict:
         
     score_info = state.get("risk_score", {"rating": "Unknown", "score": 0, "max": 100})
     risks = state.get("extracted_risks", [])
+    strengths = state.get("extracted_strengths", [])
     explanations = state.get("explanations", [])
     
     prompt = f"""
@@ -23,9 +24,16 @@ def reviewer_agent(state: AgentState) -> dict:
     Use the following analytics output to write a professional, concise Markdown report:
     Risk Score: {json.dumps(score_info, indent=2)}
     Extracted Risks: {json.dumps(risks, indent=2)}
-    Explanations for Score: {json.dumps(explanations, indent=2)}
+    Strengths & Mitigating Factors: {json.dumps(strengths, indent=2)}
+    Explanations: {json.dumps(explanations, indent=2)}
     
-    The report should start with the company name, display the primary score prominently, provide bullet points of the traditional vs non-traditional risks, and finish with a brief synthesized explanation based on the 'Explanations for Score' data. Make it sleek and easy for executives to digest.
+    The report should:
+    1. Start with the company name and primary score (0-100).
+    2. Provide a section for 'Red Flags (Risks)'.
+    3. Provide a section for 'Green Flags (Strengths & Mitigations)'.
+    4. Finish with a balanced 'Executive Summary' that explains how the strengths offset some of the risks.
+    
+    Make it sleek, neutral, and easy for executives to digest.
     """
     
     messages = [

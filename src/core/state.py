@@ -20,6 +20,7 @@ class AgentState(TypedDict):
     
     # Analysis results
     extracted_risks: List[Dict[str, Any]]
+    extracted_strengths: List[Dict[str, Any]]
     risk_score: Dict[str, Any]
     explanations: List[Dict[str, Any]]
     

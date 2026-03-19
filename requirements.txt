@@ -1,0 +1,14 @@
+streamlit==1.55.0
+pydantic==2.12.5
+mcp==1.26.0
+anthropic==0.84.0
+pandas==2.3.3
+numpy==2.4.3
+python-dotenv
+langgraph
+langchain
+langchain-openai
+duckduckgo-search
+yfinance
+requests
+httpx
