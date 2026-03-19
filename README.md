@@ -42,39 +42,62 @@ Final Risk Report
 
 ```
 G5-AAFS-5K/
-├── app.py                 # Main Streamlit UI application
-├── README.md              # This file
-├── .gitignore             # Git ignore rules
-├── project_venv/          # Python virtual environment
-├── src/
-│   ├── agents/           # Agent implementations
-│   │   ├── input_agent.py
-│   │   ├── discovery_agent.py
-│   │   ├── news_agent.py
-│   │   ├── social_agent.py
-│   │   ├── review_agent.py
-│   │   ├── financial_agent.py
-│   │   ├── risk_extraction_agent.py
-│   │   ├── risk_scoring_agent.py
-│   │   └── reviewer_agent.py
-│   ├── mcp_tools/        # MCP tool integrations
-│   │   ├── news_api.py
-│   │   ├── social_scraper.py
-│   │   ├── review_scraper.py
-│   │   └── financial_lookup.py
-│   ├── storage/          # Data storage
-│   │   ├── vector_db.py
-│   │   └── raw_data_store.py
-│   ├── embeddings/       # Embedding generation
-│   │   └── embedder.py
-│   ├── rag/              # RAG retrieval
-│   │   └── retriever.py
-│   └── reporter/         # Report generation
-│       └── report_generator.py
-├── tests/                # Unit tests
-└── config/               # Configuration files
-    └── settings.py
-```
+│
+├── app.py                # Entry point (orchestrates full pipeline)
+├── config.py               # API keys, model configs, env variables
+│
+├── data_collection/
+│   ├── news/
+│   │   └── news_collector.py
+│   ├── social/
+│   │   └── social_collector.py
+│   ├── forums/
+│   │   └── forum_collector.py
+│   ├── filings/
+│   │   └── filings_collector.py
+│   └── __init__.py
+│
+├── tools/                      # MCP Tool Layer
+│   ├── news_search_tool.py
+│   ├── social_scraper.py
+│   ├── forum_scraper.py
+│   ├── legal_lookup_tool.py
+│   ├── review_scraper.py
+│   ├── finbert_tool.py
+│   └── __init__.py
+│
+├── agents/
+│   ├── news_agent.py
+│   ├── social_media_agent.py
+│   ├── forum_agent.py
+│   ├── filings_agent.py
+│   ├── reviewer_agent.py
+│   └── __init__.py
+│
+├── guardrails/
+│   ├── validation.py           # sanity checks, hallucination detection
+│   ├── compliance.py           # regulatory filtering
+│   └── __init__.py
+│
+├── models/
+│   ├── llama_interface.py      # LLaMA 3.1 interaction (inference / finetuned)
+│   ├── prompts.py              # prompt templates
+│   └── __init__.py
+│
+├── pipeline/
+│   ├── orchestrator.py         # connects all layers together
+│   └── state_manager.py        # handles intermediate data
+│
+├── utils/
+│   ├── text_cleaning.py
+│   ├── scoring.py              # weighting / risk scoring logic
+│   └── logger.py
+│
+├── outputs/
+│   ├── reports/
+│   └── logs/
+│
+└── README.md
 
 ## 🚀 Quick Start
 
