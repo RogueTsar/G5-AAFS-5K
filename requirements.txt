@@ -8,7 +8,10 @@ python-dotenv
 langgraph
 langchain
 langchain-openai
-duckduckgo-search
+tavily-python
 yfinance
 requests
 httpx
+transformers
+torch
+torchvision

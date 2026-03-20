@@ -47,11 +47,13 @@ def risk_extraction_agent(state: AgentState) -> dict:
     
     prompt = f"""
     You are an objective corporate analyst analyzing data for {company}.
-    Review the following raw data collected from financial databases and news APIs.
+    Review the following processed data, which includes specialized 'finbert_sentiment' scores (expert financial sentiment analysis).
     
     Your goal is to provide a BALANCED view:
-    1. Extract potential RISK factors (Traditional or Non-traditional).
-    2. Extract STRENGTHS or mitigating factors (Financial or Market dominance/positive sentiment).
+    1. Extract potential RISK factors (Traditional or Non-traditional). 
+       - Pay close attention to items with 'Negative' finbert_sentiment.
+    2. Extract STRENGTHS or mitigating factors.
+       - Items with 'Positive' finbert_sentiment are strong indicators of growth and stability.
     
     Data:
     {data_context}
@@ -89,11 +91,10 @@ def risk_scoring_agent(state: AgentState) -> dict:
     
     prompt = f"""
     You are a neutral and objective credit analyst assessing {company}.
-    Review the list of Risks and Strengths provided below.
+    Review the list of Risks and Strengths, which incorporate specialized FinBERT sentiment signals.
     
     Calculate a final risk score (0-100) where 100 is maximum insolvency risk.
-    BE NEUTRAL: If the company has significant strengths (high margins, growth, positive news), use them to OFFSET the risks. 
-    Do not be overly pessimistic; a 70+ score should only be for companies with serious, unmitigated threats.
+    BE NEUTRAL: Use the FinBERT sentiment scores as objective anchor points. High confidence positive sentiment should significantly offset risks.
     
     Risks:
     {risks_context}

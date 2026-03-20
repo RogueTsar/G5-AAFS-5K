@@ -7,6 +7,7 @@ class AgentState(TypedDict):
     """
     company_name: str
     company_info: Dict[str, Any]  # Validated details
+    search_queries: Dict[str, List[str]] # Dynamically generated queries
     
     # Raw data collection (Annotated with operator.add to accumulate parallel outputs)
     news_data: Annotated[List[Dict[str, Any]], operator.add]

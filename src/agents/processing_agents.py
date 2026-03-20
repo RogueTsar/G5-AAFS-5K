@@ -1,23 +1,53 @@
 from src.core.state import AgentState
 from src.core.logger import log_agent_action
+from src.mcp_tools.finbert_tool import analyze_financial_sentiment
 
 def data_cleaning_agent(state: AgentState) -> AgentState:
-    """Removes noise, duplicates, irrelevant content."""
+    """Enriches data points with FinBERT sentiment scores."""
     company_name = state.get("company_name", "Unknown")
-    log_agent_action("data_cleaning_agent", f"Starting data cleaning for {company_name}")
+    log_agent_action("data_cleaning_agent", f"Starting data cleaning and sentiment enrichment for {company_name}")
     
-    cleaned_data = []
+    raw_data = []
     if state.get("news_data"):
-        cleaned_data.extend(state["news_data"])
+        for item in state["news_data"]:
+            item["source_type"] = "news"
+            raw_data.append(item)
     if state.get("social_data"):
-        cleaned_data.extend(state["social_data"])
+        for item in state["social_data"]:
+            item["source_type"] = "social"
+            raw_data.append(item)
     if state.get("review_data"):
-        cleaned_data.extend(state["review_data"])
+        for item in state["review_data"]:
+            item["source_type"] = "review"
+            raw_data.append(item)
     if state.get("financial_data"):
-        cleaned_data.extend(state["financial_data"])
+        for item in state["financial_data"]:
+            item["source_type"] = "financial"
+            raw_data.append(item)
+            
+    enriched_data = []
+    for item in raw_data:
+        # Extract text to analyze
+        text = ""
+        if "title" in item and "snippet" in item:
+            text = f"{item['title']} - {item['snippet']}"
+        elif "content" in item and isinstance(item["content"], dict):
+             # For financial web search snippets
+             c = item["content"]
+             text = f"{c.get('title', '')} {c.get('snippet', '')}"
+        elif "title" in item:
+            text = item["title"]
+        elif "snippet" in item:
+            text = item["snippet"]
+            
+        if text:
+            sentiment = analyze_financial_sentiment(text)
+            item["finbert_sentiment"] = sentiment
         
-    log_agent_action("data_cleaning_agent", f"Aggregated {len(cleaned_data)} total data points")
-    return {"cleaned_data": cleaned_data} # type: ignore
+        enriched_data.append(item)
+        
+    log_agent_action("data_cleaning_agent", f"Aggregated and enriched {len(enriched_data)} total data points")
+    return {"cleaned_data": enriched_data} # type: ignore
 
 def entity_resolution_agent(state: AgentState) -> AgentState:
     """Ensures all data refers to the same company."""

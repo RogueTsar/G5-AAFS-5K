@@ -204,10 +204,10 @@ def render_results():
         with st.expander("View News Data (NewsAPI)", expanded=False):
             st.json(st.session_state.final_state.get("news_data", []))
 
-        with st.expander("View Social Sentiment Data (DuckDuckGo)", expanded=False):
+        with st.expander("View Social Sentiment Data (Tavily)", expanded=False):
             st.json(st.session_state.final_state.get("social_data", []))
 
-        with st.expander("View Review Data (DuckDuckGo)", expanded=False):
+        with st.expander("View Review Data (Tavily)", expanded=False):
             st.json(st.session_state.final_state.get("review_data", []))
     else:
         st.info("Final report will be displayed here once analysis completes")
