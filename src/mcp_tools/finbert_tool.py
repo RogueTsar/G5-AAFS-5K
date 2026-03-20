@@ -18,7 +18,7 @@ def get_finbert_pipeline():
             logger.info(f"Loading FinBERT model: {model_name}")
             _tokenizer = AutoTokenizer.from_pretrained(model_name)
             _model = AutoModelForSequenceClassification.from_pretrained(model_name)
-            _nlp_pipeline = pipeline("sentiment-analysis", model=_model, tokenizer=_tokenizer)
+            _nlp_pipeline = pipeline("sentiment-analysis", model=_model, tokenizer=_tokenizer, truncation=True, max_length=512)
         except Exception as e:
             logger.error(f"Error loading FinBERT model: {str(e)}")
             return None

@@ -31,12 +31,13 @@ def discovery_agent(state: AgentState) -> Dict[str, List[str]]:
     Your goal is to generate HIGHLY SPECIFIC search queries to uncover risks, strengths, and future outlook.
     
     Guidelines:
-    1. NEWS: Include queries about financial health, "company outlook", future prospects, and recent controversies.
-    2. SOCIAL: Target Reddit, Twitter (X), and forums for unvarnished customer/public sentiment.
-    3. REVIEWS: Target employee satisfaction (Glassdoor) and product quality (customer reviews).
-    4. FINANCIALS: Target stock performance, debt levels, and annual report highlights.
-    
-    Be objective and thorough.
+    1. NEWS: Focus on real events and outlook. Use terms like "{company_name} outlook", "{company_name} future plans", "{company_name} expansion". Avoid "report" or "analysis" in news queries.
+    2. SOCIAL: Target RAW conversations and unfiltered feedback. Use "{company_name} reddit", "{company_name} twitter", "{company_name} complaints", "{company_name} issues". 
+       CRITICAL: Avoid words like "sentiment analysis", "public opinion", or "research" in social queries, as they lead to blog posts ABOUT the company instead of real user posts.
+    3. REVIEWS: Target direct feedback. Use "{company_name} employee reviews", "{company_name} glassdoor", "{company_name} trustpilot", "{company_name} customer complaints".
+    4. FINANCIALS: Focus on raw data and filings. Use "{company_name} stock", "{company_name} debt", "{company_name} revenue", "{company_name} balance sheet".
+
+    Be aggressive in hunting for raw, unvarnished data.
     """
     
     try:
