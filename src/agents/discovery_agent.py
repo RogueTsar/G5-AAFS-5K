@@ -31,13 +31,16 @@ def discovery_agent(state: AgentState) -> Dict[str, List[str]]:
     Your goal is to generate HIGHLY SPECIFIC search queries to uncover risks, strengths, and future outlook.
     
     Guidelines:
-    1. NEWS: Focus on real events and outlook. Use terms like "{company_name} outlook", "{company_name} future plans", "{company_name} expansion". Avoid "report" or "analysis" in news queries.
-    2. SOCIAL: Target RAW conversations and unfiltered feedback. Use "{company_name} reddit", "{company_name} twitter", "{company_name} complaints", "{company_name} issues". 
-       CRITICAL: Avoid words like "sentiment analysis", "public opinion", or "research" in social queries, as they lead to blog posts ABOUT the company instead of real user posts.
-    3. REVIEWS: Target direct feedback. Use "{company_name} employee reviews", "{company_name} glassdoor", "{company_name} trustpilot", "{company_name} customer complaints".
-    4. FINANCIALS: Focus on raw data and filings. Use "{company_name} stock", "{company_name} debt", "{company_name} revenue", "{company_name} balance sheet".
+    1. NEWS: Focus on real events and outlook. Use terms like "{company_name} outlook", "{company_name} future plans", "{company_name} expansion".
+    2. SOCIAL: Focus on business-related discussions and market reactions to outlook. Use terms like "{company_name} business outlook reddit", "{company_name} growth stock twitter", "{company_name} market response". 
+       CRITICAL: Avoid generic terms like "sentiment analysis" or "research".
+    3. REVIEWS: Target business-relevant feedback. Use "{company_name} employee reviews", "{company_name} glassdoor", "{company_name} service quality issues".
+    4. FINANCIALS: Focus on raw data and filings. Use "{company_name} stock", "{company_name} revenue", "{company_name} balance sheet".
 
-    Be aggressive in hunting for raw, unvarnished data.
+    SPECIAL HANDLING FOR COMMON NAMES:
+    If "{company_name}" is a common noun or verb (e.g., Grab, Apple, Square), you MUST include context-rich suffixes مثل "Holdings", "Corp", "App", "Services", or "Business" in ALL queries to ensure relevance and filter out academic/generic noise.
+
+    Be aggressive in hunting for raw, unvarnished business data.
     """
     
     try:
