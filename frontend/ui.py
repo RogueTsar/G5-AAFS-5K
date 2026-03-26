@@ -141,11 +141,10 @@ def render_pipeline_overview():
         ("2. Source Discovery", "Identifying relevant data sources"),
         ("3. Data Collection (Parallel)", "Gathering data from multiple sources"),
         ("4. Data Aggregation", "Combining raw data"),
-        ("5. Embeddings & Vector Storage", "Processing data for RAG"),
-        ("6. Risk Extraction", "Identifying risk factors"),
-        ("7. Risk Scoring", "Calculating risk metrics"),
-        ("8. Review & Validation", "Human review of results"),
-        ("9. Report Generation", "Creating final analysis")
+        ("5. Risk Extraction", "Identifying risk factors"),
+        ("6. Risk Scoring", "Calculating risk metrics"),
+        ("7. Review & Validation", "Human review of results"),
+        ("8. Report Generation", "Creating final analysis")
     ]
     
     for stage, description in stages:
