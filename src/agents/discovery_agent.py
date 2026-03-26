@@ -5,10 +5,10 @@ from pydantic import BaseModel, Field
 from typing import List, Dict
 
 class SearchQueriesOutput(BaseModel):
-    news: List[str] = Field(description="3-5 optimized search queries for news, press releases, and outlook reports.")
-    social: List[str] = Field(description="2-3 optimized search queries for social media sentiment (Reddit, Twitter, etc.).")
-    reviews: List[str] = Field(description="2-3 optimized search queries for employee and customer reviews (Glassdoor, Trustpilot, etc.).")
-    financials: List[str] = Field(description="2-3 optimized search queries for financial metrics and filings.")
+    news: List[str] = Field(description="2-3 optimized search queries for news, press releases, and outlook reports.")
+    social: List[str] = Field(description="1-2 optimized search queries for social media sentiment (Reddit, Twitter, etc.).")
+    reviews: List[str] = Field(description="1-2 optimized search queries for employee and customer reviews (Glassdoor, Trustpilot, etc.).")
+    financials: List[str] = Field(description="1-2 optimized search queries for financial metrics and filings.")
 
 def discovery_agent(state: AgentState) -> Dict[str, List[str]]:
     """
@@ -28,14 +28,14 @@ def discovery_agent(state: AgentState) -> Dict[str, List[str]]:
     prompt = f"""
     You are a strategic intelligence analyst planning a deep-dive risk assessment for the company: {company_name}.
     
-    Your goal is to generate HIGHLY SPECIFIC search queries to uncover risks, strengths, and future outlook.
+    Your goal is to generate MINIMAL but HIGHLY SPECIFIC search queries to uncover risks, strengths, and future outlook. 
+    Keep the number of queries low (max 2-3 for news, 1-2 for others) to ensure fast processing.
     
     Guidelines:
-    1. NEWS: Focus on real events and outlook. Use terms like "{company_name} outlook", "{company_name} future plans", "{company_name} expansion".
-    2. SOCIAL: Focus on business-related discussions and market reactions to outlook. Use terms like "{company_name} business outlook reddit", "{company_name} growth stock twitter", "{company_name} market response". 
-       CRITICAL: Avoid generic terms like "sentiment analysis" or "research".
-    3. REVIEWS: Target business-relevant feedback. Use "{company_name} employee reviews", "{company_name} glassdoor", "{company_name} service quality issues".
-    4. FINANCIALS: Focus on raw data and filings. Use "{company_name} stock", "{company_name} revenue", "{company_name} balance sheet".
+    1. NEWS: Focus on real events and outlook. Use terms like "{company_name} outlook", "{company_name} future plans".
+    2. SOCIAL: Focus on business-related discussions. Use "{company_name} business outlook reddit", "{company_name} growth stock twitter".
+    3. REVIEWS: Target business-relevant feedback. Use "{company_name} employee reviews", "{company_name} glassdoor".
+    4. FINANCIALS: Focus on raw data. Use "{company_name} stock", "{company_name} revenue".
 
     SPECIAL HANDLING FOR COMMON NAMES:
     If "{company_name}" is a common noun or verb (e.g., Grab, Apple, Square), you MUST include context-rich suffixes مثل "Holdings", "Corp", "App", "Services", or "Business" in ALL queries to ensure relevance and filter out academic/generic noise.

@@ -66,7 +66,7 @@ def get_sentiment_snippets(company_name: str, platform: str = "reddit") -> List[
     def fetch_with_tavily(client, q: str):
         try:
             # Tavily search returns a dictionary with 'results' key
-            search_result = client.search(query=q, search_depth="advanced", max_results=10)
+            search_result = client.search(query=q, search_depth="advanced", max_results=5)
             results_list = search_result.get("results", [])
             
             extracted = []

@@ -14,10 +14,19 @@ def get_finbert_pipeline():
     global _tokenizer, _model, _nlp_pipeline
     if _nlp_pipeline is None:
         try:
+            from transformers import logging as transformers_logging
+            # Suppress specific transformers warnings during loading
+            # This handles the harmless bert.embeddings.position_ids UNEXPECTED warning
+            transformers_logging.set_verbosity_error()
+            
             model_name = "ProsusAI/finbert"
             logger.info(f"Loading FinBERT model: {model_name}")
             _tokenizer = AutoTokenizer.from_pretrained(model_name)
             _model = AutoModelForSequenceClassification.from_pretrained(model_name)
+            
+            # Reset verbosity back to info/warning if needed, or keep it suppressed for the pipeline creation
+            transformers_logging.set_verbosity_warning()
+            
             _nlp_pipeline = pipeline("sentiment-analysis", model=_model, tokenizer=_tokenizer, truncation=True, max_length=512)
         except Exception as e:
             logger.error(f"Error loading FinBERT model: {str(e)}")

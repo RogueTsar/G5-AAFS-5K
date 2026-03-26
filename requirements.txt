@@ -15,3 +15,5 @@ httpx
 transformers
 torch
 torchvision
+pypdf
+openpyxl

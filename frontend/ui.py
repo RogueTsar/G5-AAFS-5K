@@ -109,6 +109,13 @@ def render_company_input() -> tuple[str, bool]:
                     type="primary"
                 )
             
+            uploaded_files = st.file_uploader(
+                "Enhance Analysis with Documents (Optional)",
+                type=["pdf", "xlsx", "xls", "txt", "xbrl", "xml"],
+                accept_multiple_files=True,
+                help="Upload financial reports, news transcripts, or spreadsheets to improve risk assessment accuracy."
+            )
+            
             st.markdown('</div>', unsafe_allow_html=True)
             
             if submit_button and company_input.strip():
@@ -116,11 +123,23 @@ def render_company_input() -> tuple[str, bool]:
                 st.session_state.analysis_started = True
                 st.success(f"✅ Analysis started for: **{st.session_state.company_name}**")
                 
+                # Prepare uploaded docs for the graph
+                docs_for_graph = []
+                if uploaded_files:
+                    for uploaded_file in uploaded_files:
+                        docs_for_graph.append({
+                            "filename": uploaded_file.name,
+                            "content": uploaded_file.read()
+                        })
+                
                 # Execute LangGraph
                 with st.spinner("Running Multi-Agent Analysis Pipeline..."):
                     try:
                         app = create_workflow()
-                        initial_state = {"company_name": st.session_state.company_name}
+                        initial_state = {
+                            "company_name": st.session_state.company_name,
+                            "uploaded_docs": docs_for_graph
+                        }
                         final_state = app.invoke(initial_state)
                         st.session_state.final_report = final_state.get("final_report", "No report generated.")
                         st.session_state.final_state = final_state
