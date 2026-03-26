@@ -2,7 +2,7 @@ from src.core.state import AgentState
 from src.core.logger import log_agent_action
 from src.core.llm import get_llm
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 import json
 
 # Define Pydantic models for structured LLM parsing
@@ -10,8 +10,13 @@ class RiskSignal(BaseModel):
     type: str = Field(description="Category. Strictly either 'Traditional Risk' or 'Non-traditional Risk'")
     description: str = Field(description="A concise, 1-sentence description of the risk factor found in the data")
 
+class StrengthSignal(BaseModel):
+    type: str = Field(description="Category. Strictly either 'Financial Strength' or 'Market Strength'")
+    description: str = Field(description="A concise, 1-sentence description of a positive or mitigating factor found in the data")
+
 class RiskExtractionOutput(BaseModel):
     extracted_risks: List[RiskSignal]
+    extracted_strengths: List[StrengthSignal]
 
 class RiskScoreOutput(BaseModel):
     score: int = Field(description="A calculated risk score strictly between 0 and 100, where 100 is maximum risk.")
@@ -19,21 +24,20 @@ class RiskScoreOutput(BaseModel):
     rating: str = Field(description="Strictly one of: 'Low', 'Medium', or 'High'")
 
 class Explanation(BaseModel):
-    metric: str = Field(description="The specific area of concern (e.g. 'Financials', 'Public Sentiment')")
-    reason: str = Field(description="Short rationale for why this contributes to the overall risk.")
+    metric: str = Field(description="The specific area of concern or strength (e.g. 'Financials', 'Public Sentiment')")
+    reason: str = Field(description="Short rationale for why this impacts the overall risk profile positively or negatively.")
 
 class ExplainabilityOutput(BaseModel):
     explanations: List[Explanation]
 
 
 def risk_extraction_agent(state: AgentState) -> dict:
-    """Extracts risk signals from unstructured data dynamically using an LLM."""
-    log_agent_action("risk_extraction_agent", "Extracting risk signals from processed data")
+    """Extracts both risk and strength signals from unstructured data dynamically using an LLM."""
+    log_agent_action("risk_extraction_agent", "Extracting balanced signals (risks and strengths) from processed data")
     
     llm = get_llm()
     if not llm:
-        log_agent_action("risk_extraction_agent", "No LLM available, falling back to empty")
-        return {"extracted_risks": []}
+        return {"extracted_risks": [], "extracted_strengths": []}
         
     structured_llm = llm.with_structured_output(RiskExtractionOutput)
     
@@ -42,9 +46,14 @@ def risk_extraction_agent(state: AgentState) -> dict:
     data_context = json.dumps(state.get("cleaned_data", []), indent=2)
     
     prompt = f"""
-    You are an expert corporate risk analyst analyzing data for {company}.
-    Review the following raw data collected from financial databases and news APIs.
-    Extract any potential risk factors facing this company. Classify them as either 'Traditional Risk' (financials, debt, margins) or 'Non-traditional Risk' (social, news, legal, reputation).
+    You are an objective corporate analyst analyzing data for {company}.
+    Review the following processed data, which includes specialized 'finbert_sentiment' scores (expert financial sentiment analysis).
+    
+    Your goal is to provide a BALANCED view:
+    1. Extract potential RISK factors (Traditional or Non-traditional). 
+       - Pay close attention to items with 'Negative' finbert_sentiment.
+    2. Extract STRENGTHS or mitigating factors.
+       - Items with 'Positive' finbert_sentiment are strong indicators of growth and stability.
     
     Data:
     {data_context}
@@ -53,17 +62,22 @@ def risk_extraction_agent(state: AgentState) -> dict:
     try:
         result = structured_llm.invoke(prompt)
         extracted_risks = [risk.model_dump() for risk in result.extracted_risks]
+        extracted_strengths = [s.model_dump() for s in result.extracted_strengths]
     except Exception as e:
         log_agent_action("risk_extraction_agent", f"LLM error: {str(e)}")
         extracted_risks = []
+        extracted_strengths = []
     
-    log_agent_action("risk_extraction_agent", "Finished risk extraction", {"extracted_risks": extracted_risks})
-    return {"extracted_risks": extracted_risks}
+    log_agent_action("risk_extraction_agent", "Finished balanced extraction", {
+        "extracted_risks": extracted_risks,
+        "extracted_strengths": extracted_strengths
+    })
+    return {"extracted_risks": extracted_risks, "extracted_strengths": extracted_strengths}
 
 
 def risk_scoring_agent(state: AgentState) -> dict:
-    """Combines signals into risk scores dynamically using an LLM."""
-    log_agent_action("risk_scoring_agent", "Calculating overall risk score")
+    """Combines risks and strengths into a neutral, objective risk score."""
+    log_agent_action("risk_scoring_agent", "Calculating balanced risk score")
     
     llm = get_llm()
     if not llm:
@@ -73,14 +87,20 @@ def risk_scoring_agent(state: AgentState) -> dict:
     
     company = state.get("company_name", "Unknown")
     risks_context = json.dumps(state.get("extracted_risks", []), indent=2)
+    strengths_context = json.dumps(state.get("extracted_strengths", []), indent=2)
     
     prompt = f"""
-    You are an expert corporate actuary assessing risk for {company}.
-    Review the following list of extracted risk signals and calculate a definitive risk score.
-    Higher scores indicate higher risk.
+    You are a neutral and objective credit analyst assessing {company}.
+    Review the list of Risks and Strengths, which incorporate specialized FinBERT sentiment signals.
+    
+    Calculate a final risk score (0-100) where 100 is maximum insolvency risk.
+    BE NEUTRAL: Use the FinBERT sentiment scores as objective anchor points. High confidence positive sentiment should significantly offset risks.
     
     Risks:
     {risks_context}
+    
+    Strengths:
+    {strengths_context}
     """
     
     try:
@@ -90,13 +110,13 @@ def risk_scoring_agent(state: AgentState) -> dict:
         log_agent_action("risk_scoring_agent", f"LLM error: {str(e)}")
         risk_score = {"score": 0, "max": 100, "rating": "Unknown"}
         
-    log_agent_action("risk_scoring_agent", "Finished risk scoring", {"risk_score": risk_score})
+    log_agent_action("risk_scoring_agent", "Finished balanced risk scoring", {"risk_score": risk_score})
     return {"risk_score": risk_score}
 
 
 def explainability_agent(state: AgentState) -> dict:
-    """Explains why a company received a risk score using an LLM."""
-    log_agent_action("explainability_agent", "Generating explanations for the risk score")
+    """Explains why a company received a risk score, highlighting the balance of factors."""
+    log_agent_action("explainability_agent", "Generating balanced explanations for the risk score")
     
     llm = get_llm()
     if not llm:
@@ -106,15 +126,21 @@ def explainability_agent(state: AgentState) -> dict:
     
     company = state.get("company_name", "Unknown")
     score_context = json.dumps(state.get("risk_score", {}))
-    risks_context = json.dumps(state.get("extracted_risks", []), indent=2)
+    risks = json.dumps(state.get("extracted_risks", []), indent=2)
+    strengths = json.dumps(state.get("extracted_strengths", []), indent=2)
     
     prompt = f"""
-    You are an audit explainer analyzing the risk profile for {company}.
-    The company has received an overall risk configuration of: {score_context}.
-    Based on the following extracted risks, generate 1-3 high-level explanations for why this score is justified.
+    You are an objective auditor explaining the risk profile for {company}.
+    The score is: {score_context}.
     
-    Extracted Risks:
-    {risks_context}
+    Generate 2-3 explanations that show BOTH the risks and how they are (or are not) mitigated by the strengths.
+    BE BALANCED: Highlight the "tug-of-war" between the positive and negative signals.
+    
+    Risks:
+    {risks}
+    
+    Strengths:
+    {strengths}
     """
     
     try:
@@ -124,5 +150,5 @@ def explainability_agent(state: AgentState) -> dict:
         log_agent_action("explainability_agent", f"LLM error: {str(e)}")
         explanations = []
         
-    log_agent_action("explainability_agent", "Finished explainability generation", {"explanations": explanations})
+    log_agent_action("explainability_agent", "Finished balanced explanations", {"explanations": explanations})
     return {"explanations": explanations}

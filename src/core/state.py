@@ -7,6 +7,12 @@ class AgentState(TypedDict):
     """
     company_name: str
     company_info: Dict[str, Any]  # Validated details
+    search_queries: Dict[str, List[str]] # Dynamically generated queries
+    company_aliases: List[str] # Discovered during entity resolution
+    
+    # Uploaded Documents
+    uploaded_docs: List[Dict[str, Any]] # List of {"filename": str, "content": bytes}
+    doc_extracted_text: List[Dict[str, Any]] # List of {"filename": str, "text": str, "type": str}
     
     # Raw data collection (Annotated with operator.add to accumulate parallel outputs)
     news_data: Annotated[List[Dict[str, Any]], operator.add]
@@ -20,6 +26,7 @@ class AgentState(TypedDict):
     
     # Analysis results
     extracted_risks: List[Dict[str, Any]]
+    extracted_strengths: List[Dict[str, Any]]
     risk_score: Dict[str, Any]
     explanations: List[Dict[str, Any]]
     
