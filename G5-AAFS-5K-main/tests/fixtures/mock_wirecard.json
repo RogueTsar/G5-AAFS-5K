@@ -1,0 +1,25 @@
+{
+  "company_name": "Wirecard AG",
+  "news_data": [
+    {"title": "Wirecard Admits €1.9B in Cash Likely Never Existed", "snippet": "Auditor EY could not confirm existence of €1.9B in trust accounts, exposing years of accounting fraud.", "url": "https://example.com/news/wirecard-missing-cash", "source_type": "news", "published_date": "2020-06-18"},
+    {"title": "Wirecard CEO Markus Braun Arrested on Fraud Charges", "snippet": "Former CEO arrested on suspicion of market manipulation and accounting fraud spanning multiple years.", "url": "https://example.com/news/wirecard-ceo-arrest", "source_type": "news", "published_date": "2020-06-23"},
+    {"title": "Wirecard Files for Insolvency After Fraud Revelation", "snippet": "Once a DAX 30 member valued at €24B, Wirecard collapsed within days of admitting fabricated accounts.", "url": "https://example.com/news/wirecard-insolvency", "source_type": "news", "published_date": "2020-06-25"},
+    {"title": "COO Jan Marsalek Vanishes Amid Wirecard Investigation", "snippet": "Interpol issues red notice for fugitive COO believed to have orchestrated the fraud from the Philippines.", "url": "https://example.com/news/wirecard-marsalek", "source_type": "news", "published_date": "2020-06-22"},
+    {"title": "German Regulator BaFin Faces Scrutiny Over Wirecard Failure", "snippet": "Parliamentary inquiry finds BaFin shielded Wirecard and attacked short sellers instead of investigating fraud.", "url": "https://example.com/news/wirecard-bafin", "source_type": "news", "published_date": "2020-11-19"}
+  ],
+  "social_data": [
+    {"title": "Wirecard Was a Complete Fabrication", "snippet": "Half the revenue was fake, partner companies didn't exist, and regulators went after the journalists. Unreal.", "url": "https://example.com/social/wirecard-fraud", "source_type": "social", "platform": "reddit"},
+    {"title": "Lost My Savings in Wirecard Stock", "snippet": "Held since 2018 believing in the fintech story. Stock went from €140 to €0.50. Devastating.", "url": "https://example.com/social/wirecard-investor", "source_type": "social", "platform": "twitter"},
+    {"title": "EY Audit Failure Discussion", "snippet": "EY signed off on Wirecard's accounts for over a decade without verifying cash balances. How is this possible?", "url": "https://example.com/social/wirecard-ey", "source_type": "social", "platform": "reddit"}
+  ],
+  "review_data": [
+    {"title": "Wirecard Employee Review — Finance", "snippet": "Found out our company was a fraud from the news. Many of us had no idea. Career destroyed overnight.", "url": "https://example.com/reviews/wirecard-finance", "source_type": "review", "rating": 1.1},
+    {"title": "Wirecard Employee Review — Technology", "snippet": "The payments tech was real but layered on top of fabricated revenue. Mass layoffs after insolvency.", "url": "https://example.com/reviews/wirecard-tech", "source_type": "review", "rating": 1.3}
+  ],
+  "financial_data": [
+    {"metric": "Fabricated Revenue (Third-Party Acquiring)", "value": "~€1.0B (fictitious)", "source_type": "financial", "period": "FY2019"},
+    {"metric": "Missing Trust Account Balances", "value": "€1.9B (never existed)", "source_type": "financial", "period": "FY2019"},
+    {"metric": "Peak Market Capitalization", "value": "€24B (collapsed to near zero)", "source_type": "financial", "period": "Sep 2018 vs Jun 2020"}
+  ],
+  "doc_extracted_text": []
+}

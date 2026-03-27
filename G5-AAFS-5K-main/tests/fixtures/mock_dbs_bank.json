@@ -1,0 +1,25 @@
+{
+  "company_name": "DBS Group Holdings Ltd",
+  "news_data": [
+    {"title": "DBS Reports Record Net Profit of SGD 10.3B", "snippet": "Singapore's largest bank posted all-time high profits driven by rising interest rates and loan growth.", "url": "https://example.com/news/dbs-record-profit", "source_type": "news", "published_date": "2024-02-07"},
+    {"title": "DBS Named World's Best Digital Bank for Fifth Consecutive Year", "snippet": "Euromoney recognizes DBS digital transformation leadership, citing mobile banking and API ecosystem.", "url": "https://example.com/news/dbs-digital-award", "source_type": "news", "published_date": "2024-07-10"},
+    {"title": "DBS Expands Wealth Management Across Greater China", "snippet": "Bank grows AUM to $365B with aggressive push into Hong Kong and Taiwan high-net-worth segments.", "url": "https://example.com/news/dbs-wealth", "source_type": "news", "published_date": "2024-05-20"},
+    {"title": "DBS Maintains Strong Capital Position Above Regulatory Minimums", "snippet": "CET1 ratio at 14.6% provides comfortable buffer for growth and potential economic downturn.", "url": "https://example.com/news/dbs-capital", "source_type": "news", "published_date": "2024-08-02"},
+    {"title": "DBS Launches AI-Powered SME Lending Platform", "snippet": "New automated credit decisioning reduces SME loan approval time from weeks to under 24 hours.", "url": "https://example.com/news/dbs-sme-ai", "source_type": "news", "published_date": "2024-09-15"}
+  ],
+  "social_data": [
+    {"title": "DBS Is the Gold Standard for Asian Banking", "snippet": "Best banking app in Singapore by far. Digital transformation under Piyush Gupta has been incredible.", "url": "https://example.com/social/dbs-praise", "source_type": "social", "platform": "reddit"},
+    {"title": "DBS Dividend Discussion", "snippet": "SGD 2.16 per share dividend. Best income stock on the SGX. Holding for the long term.", "url": "https://example.com/social/dbs-dividend", "source_type": "social", "platform": "twitter"},
+    {"title": "DBS PayLah User Review", "snippet": "PayLah makes splitting bills and paying hawkers effortless. Way ahead of other SG bank apps.", "url": "https://example.com/social/dbs-paylah", "source_type": "social", "platform": "reddit"}
+  ],
+  "review_data": [
+    {"title": "DBS Employee Review — Technology", "snippet": "Strong engineering culture for a bank. Good benefits and stability. Promotion pace can be slow.", "url": "https://example.com/reviews/dbs-tech", "source_type": "review", "rating": 4.0},
+    {"title": "DBS Employee Review — Relationship Manager", "snippet": "Stable career with good brand reputation. Work-life balance is reasonable. Training programs are excellent.", "url": "https://example.com/reviews/dbs-rm", "source_type": "review", "rating": 3.9}
+  ],
+  "financial_data": [
+    {"metric": "Net Profit", "value": "SGD 10.3B", "source_type": "financial", "period": "FY2023"},
+    {"metric": "CET1 Capital Ratio", "value": "14.6%", "source_type": "financial", "period": "Q4 2023"},
+    {"metric": "Net Interest Income", "value": "SGD 14.1B (+32% YoY)", "source_type": "financial", "period": "FY2023"}
+  ],
+  "doc_extracted_text": []
+}

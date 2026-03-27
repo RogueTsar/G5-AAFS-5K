@@ -1,0 +1,25 @@
+{
+  "company_name": "Credit Suisse Group AG",
+  "news_data": [
+    {"title": "Credit Suisse Reports $7.9B Loss After Archegos Collapse", "snippet": "Prime brokerage unit suffered catastrophic losses from the Archegos Capital margin call debacle.", "url": "https://example.com/news/cs-archegos", "source_type": "news", "published_date": "2021-04-27"},
+    {"title": "Credit Suisse Greensill Scandal Freezes $10B in Funds", "snippet": "Investors trapped after supply-chain finance funds linked to Greensill Capital were suspended.", "url": "https://example.com/news/cs-greensill", "source_type": "news", "published_date": "2021-03-01"},
+    {"title": "UBS Agrees to Emergency Acquisition of Credit Suisse", "snippet": "Swiss regulators brokered the $3.2B takeover to prevent systemic banking crisis, wiping out AT1 bondholders.", "url": "https://example.com/news/cs-ubs-acquisition", "source_type": "news", "published_date": "2023-03-19"},
+    {"title": "Credit Suisse Clients Pull $120B in Assets", "snippet": "Wealth management outflows accelerated as clients lost confidence in the bank's stability and governance.", "url": "https://example.com/news/cs-outflows", "source_type": "news", "published_date": "2023-02-15"},
+    {"title": "Credit Suisse Compliance Failures Span Over a Decade", "snippet": "Internal review revealed systemic risk management failures, including Mozambique loan fraud and tax evasion.", "url": "https://example.com/news/cs-compliance", "source_type": "news", "published_date": "2023-03-10"}
+  ],
+  "social_data": [
+    {"title": "Credit Suisse Is the New Lehman", "snippet": "CDS spreads blowing out, deposits fleeing, stock at all-time lows. This bank is done.", "url": "https://example.com/social/cs-lehman", "source_type": "social", "platform": "twitter"},
+    {"title": "CS Wealth Management Client", "snippet": "Moved my family's accounts to UBS last month. Should have done it after Archegos. Trust is gone.", "url": "https://example.com/social/cs-client-exit", "source_type": "social", "platform": "reddit"},
+    {"title": "AT1 Bondholders Wiped Out Thread", "snippet": "$17B in AT1 bonds written to zero while equity got $3.2B. This inversion of hierarchy is unprecedented.", "url": "https://example.com/social/cs-at1", "source_type": "social", "platform": "twitter"}
+  ],
+  "review_data": [
+    {"title": "Credit Suisse Employee Review — Investment Banking", "snippet": "Morale collapsed years ago. Constant restructuring, leadership turnover, and reputational damage made it unbearable.", "url": "https://example.com/reviews/cs-ib", "source_type": "review", "rating": 1.9},
+    {"title": "Credit Suisse Employee Review — Compliance", "snippet": "We flagged risks for years. Nobody listened. Watching the bank die in slow motion was agonizing.", "url": "https://example.com/reviews/cs-compliance", "source_type": "review", "rating": 1.7}
+  ],
+  "financial_data": [
+    {"metric": "Net Loss", "value": "-$7.9B (CHF)", "source_type": "financial", "period": "FY2022"},
+    {"metric": "Client Asset Outflows", "value": "-$120.3B", "source_type": "financial", "period": "Q4 2022"},
+    {"metric": "CET1 Capital Ratio", "value": "13.6% (declining)", "source_type": "financial", "period": "Q4 2022"}
+  ],
+  "doc_extracted_text": []
+}

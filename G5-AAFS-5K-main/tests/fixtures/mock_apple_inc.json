@@ -1,0 +1,25 @@
+{
+  "company_name": "Apple Inc.",
+  "news_data": [
+    {"title": "Apple Reports Record Q4 Revenue of $89.5B", "snippet": "Apple exceeded analyst expectations with strong iPhone 15 Pro demand driving record quarterly revenue.", "url": "https://example.com/news/apple-q4-record", "source_type": "news", "published_date": "2024-11-01"},
+    {"title": "Apple Services Revenue Hits All-Time High", "snippet": "Services segment grew 16% YoY to $22.3B, led by App Store, Apple Music, and iCloud subscriptions.", "url": "https://example.com/news/apple-services-growth", "source_type": "news", "published_date": "2024-10-28"},
+    {"title": "Apple Intelligence Rollout Boosts iPhone Upgrade Cycle", "snippet": "On-device AI features are accelerating upgrade rates, with analysts projecting a multi-year supercycle.", "url": "https://example.com/news/apple-ai-supercycle", "source_type": "news", "published_date": "2024-12-05"},
+    {"title": "Apple Expands India Manufacturing to Reduce China Dependency", "snippet": "Foxconn and Tata Electronics ramp up iPhone production in India, now accounting for 14% of global output.", "url": "https://example.com/news/apple-india-expansion", "source_type": "news", "published_date": "2024-11-15"},
+    {"title": "Apple Announces $110B Share Buyback Program", "snippet": "The largest buyback in corporate history signals management confidence in long-term cash flow generation.", "url": "https://example.com/news/apple-buyback", "source_type": "news", "published_date": "2024-05-02"}
+  ],
+  "social_data": [
+    {"title": "AAPL Bull Case Strengthens", "snippet": "Apple's ecosystem moat keeps widening. Services margins above 70% make this a cash machine. $250 PT.", "url": "https://example.com/social/aapl-bull", "source_type": "social", "platform": "reddit"},
+    {"title": "iPhone 16 Pro Max Review", "snippet": "Best smartphone camera I've ever used. Apple Intelligence summarization is genuinely useful daily.", "url": "https://example.com/social/iphone-review", "source_type": "social", "platform": "twitter"},
+    {"title": "Apple Ecosystem Lock-in Discussion", "snippet": "Switched my whole family to Apple. AirDrop, iMessage, and Handoff make everything seamless.", "url": "https://example.com/social/apple-ecosystem", "source_type": "social", "platform": "reddit"}
+  ],
+  "review_data": [
+    {"title": "Apple Inc. Employee Review — Software Engineer", "snippet": "Great work-life balance, excellent compensation, and meaningful projects. Bureaucracy can slow innovation.", "url": "https://example.com/reviews/apple-swe", "source_type": "review", "rating": 4.2},
+    {"title": "Apple Inc. Employee Review — Retail", "snippet": "Good benefits for retail. High expectations and busy stores but strong team culture.", "url": "https://example.com/reviews/apple-retail", "source_type": "review", "rating": 3.8}
+  ],
+  "financial_data": [
+    {"metric": "Annual Revenue", "value": "$394.3B", "source_type": "financial", "period": "FY2024"},
+    {"metric": "P/E Ratio (TTM)", "value": "28.4", "source_type": "financial", "period": "Q4 2024"},
+    {"metric": "Market Capitalization", "value": "$3.01T", "source_type": "financial", "period": "Dec 2024"}
+  ],
+  "doc_extracted_text": []
+}
