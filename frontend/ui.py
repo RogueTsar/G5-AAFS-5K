@@ -22,42 +22,101 @@ def setup_page_config():
 
 
 def setup_custom_css():
-    """Apply custom CSS styling."""
-    st.markdown("""
-        <style>
-            .main {
-                max-width: 1200px;
-            }
-            .stTabs [data-baseweb="tab-list"] button {
-                font-size: 16px;
-            }
-            .flow-diagram {
-                background-color: #f0f2f6;
-                padding: 20px;
-                border-radius: 10px;
-                margin: 20px 0;
-            }
-            .step-container {
-                background-color: #e8f4f8;
-                padding: 15px;
-                border-left: 4px solid #0066cc;
-                margin: 10px 0;
-                border-radius: 5px;
-            }
-            .success-message {
-                background-color: #d4edda;
-                padding: 15px;
-                border-radius: 5px;
-                border: 1px solid #c3e6cb;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    """Apply custom CSS styling based on the selected theme."""
+    theme = st.session_state.get("theme", "Light")
+    
+    if theme == "Purple Galaxy":
+        st.markdown("""
+            <style>
+                .stApp {
+                    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+                    background-attachment: fixed;
+                    color: white !important;
+                }
+                .main {
+                    max-width: 1200px;
+                }
+                /* Glassmorphism containers */
+                .flow-diagram, .step-container, [data-testid="stExpander"], .stMetric {
+                    background: rgba(255, 255, 255, 0.08) !important;
+                    backdrop-filter: blur(12px) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+                    border-radius: 12px !important;
+                    padding: 20px !important;
+                    color: white !important;
+                }
+                /* Header and text colors */
+                h1, h2, h3, h4, h5, h6, b, p, label, .stMarkdown {
+                    color: #e0d1ff !important;
+                }
+                /* Metric values */
+                [data-testid="stMetricValue"] {
+                    color: #ffffff !important;
+                }
+                /* Tabs */
+                .stTabs [data-baseweb="tab-list"] button {
+                    font-size: 16px;
+                    color: #d8c4ff !important;
+                }
+                .stTabs [data-baseweb="tab-highlight"] {
+                    background-color: #9d50bb !important;
+                }
+                /* Sidebar fix */
+                [data-testid="stSidebar"] {
+                    background-color: #1a1525 !important;
+                }
+                /* Buttons */
+                .stButton > button {
+                    background: linear-gradient(90deg, #9d50bb, #6e48aa) !important;
+                    border: none !important;
+                    color: white !important;
+                    transition: all 0.3s ease;
+                }
+                .stButton > button:hover {
+                    box-shadow: 0 0 15px rgba(157, 80, 187, 0.6);
+                    transform: translateY(-2px);
+                }
+            </style>
+        """, unsafe_allow_html=True)
+    else:
+        # Standard Light/Corporate theme
+        st.markdown("""
+            <style>
+                .main {
+                    max-width: 1200px;
+                }
+                .stTabs [data-baseweb="tab-list"] button {
+                    font-size: 16px;
+                }
+                .flow-diagram {
+                    background-color: #f0f2f6;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                }
+                .step-container {
+                    background-color: #e8f4f8;
+                    padding: 15px;
+                    border-left: 4px solid #0066cc;
+                    margin: 10px 0;
+                    border-radius: 5px;
+                }
+                .success-message {
+                    background-color: #d4edda;
+                    padding: 15px;
+                    border-radius: 5px;
+                    border: 1px solid #c3e6cb;
+                }
+            </style>
+        """, unsafe_allow_html=True)
 
 
 def initialize_session_state():
     """Initialize Streamlit session state variables."""
     if "company_name" not in st.session_state:
         st.session_state.company_name = ""
+    if "theme" not in st.session_state:
+        st.session_state.theme = "Light"
     if "analysis_started" not in st.session_state:
         st.session_state.analysis_started = False
     if "current_stage" not in st.session_state:
@@ -81,6 +140,15 @@ def render_sidebar():
             st.info("Configure your API keys and settings here")
             st.text_input("News API Key", type="password", placeholder="Enter your News API key")
             st.text_input("Financial API Key", type="password", placeholder="Enter your Financial API key")
+            
+        st.markdown("---")
+        st.subheader("🎨 Appearance")
+        st.session_state.theme = st.selectbox(
+            "Select UI Theme",
+            options=["Light", "Purple Galaxy"],
+            index=0 if st.session_state.get("theme") == "Light" else 1,
+            help="Switch between standard and premium galaxy themes."
+        )
 
 
 def render_company_input() -> tuple[str, bool]:
