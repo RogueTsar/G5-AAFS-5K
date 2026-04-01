@@ -87,11 +87,12 @@ def evaluate_financial_metrics(metrics: Dict[str, Any]) -> str:
     if not metrics:
         return "neutral"
         
-    # Extract key ratios (handling potential missing keys)
-    de = metrics.get("debtToEquity", 0)
-    cr = metrics.get("currentRatio", 1.0)
-    rg = metrics.get("revenueGrowth", 0)
-    pm = metrics.get("profitMargins", 0)
+    # Extract key ratios (handling potential missing keys or None values)
+    # Using 'get(key) or default' to ensure None values are replaced by numerical defaults
+    de = metrics.get("debtToEquity") if metrics.get("debtToEquity") is not None else 0
+    cr = metrics.get("currentRatio") if metrics.get("currentRatio") is not None else 1.0
+    rg = metrics.get("revenueGrowth") if metrics.get("revenueGrowth") is not None else 0
+    pm = metrics.get("profitMargins") if metrics.get("profitMargins") is not None else 0
     
     # 1. Red Flags (Negative)
     if cr < 1.0: return "negative" # Liquidity risk: Can't pay short-term debts

@@ -29,15 +29,30 @@ def reviewer_agent(state: AgentState) -> dict:
     
     REPORT STRUCTURE REQUIREMENTS:
     1. **Title**: Main heading with company name.
-    2. **Executive Summary**: A high-level overview of the risk profile.
-    3. **Key Metrics Table**: Create a Markdown table showing 'Metric', 'Rating', and 'Score'.
+    2. **Executive Summary**: A high-level overview of the risk profile. Includes the 'Overall Risk Score'.
+    3. **Key Metrics Table**: Create a Markdown table with 'Metric', 'Rating', and 'Score'.
+       **CRITICAL: STICK TO THE NUMERICAL SCORES (0-100) FROM THE BREAKDOWN.** 
+       Do NOT use raw metrics (like 2.164 or 25%) here. Only use the 0-100 values.
+       
+       MAPPING FOR CATEGORIES:
+       - 'Overall Risk Score' ➔ use the main 'score' and 'rating'.
+       - 'Financial Metrics & Docs' ➔ use 'structured' score.
+       - 'Market News & Sentiment' ➔ use 'news' score.
+       - 'Employee/Customer Feedback' ➔ use 'review' score.
+       - 'Social Media Momentum' ➔ use 'social' score.
+       
+       RATING LOGIC (IF NOT PROVIDED):
+       - < 40: Low
+       - 40 - 70: Medium
+       - > 70: High
+       
     4. **Risk Profile Details**:
         - Use `### 🚩 Red Flags (Risks)` for potential issues. 
           **CRITICAL: Order these by 'impact', placing 'High' significance risks at the top.**
-          Use bullet points.
+          Include the impact label (e.g., "[High] Traditional Risk: ...") in the bullet point.
         - Use `### ✅ Green Flags (Strengths)` for positive/mitigating factors. 
           **CRITICAL: Order these by 'impact', placing 'High' significance strengths at the top.**
-          Use bullet points.
+          Include the impact label in the bullet point.
     5. **Analyst Conclusion**: A final synthesized view on the outlook.
     
     STYLING:
