@@ -62,6 +62,14 @@ def initialize_session_state():
         st.session_state.analysis_started = False
     if "current_stage" not in st.session_state:
         st.session_state.current_stage = None
+    if "ready_for_review" not in st.session_state:
+        st.session_state.ready_for_review = False
+    if "analysis_complete" not in st.session_state:
+        st.session_state.analysis_complete = False
+    if "edited_risks" not in st.session_state:
+        st.session_state.edited_risks = []
+    if "edited_strengths" not in st.session_state:
+        st.session_state.edited_strengths = []
 
 
 def render_sidebar():
@@ -165,6 +173,10 @@ def render_company_input() -> tuple[str, bool]:
                     for event in app.stream(initial_state):
                         # Each event contains one or more completed nodes
                         for node_name in event.keys():
+                            # STOP before the reviewer node to allow manual intervention
+                            if node_name == "reviewer":
+                                continue
+                                
                             if node_name in node_progress:
                                 prg, label = node_progress[node_name]
                                 progress_bar.progress(prg, text=label)
@@ -172,13 +184,15 @@ def render_company_input() -> tuple[str, bool]:
                             # Accumulate the state changes from each node
                             final_state.update(event[node_name])
                     
-                    st.session_state.final_report = final_state.get("final_report", "No report generated.")
+                    # Store the results for human review
                     st.session_state.final_state = final_state
-                    st.session_state.analysis_complete = True
-                    st.success("Analysis Complete!")
+                    st.session_state.edited_risks = final_state.get("extracted_risks", [])
+                    st.session_state.edited_strengths = final_state.get("extracted_strengths", [])
+                    st.session_state.ready_for_review = True
+                    st.success("✅ AI Analysis Phase Complete. Please review the findings below.")
                 except Exception as e:
                     st.error(f"Error during analysis: {str(e)}")
-                    st.session_state.analysis_complete = False
+                    st.session_state.ready_for_review = False
     
     return company_input.strip() if company_input else "", submit_button
 
@@ -299,6 +313,68 @@ def render_results():
 
         with st.expander("View Uploaded Document Data (Structured)", expanded=False):
             st.json(st.session_state.final_state.get("doc_structured_data", []))
+            
+    elif st.session_state.get("ready_for_review", False):
+        st.info("👋 AI has completed its initial scan. Review and refine the findings below.")
+        
+        from src.agents.reviewer_agent import reviewer_agent
+        
+        st.markdown("### ✍️ Analyst Review Stage")
+        st.write("Modify AI-detected risks and strengths, or add your own expert notes.")
+
+        # Editable Dataframes for HITL
+        impact_options = ["High", "Medium", "Low"]
+        risk_type_options = ["Traditional Risk", "Non-traditional Risk"]
+        strength_type_options = ["Financial Strength", "Market Strength"]
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("🚩 Red Flags")
+            edited_risks = st.data_editor(
+                st.session_state.edited_risks,
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "type": st.column_config.SelectboxColumn("Category", options=risk_type_options, required=True),
+                    "impact": st.column_config.SelectboxColumn("Severity", options=impact_options, required=True),
+                    "description": st.column_config.TextColumn("Risk Factor Description", required=True)
+                },
+                key="risk_editor"
+            )
+            
+        with col2:
+            st.subheader("✅ Green Flags")
+            edited_strengths = st.data_editor(
+                st.session_state.edited_strengths,
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "type": st.column_config.SelectboxColumn("Category", options=strength_type_options, required=True),
+                    "impact": st.column_config.SelectboxColumn("Significance", options=impact_options, required=True),
+                    "description": st.column_config.TextColumn("Strength Description", required=True)
+                },
+                key="strength_editor"
+            )
+
+        if st.button("📝 Finalize & Generate Report", type="primary", use_container_width=True):
+            with st.spinner("Composing final executive report with your expert edits..."):
+                try:
+                    # Update state with human edits
+                    final_state = st.session_state.final_state
+                    final_state["extracted_risks"] = edited_risks
+                    final_state["extracted_strengths"] = edited_strengths
+                    
+                    # Call reviewer agent manually
+                    output = reviewer_agent(final_state)
+                    
+                    # Update session state with final results
+                    st.session_state.final_report = output.get("final_report", "Report generation failed.")
+                    st.session_state.analysis_complete = True
+                    st.session_state.ready_for_review = False
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error during report generation: {str(e)}")
     else:
         st.info("Final report will be displayed here once analysis completes")
         
