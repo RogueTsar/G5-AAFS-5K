@@ -376,6 +376,13 @@ def render_results():
         with st.expander("View Review Data (Tavily)", expanded=False):
             st.json(st.session_state.final_state.get("review_data", []))
 
+        # Visual XBRL Financial Statements Display
+        xbrl_data = st.session_state.final_state.get("xbrl_parsed_data", [])
+        if xbrl_data:
+            st.markdown("### XBRL Financial Statements")
+            from frontend.xbrl_display import render_xbrl_financials
+            render_xbrl_financials(xbrl_data)
+
         with st.expander("View Uploaded Document Data (Processed)", expanded=False):
             st.json(st.session_state.final_state.get("doc_extracted_text", []))
 
