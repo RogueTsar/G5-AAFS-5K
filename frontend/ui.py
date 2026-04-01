@@ -261,6 +261,9 @@ def render_results():
 
         with st.expander("View Review Data (Tavily)", expanded=False):
             st.json(st.session_state.final_state.get("review_data", []))
+
+        with st.expander("View Uploaded Document Data (Processed)", expanded=False):
+            st.json(st.session_state.final_state.get("doc_extracted_text", []))
     else:
         st.info("Final report will be displayed here once analysis completes")
         
