@@ -213,15 +213,48 @@ def render_results():
     
     if st.session_state.get("analysis_complete", False):
         st.success("Analysis Complete!")
-        # Use text area to output markdown exactly or raw text
-        st.text_area("Generated Risk Report", st.session_state.get("final_report", ""), height=400)
+        
+        final_state = st.session_state.get("final_state", {})
+        risk_info = final_state.get("risk_score", {"score": 0, "rating": "Unknown"})
+        
+        # Prominent Summary Metrics
+        m_col1, m_col2, m_col3 = st.columns(3)
+        with m_col1:
+            st.metric("Risk Score", f"{risk_info.get('score', 0)}/100")
+        with m_col2:
+            rating = risk_info.get("rating", "Unknown")
+            color = "green" if rating == "Low" else "orange" if rating == "Medium" else "red"
+            st.markdown(f"**Risk Rating:** <span style='color:{color}; font-size:24px;'>{rating}</span>", unsafe_allow_html=True)
+        with m_col3:
+            st.metric("Data Points", len(final_state.get("cleaned_data", [])))
+            
+        # Display Weighted Breakdown
+        breakdown = risk_info.get("breakdown", {})
+        if breakdown:
+            with st.expander("📊 View Weighted Score Breakdown", expanded=False):
+                st.markdown("This score is calculated using a **60/20/12/8** weighted distribution (re-normalized if data is missing).")
+                cols = st.columns(len(breakdown))
+                for i, (cat, cat_score) in enumerate(breakdown.items()):
+                    cat_name = cat.capitalize()
+                    if cat == "structured":
+                        cat_name = "Financial/Docs"
+                    with cols[i]:
+                        st.metric(cat_name, f"{cat_score:.1f}")
+            
+        st.markdown("---")
+        
+        # Render the actual report
+        st.markdown(st.session_state.get("final_report", ""))
         
         st.markdown("### 🔍 Raw API Data")
         with st.expander("View Financial Data (Yahoo Finance)", expanded=False):
             st.json(st.session_state.final_state.get("financial_data", []))
             
-        with st.expander("View News Data (NewsAPI)", expanded=False):
+        with st.expander("View News Data (General Web Search)", expanded=False):
             st.json(st.session_state.final_state.get("news_data", []))
+
+        with st.expander("View Targeted Financial News (NewsAPI/Tavily)", expanded=False):
+            st.json(st.session_state.final_state.get("financial_news_data", []))
 
         with st.expander("View Social Sentiment Data (Tavily)", expanded=False):
             st.json(st.session_state.final_state.get("social_data", []))
@@ -247,14 +280,14 @@ def render_analysis_pipeline():
     st.markdown("## 🔄 Analysis Pipeline")
     
     tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 Pipeline Overview",
+        "📈 Results",
         "🔍 Data Collection",
         "🎯 Analysis & Scoring",
-        "📈 Results"
+        "📊 Pipeline Overview"
     ])
     
     with tab1:
-        render_pipeline_overview()
+        render_results()
     
     with tab2:
         render_data_collection()
@@ -263,7 +296,7 @@ def render_analysis_pipeline():
         render_analysis_scoring()
     
     with tab4:
-        render_results()
+        render_pipeline_overview()
     
     # Progress section
     st.markdown("---")

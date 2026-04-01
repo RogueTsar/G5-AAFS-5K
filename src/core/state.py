@@ -19,6 +19,7 @@ class AgentState(TypedDict):
     social_data: Annotated[List[Dict[str, Any]], operator.add]
     review_data: Annotated[List[Dict[str, Any]], operator.add]
     financial_data: Annotated[List[Dict[str, Any]], operator.add]
+    financial_news_data: Annotated[List[Dict[str, Any]], operator.add]
     
     # Processed data
     cleaned_data: List[Dict[str, Any]]

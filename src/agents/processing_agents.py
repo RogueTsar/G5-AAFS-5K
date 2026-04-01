@@ -38,6 +38,10 @@ def data_cleaning_agent(state: AgentState) -> dict:
         for item in state["financial_data"]:
             item["source_type"] = "financial"
             raw_data.append(item)
+    if state.get("financial_news_data"):
+        for item in state["financial_news_data"]:
+            item["source_type"] = "news"
+            raw_data.append(item)
     if state.get("doc_extracted_text"):
         for item in state["doc_extracted_text"]:
             item["source_type"] = "document"
@@ -85,15 +89,40 @@ def entity_resolution_agent(state: AgentState) -> dict:
     if not cleaned_data:
         return {"resolved_entities": {"primary_entity": company_name}, "company_aliases": []}
         
-    # Prepare data for verification
-    data_to_verify = []
+    # 1. Separate trusted data from data that needs verification
+    trusted_data = []
+    to_verify_data = []
+    
     for item in cleaned_data:
-        text = item.get("title", item.get("snippet", ""))
-        data_to_verify.append({"id": id(item), "text": text[:200]})
+        # yfinance is a trusted source retrieved by ticker
+        if item.get("source") == "yfinance":
+            trusted_data.append(item)
+        else:
+            to_verify_data.append(item)
+            
+    if not to_verify_data:
+        return {
+            "cleaned_data": trusted_data,
+            "resolved_entities": {"primary_entity": company_name, "mentions": len(trusted_data)},
+            "company_aliases": []
+        }
+        
+    # 2. Prepare only unverified data for the LLM
+    data_to_verify = []
+    for item in to_verify_data:
+        # Handle different nested structures for text extraction
+        text = ""
+        if "content" in item and isinstance(item["content"], dict):
+            c = item["content"]
+            text = f"[{c.get('platform', 'news')}] {c.get('title', '')}: {c.get('snippet', '')}"
+        else:
+            text = f"{item.get('title', '')} {item.get('snippet', '')}"
+            
+        data_to_verify.append({"id": id(item), "text": text[:300]})
         
     prompt = f"""
     You are an expert corporate genealogist. Your task is to verify if the following data points 
-    refers to the company: '{company_name}' or its subsidiaries/brands.
+    refers to the company: '{company_name}' or its direct subsidiaries/brands.
     
     Data to verify:
     {json.dumps(data_to_verify, indent=2)}
@@ -109,23 +138,26 @@ def entity_resolution_agent(state: AgentState) -> dict:
     try:
         result = structured_llm.invoke(prompt)
         
-        # Filter the cleaned_data based on verification
+        # 3. Filter the to_verify_data based on LLM verification
         verified_data = []
         for i, verification in enumerate(result.verifications):
-            if i < len(cleaned_data) and verification.is_relevant:
-                item = cleaned_data[i]
+            if i < len(to_verify_data) and verification.is_relevant:
+                item = to_verify_data[i]
                 item["verified_relevant"] = True
                 if verification.company_alias_found:
                     item["resolved_alias"] = verification.company_alias_found
                 verified_data.append(item)
+        
+        # 4. Combine trusted data with verified data
+        final_cleaned_data = trusted_data + verified_data
                 
-        log_agent_action("entity_resolution_agent", f"Verified {len(verified_data)}/{len(cleaned_data)} data points as relevant.")
+        log_agent_action("entity_resolution_agent", f"Verified {len(verified_data)}/{len(to_verify_data)} points. Kept {len(trusted_data)} trusted points. Total: {len(final_cleaned_data)}")
         
         return {
-            "cleaned_data": verified_data, # Filter the main list
+            "cleaned_data": final_cleaned_data,
             "resolved_entities": {
                 "primary_entity": result.primary_name,
-                "mentions": len(verified_data)
+                "mentions": len(final_cleaned_data)
             },
             "company_aliases": result.discovered_aliases
         }

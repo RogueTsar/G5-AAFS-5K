@@ -81,21 +81,25 @@ def financial_agent(state: AgentState) -> Dict[str, Any]:
     
     # 1. Traditional Ticker Lookup
     ticker = find_ticker(company_name)
-    financial_data = []
+    financial_metrics = []
     
     if ticker:
         log_agent_action("financial_agent", f"Resolved ticker to {ticker}")
         metrics = get_financial_metrics(ticker)
         if metrics:
-            financial_data.append({"source": "yfinance", "ticker": ticker, "metrics": metrics})
+            financial_metrics.append({"source": "yfinance", "ticker": ticker, "metrics": metrics})
             
     # 2. Supplemental Web Search for Financial Context
+    financial_news = []
     for q in queries:
-        if len(financial_data) >= 5: break
+        if len(financial_news) >= 5: break
         snippets = get_sentiment_snippets(q, platform="financial news")
         for s in snippets:
-            financial_data.append({"source": "web_search", "content": s})
-            if len(financial_data) >= 5: break
+            financial_news.append({"source": "web_search", "content": s})
+            if len(financial_news) >= 5: break
             
-    log_agent_action("financial_agent", f"Gathered {len(financial_data)} financial data points")
-    return {"financial_data": financial_data[:5]}
+    log_agent_action("financial_agent", f"Gathered {len(financial_metrics)} metrics and {len(financial_news)} news points")
+    return {
+        "financial_data": financial_metrics,
+        "financial_news_data": financial_news
+    }

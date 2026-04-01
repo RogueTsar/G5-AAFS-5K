@@ -21,19 +21,29 @@ def reviewer_agent(state: AgentState) -> dict:
     prompt = f"""
     You are a Senior Risk Analyst formatting a final executive report for {company}.
     
-    Use the following analytics output to write a professional, concise Markdown report:
-    Risk Score: {json.dumps(score_info, indent=2)}
-    Extracted Risks: {json.dumps(risks, indent=2)}
-    Strengths & Mitigating Factors: {json.dumps(strengths, indent=2)}
-    Explanations: {json.dumps(explanations, indent=2)}
+    Use the following analytics output to write a professional, high-impact Markdown report:
+    - Risk Score: {json.dumps(score_info, indent=2)}
+    - Extracted Risks: {json.dumps(risks, indent=2)}
+    - Strengths & Mitigations: {json.dumps(strengths, indent=2)}
+    - Detailed Explanations: {json.dumps(explanations, indent=2)}
     
-    The report should:
-    1. Start with the company name and primary score (0-100).
-    2. Provide a section for 'Red Flags (Risks)'.
-    3. Provide a section for 'Green Flags (Strengths & Mitigations)'.
-    4. Finish with a balanced 'Executive Summary' that explains how the strengths offset some of the risks.
+    REPORT STRUCTURE REQUIREMENTS:
+    1. **Title**: Main heading with company name.
+    2. **Executive Summary**: A high-level overview of the risk profile.
+    3. **Key Metrics Table**: Create a Markdown table showing 'Metric', 'Rating', and 'Score'.
+    4. **Risk Profile Details**:
+        - Use `### 🚩 Red Flags (Risks)` for potential issues. 
+          **CRITICAL: Order these by 'impact', placing 'High' significance risks at the top.**
+          Use bullet points.
+        - Use `### ✅ Green Flags (Strengths)` for positive/mitigating factors. 
+          **CRITICAL: Order these by 'impact', placing 'High' significance strengths at the top.**
+          Use bullet points.
+    5. **Analyst Conclusion**: A final synthesized view on the outlook.
     
-    Make it sleek, neutral, and easy for executives to digest.
+    STYLING:
+    - Use bold text for key terms.
+    - Keep it professional, data-driven, and objective.
+    - Avoid flowery language; focus on clarity.
     """
     
     messages = [
