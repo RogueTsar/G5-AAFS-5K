@@ -13,6 +13,7 @@ class AgentState(TypedDict):
     # Uploaded Documents
     uploaded_docs: List[Dict[str, Any]] # List of {"filename": str, "content": bytes}
     doc_extracted_text: List[Dict[str, Any]] # List of {"filename": str, "text": str, "type": str}
+    doc_structured_data: Annotated[List[Dict[str, Any]], operator.add] # Extracted metrics from docs
     
     # Raw data collection (Annotated with operator.add to accumulate parallel outputs)
     news_data: Annotated[List[Dict[str, Any]], operator.add]

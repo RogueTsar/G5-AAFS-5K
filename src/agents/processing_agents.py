@@ -48,6 +48,14 @@ def data_cleaning_agent(state: AgentState) -> dict:
             # Ensure the structure matches what the loop expects for 'text' extraction
             item["snippet"] = item.get("text", "") 
             raw_data.append(item)
+
+    if state.get("doc_structured_data"):
+        for item in state["doc_structured_data"]:
+            # These are financial metrics from documents
+            item["source_type"] = "financial"
+            # Add a snippet for consistency in extraction agents
+            item["snippet"] = f"{item.get('metric')}: {item.get('value')} ({item.get('period')}) - {item.get('context')}"
+            raw_data.append(item)
             
     enriched_data = []
     for item in raw_data:

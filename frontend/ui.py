@@ -132,21 +132,53 @@ def render_company_input() -> tuple[str, bool]:
                             "content": uploaded_file.read()
                         })
                 
-                # Execute LangGraph
-                with st.spinner("Running Multi-Agent Analysis Pipeline..."):
-                    try:
-                        app = create_workflow()
-                        initial_state = {
-                            "company_name": st.session_state.company_name,
-                            "uploaded_docs": docs_for_graph
-                        }
-                        final_state = app.invoke(initial_state)
-                        st.session_state.final_report = final_state.get("final_report", "No report generated.")
-                        st.session_state.final_state = final_state
-                        st.session_state.analysis_complete = True
-                    except Exception as e:
-                        st.error(f"Error during analysis: {str(e)}")
-                        st.session_state.analysis_complete = False
+                # Execute LangGraph Pipeline with streaming progress
+                progress_bar = st.progress(0, text="Initializing Multi-Agent Analysis Pipeline...")
+                
+                # Map nodes to progress percentage and status labels
+                node_progress = {
+                    "input": (10, "Parsing company information..."),
+                    "discovery": (20, "Discovering data search queries..."),
+                    "news": (40, "Collecting news data from NewsAPI..."),
+                    "social": (45, "Gathering social sentiment (X/Reddit)..."),
+                    "review": (50, "Analyzing employee and customer reviews..."),
+                    "financial": (55, "Fetching structured financial ratios..."),
+                    "document_processor": (60, "Extracting text from uploaded docs..."),
+                    "document_metrics": (70, "Identifying structured metrics in documents..."),
+                    "data_cleaning": (80, "Consolidating and cleaning data points..."),
+                    "entity_resolution": (85, "Resolving corporate entities and aliases..."),
+                    "risk_extraction": (90, "Extracting risk and strength signals..."),
+                    "risk_scoring": (93, "Calculating weighted risk scores..."),
+                    "explainability": (96, "Generating metric-level justifications..."),
+                    "reviewer": (100, "Composing final executive report...")
+                }
+
+                try:
+                    app = create_workflow()
+                    initial_state = {
+                        "company_name": st.session_state.company_name,
+                        "uploaded_docs": docs_for_graph
+                    }
+                    
+                    final_state = initial_state
+                    # Use streaming to update the progress bar as nodes finish
+                    for event in app.stream(initial_state):
+                        # Each event contains one or more completed nodes
+                        for node_name in event.keys():
+                            if node_name in node_progress:
+                                prg, label = node_progress[node_name]
+                                progress_bar.progress(prg, text=label)
+                            
+                            # Accumulate the state changes from each node
+                            final_state.update(event[node_name])
+                    
+                    st.session_state.final_report = final_state.get("final_report", "No report generated.")
+                    st.session_state.final_state = final_state
+                    st.session_state.analysis_complete = True
+                    st.success("Analysis Complete!")
+                except Exception as e:
+                    st.error(f"Error during analysis: {str(e)}")
+                    st.session_state.analysis_complete = False
     
     return company_input.strip() if company_input else "", submit_button
 
@@ -264,6 +296,9 @@ def render_results():
 
         with st.expander("View Uploaded Document Data (Processed)", expanded=False):
             st.json(st.session_state.final_state.get("doc_extracted_text", []))
+
+        with st.expander("View Uploaded Document Data (Structured)", expanded=False):
+            st.json(st.session_state.final_state.get("doc_structured_data", []))
     else:
         st.info("Final report will be displayed here once analysis completes")
         

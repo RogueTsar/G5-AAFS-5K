@@ -4,6 +4,7 @@ from src.agents.input_agent import input_agent
 from src.agents.discovery_agent import discovery_agent
 from src.agents.collection_agents import news_agent, social_agent, review_agent, financial_agent
 from src.agents.document_processing_agent import document_processing_agent
+from src.agents.document_metrics_agent import document_metrics_agent
 from src.agents.processing_agents import data_cleaning_agent, entity_resolution_agent
 from src.agents.analysis_agents import risk_extraction_agent, risk_scoring_agent, explainability_agent
 from src.agents.reviewer_agent import reviewer_agent
@@ -24,6 +25,7 @@ def create_workflow():
     workflow.add_node("review", review_agent)
     workflow.add_node("financial", financial_agent)
     workflow.add_node("document_processor", document_processing_agent)
+    workflow.add_node("document_metrics", document_metrics_agent)
     
     # Processing and Analysis nodes
     workflow.add_node("data_cleaning", data_cleaning_agent)
@@ -37,6 +39,7 @@ def create_workflow():
     workflow.add_edge(START, "input")
     workflow.add_edge("input", "discovery")
     workflow.add_edge("input", "document_processor")
+    workflow.add_edge("document_processor", "document_metrics")
     
     # Fan-out
     workflow.add_edge("discovery", "news")
@@ -45,7 +48,7 @@ def create_workflow():
     workflow.add_edge("discovery", "financial")
     
     # Fan-in
-    workflow.add_edge(["news", "social", "review", "financial", "document_processor"], "data_cleaning")
+    workflow.add_edge(["news", "social", "review", "financial", "document_metrics"], "data_cleaning")
     
     # Sequential processing
     workflow.add_edge("data_cleaning", "entity_resolution")
