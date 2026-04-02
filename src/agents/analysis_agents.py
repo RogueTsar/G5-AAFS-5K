@@ -2,17 +2,19 @@ from src.core.state import AgentState
 from src.core.logger import log_agent_action
 from src.core.llm import get_llm
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import json
 
 # Define Pydantic models for structured LLM parsing
 class RiskSignal(BaseModel):
     type: str = Field(description="Category. Strictly either 'Traditional Risk' or 'Non-traditional Risk'")
     description: str = Field(description="A concise, 1-sentence description of the risk factor found in the data")
+    impact: str = Field(description="The significance of the risk factor. Strictly one of: 'High', 'Medium', or 'Low'")
 
 class StrengthSignal(BaseModel):
     type: str = Field(description="Category. Strictly either 'Financial Strength' or 'Market Strength'")
     description: str = Field(description="A concise, 1-sentence description of a positive or mitigating factor found in the data")
+    impact: str = Field(description="The significance of the factor. Strictly one of: 'High', 'Medium', or 'Low'")
 
 class RiskExtractionOutput(BaseModel):
     extracted_risks: List[RiskSignal]
@@ -47,13 +49,15 @@ def risk_extraction_agent(state: AgentState) -> dict:
     
     prompt = f"""
     You are an objective corporate analyst analyzing data for {company}.
-    Review the following processed data, which includes specialized 'finbert_sentiment' scores (expert financial sentiment analysis).
+    Review the following processed data, which includes specialized 'finbert_sentiment' scores (expert financial sentiment analysis) and raw metrics.
     
     Your goal is to provide a BALANCED view:
     1. Extract potential RISK factors (Traditional or Non-traditional). 
        - Pay close attention to items with 'Negative' finbert_sentiment.
+       - Assign an 'impact' (High, Medium, Low) to each risk. Factors impacting core revenue, solvency, or major leadership stability are 'High' impact.
     2. Extract STRENGTHS or mitigating factors.
        - Items with 'Positive' finbert_sentiment are strong indicators of growth and stability.
+       - Assign an 'impact' (High, Medium, Low) to each strength. Major revenue growth, strong liquidity, or significant strategic wins are 'High' impact.
     
     Data:
     {data_context}
@@ -75,42 +79,151 @@ def risk_extraction_agent(state: AgentState) -> dict:
     return {"extracted_risks": extracted_risks, "extracted_strengths": extracted_strengths}
 
 
-def risk_scoring_agent(state: AgentState) -> dict:
-    """Combines risks and strengths into a neutral, objective risk score."""
-    log_agent_action("risk_scoring_agent", "Calculating balanced risk score")
+def evaluate_financial_metrics(metrics: Dict[str, Any]) -> str:
+    """
+    Rule-based engine to evaluate raw financial ratios.
+    Returns "positive", "neutral", or "negative".
+    """
+    if not metrics:
+        return "neutral"
+        
+    # Extract key ratios (handling potential missing keys or None values)
+    # Using 'get(key) or default' to ensure None values are replaced by numerical defaults
+    de = metrics.get("debtToEquity") if metrics.get("debtToEquity") is not None else 0
+    cr = metrics.get("currentRatio") if metrics.get("currentRatio") is not None else 1.0
+    rg = metrics.get("revenueGrowth") if metrics.get("revenueGrowth") is not None else 0
+    pm = metrics.get("profitMargins") if metrics.get("profitMargins") is not None else 0
     
+    # 1. Red Flags (Negative)
+    if cr < 1.0: return "negative" # Liquidity risk: Can't pay short-term debts
+    if de > 100: return "negative" # High leverage: Over 100% debt-to-equity
+    if rg < -0.05: return "negative" # Significant revenue decline
+    
+    # 2. Green Flags (Positive)
+    if cr > 1.5 and rg > 0.05 and pm > 0.05:
+        return "positive" # Healthy balance of liquidity, growth, and margins
+    
+    return "neutral"
+
+def calculate_source_score(items: List[Dict[str, Any]]) -> Optional[float]:
+    """Calculates a 0-100 risk score based on average FinBERT sentiment or raw metrics."""
+    if not items:
+        return None
+        
+    scores = []
+    for item in items:
+        # Check for yfinance metrics first (threshold-based scoring)
+        if "metrics" in item:
+            label = evaluate_financial_metrics(item["metrics"])
+        else:
+            # Fallback to textual sentiment (FinBERT)
+            sentiment = item.get("finbert_sentiment", {})
+            label = sentiment.get("label", "neutral").lower()
+            
+        # Mapping: Positive -> 0, Neutral -> 50, Negative -> 100
+        if label == "positive":
+            scores.append(0.0)
+        elif label == "negative":
+            scores.append(100.0)
+        else: # Neutral or Error
+            scores.append(50.0)
+            
+    return sum(scores) / len(scores)
+
+def risk_scoring_agent(state: AgentState) -> dict:
+    """Calculates a deterministic risk score using weighted categories and LLM refinement."""
+    company = state.get("company_name", "Unknown")
+    log_agent_action("risk_scoring_agent", f"Calculating weighted risk score for {company}")
+    
+    # 1. Rules: 60/20/12/8 distribution
+    base_weights = {
+        "structured": 0.60, # financial + document
+        "news": 0.20,
+        "review": 0.12,
+        "social": 0.08
+    }
+    
+    # 2. Group items from cleaned_data
+    grouped_data = {
+        "structured": [],
+        "news": [],
+        "review": [],
+        "social": []
+    }
+    
+    for item in state.get("cleaned_data", []):
+        stype = item.get("source_type")
+        if stype in ["financial", "document"]:
+            grouped_data["structured"].append(item)
+        elif stype in grouped_data:
+            grouped_data[stype].append(item)
+            
+    # 3. Calculate category scores and re-normalize weights
+    category_scores = {}
+    active_weights = {}
+    total_active_weight = 0.0
+    
+    for category, weight in base_weights.items():
+        score = calculate_source_score(grouped_data[category])
+        if score is not None:
+            category_scores[category] = score
+            active_weights[category] = weight
+            total_active_weight += weight
+            
+    # 4. Final Weighted Calculation with Re-normalization
+    if total_active_weight == 0:
+        base_score = 50.0 # Default to neutral if no data
+    else:
+        # Re-normalize weights so they sum to 1.0 (deterministic math)
+        weighted_sum = 0.0
+        normalized_weights = {cat: w/total_active_weight for cat, w in active_weights.items()}
+        for category, score in category_scores.items():
+            weighted_sum += score * normalized_weights[category]
+        base_score = weighted_sum
+
+    # 5. LLM refinement for Rating and Justification
     llm = get_llm()
     if not llm:
-        return {"risk_score": {"score": 0, "max": 100, "rating": "Unknown"}}
-        
+        # Qualitative fallback if LLM is unavailable
+        rating = "Low" if base_score < 40 else "Medium" if base_score < 70 else "High"
+        return {"risk_score": {"score": int(base_score), "max": 100, "rating": rating, "breakdown": category_scores}}
+
     structured_llm = llm.with_structured_output(RiskScoreOutput)
     
-    company = state.get("company_name", "Unknown")
-    risks_context = json.dumps(state.get("extracted_risks", []), indent=2)
-    strengths_context = json.dumps(state.get("extracted_strengths", []), indent=2)
-    
     prompt = f"""
-    You are a neutral and objective credit analyst assessing {company}.
-    Review the list of Risks and Strengths, which incorporate specialized FinBERT sentiment signals.
+    You are a Senior Risk Analyst. We have calculated a rule-based risk score for {company} weighting sources as follows:
+    - Structured/Financial: 60%
+    - News: 20%
+    - Reviews: 12%
+    - Social Media: 8% (Adjusted weights sum to 100% when data is missing).
     
-    Calculate a final risk score (0-100) where 100 is maximum insolvency risk.
-    BE NEUTRAL: Use the FinBERT sentiment scores as objective anchor points. High confidence positive sentiment should significantly offset risks.
+    The calculated base score is: {base_score:.1f}/100.
     
-    Risks:
-    {risks_context}
+    Categorized Risk Scores (Average Risk):
+    {json.dumps(category_scores, indent=2)}
     
-    Strengths:
-    {strengths_context}
+    Your Task:
+    1. Verify if the calculated 'base_score' matches the appropriate 'rating' (Low, Medium, or High).
+    2. Suggest any final small adjustment (+/- 5 points) if the qualitative context suggests something the math missed.
+    3. Output the final score and rating.
+    
+    Rating Guide:
+    - < 40: Low
+    - 40 - 70: Medium
+    - > 70: High
     """
     
     try:
         result = structured_llm.invoke(prompt)
         risk_score = result.model_dump()
+        risk_score["breakdown"] = category_scores # Pass breakdown to UI for transparency
     except Exception as e:
-        log_agent_action("risk_scoring_agent", f"LLM error: {str(e)}")
-        risk_score = {"score": 0, "max": 100, "rating": "Unknown"}
+        log_agent_action("risk_scoring_agent", f"Error in LLM refinement: {str(e)}")
+        # Use calculated score as final if LLM fails
+        rating = "Low" if base_score < 40 else "Medium" if base_score < 70 else "High"
+        risk_score = {"score": int(base_score), "max": 100, "rating": rating, "breakdown": category_scores}
         
-    log_agent_action("risk_scoring_agent", "Finished balanced risk scoring", {"risk_score": risk_score})
+    log_agent_action("risk_scoring_agent", "Finished weighted risk scoring", {"final_score": risk_score["score"]})
     return {"risk_score": risk_score}
 
 

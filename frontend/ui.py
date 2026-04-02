@@ -22,46 +22,113 @@ def setup_page_config():
 
 
 def setup_custom_css():
-    """Apply custom CSS styling."""
-    st.markdown("""
-        <style>
-            .main {
-                max-width: 1200px;
-            }
-            .stTabs [data-baseweb="tab-list"] button {
-                font-size: 16px;
-            }
-            .flow-diagram {
-                background-color: #f0f2f6;
-                padding: 20px;
-                border-radius: 10px;
-                margin: 20px 0;
-            }
-            .step-container {
-                background-color: #e8f4f8;
-                padding: 15px;
-                border-left: 4px solid #0066cc;
-                margin: 10px 0;
-                border-radius: 5px;
-            }
-            .success-message {
-                background-color: #d4edda;
-                padding: 15px;
-                border-radius: 5px;
-                border: 1px solid #c3e6cb;
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    """Apply custom CSS styling based on the selected theme."""
+    theme = st.session_state.get("theme", "Light")
+    
+    if theme == "Purple Galaxy":
+        st.markdown("""
+            <style>
+                .stApp {
+                    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+                    background-attachment: fixed;
+                    color: white !important;
+                }
+                .main {
+                    max-width: 1200px;
+                }
+                /* Glassmorphism containers */
+                .flow-diagram, .step-container, [data-testid="stExpander"], .stMetric {
+                    background: rgba(255, 255, 255, 0.08) !important;
+                    backdrop-filter: blur(12px) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+                    border-radius: 12px !important;
+                    padding: 20px !important;
+                    color: white !important;
+                }
+                /* Header and text colors */
+                h1, h2, h3, h4, h5, h6, b, p, label, .stMarkdown {
+                    color: #e0d1ff !important;
+                }
+                /* Metric values */
+                [data-testid="stMetricValue"] {
+                    color: #ffffff !important;
+                }
+                /* Tabs */
+                .stTabs [data-baseweb="tab-list"] button {
+                    font-size: 16px;
+                    color: #d8c4ff !important;
+                }
+                .stTabs [data-baseweb="tab-highlight"] {
+                    background-color: #9d50bb !important;
+                }
+                /* Sidebar fix */
+                [data-testid="stSidebar"] {
+                    background-color: #1a1525 !important;
+                }
+                /* Buttons */
+                .stButton > button {
+                    background: linear-gradient(90deg, #9d50bb, #6e48aa) !important;
+                    border: none !important;
+                    color: white !important;
+                    transition: all 0.3s ease;
+                }
+                .stButton > button:hover {
+                    box-shadow: 0 0 15px rgba(157, 80, 187, 0.6);
+                    transform: translateY(-2px);
+                }
+            </style>
+        """, unsafe_allow_html=True)
+    else:
+        # Standard Light/Corporate theme
+        st.markdown("""
+            <style>
+                .main {
+                    max-width: 1200px;
+                }
+                .stTabs [data-baseweb="tab-list"] button {
+                    font-size: 16px;
+                }
+                .flow-diagram {
+                    background-color: #f0f2f6;
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin: 20px 0;
+                }
+                .step-container {
+                    background-color: #e8f4f8;
+                    padding: 15px;
+                    border-left: 4px solid #0066cc;
+                    margin: 10px 0;
+                    border-radius: 5px;
+                }
+                .success-message {
+                    background-color: #d4edda;
+                    padding: 15px;
+                    border-radius: 5px;
+                    border: 1px solid #c3e6cb;
+                }
+            </style>
+        """, unsafe_allow_html=True)
 
 
 def initialize_session_state():
     """Initialize Streamlit session state variables."""
     if "company_name" not in st.session_state:
         st.session_state.company_name = ""
+    if "theme" not in st.session_state:
+        st.session_state.theme = "Light"
     if "analysis_started" not in st.session_state:
         st.session_state.analysis_started = False
     if "current_stage" not in st.session_state:
         st.session_state.current_stage = None
+    if "ready_for_review" not in st.session_state:
+        st.session_state.ready_for_review = False
+    if "analysis_complete" not in st.session_state:
+        st.session_state.analysis_complete = False
+    if "edited_risks" not in st.session_state:
+        st.session_state.edited_risks = []
+    if "edited_strengths" not in st.session_state:
+        st.session_state.edited_strengths = []
 
 
 def render_sidebar():
@@ -73,6 +140,15 @@ def render_sidebar():
             st.info("Configure your API keys and settings here")
             st.text_input("News API Key", type="password", placeholder="Enter your News API key")
             st.text_input("Financial API Key", type="password", placeholder="Enter your Financial API key")
+            
+        st.markdown("---")
+        st.subheader("🎨 Appearance")
+        st.session_state.theme = st.selectbox(
+            "Select UI Theme",
+            options=["Light", "Purple Galaxy"],
+            index=0 if st.session_state.get("theme") == "Light" else 1,
+            help="Switch between standard and premium galaxy themes."
+        )
 
 
 def render_company_input() -> tuple[str, bool]:
@@ -119,8 +195,15 @@ def render_company_input() -> tuple[str, bool]:
             st.markdown('</div>', unsafe_allow_html=True)
             
             if submit_button and company_input.strip():
+                # Reset analysis state for a fresh run
                 st.session_state.company_name = company_input.strip()
                 st.session_state.analysis_started = True
+                st.session_state.ready_for_review = False
+                st.session_state.analysis_complete = False
+                st.session_state.edited_risks = []
+                st.session_state.edited_strengths = []
+                st.session_state.final_report = ""
+                
                 st.success(f"✅ Analysis started for: **{st.session_state.company_name}**")
                 
                 # Prepare uploaded docs for the graph
@@ -132,21 +215,73 @@ def render_company_input() -> tuple[str, bool]:
                             "content": uploaded_file.read()
                         })
                 
-                # Execute LangGraph
-                with st.spinner("Running Multi-Agent Analysis Pipeline..."):
-                    try:
-                        app = create_workflow()
-                        initial_state = {
-                            "company_name": st.session_state.company_name,
-                            "uploaded_docs": docs_for_graph
-                        }
-                        final_state = app.invoke(initial_state)
-                        st.session_state.final_report = final_state.get("final_report", "No report generated.")
-                        st.session_state.final_state = final_state
-                        st.session_state.analysis_complete = True
-                    except Exception as e:
-                        st.error(f"Error during analysis: {str(e)}")
-                        st.session_state.analysis_complete = False
+                # Execute LangGraph Pipeline with streaming progress
+                progress_bar = st.progress(0, text="Initializing Multi-Agent Analysis Pipeline...")
+                
+                # Map nodes to progress percentage and status labels
+                node_progress = {
+                    "input": (10, "Parsing company information..."),
+                    "discovery": (20, "Discovering data search queries..."),
+                    "news": (40, "Collecting news data from NewsAPI..."),
+                    "social": (45, "Gathering social sentiment (X/Reddit)..."),
+                    "review": (50, "Analyzing employee and customer reviews..."),
+                    "financial": (55, "Fetching structured financial ratios..."),
+                    "document_processor": (60, "Extracting text from uploaded docs..."),
+                    "document_metrics": (70, "Identifying structured metrics in documents..."),
+                    "data_cleaning": (80, "Consolidating and cleaning data points..."),
+                    "entity_resolution": (85, "Resolving corporate entities and aliases..."),
+                    "risk_extraction": (90, "Extracting risk and strength signals..."),
+                    "risk_scoring": (93, "Calculating weighted risk scores..."),
+                    "explainability": (96, "Generating metric-level justifications..."),
+                    "reviewer": (100, "Composing final executive report...")
+                }
+
+                try:
+                    app = create_workflow()
+                    initial_state = {
+                        "company_name": st.session_state.company_name,
+                        "uploaded_docs": docs_for_graph
+                    }
+                    
+                    final_state = initial_state
+                    # Use streaming to update the progress bar as nodes finish
+                    for event in app.stream(initial_state):
+                        # Each event contains one or more completed nodes
+                        for node_name in event.keys():
+                            # STOP before the reviewer node to allow manual intervention
+                            if node_name == "reviewer":
+                                continue
+                                
+                            if node_name in node_progress:
+                                prg, label = node_progress[node_name]
+                                progress_bar.progress(prg, text=label)
+                            
+                            # Accumulate the state changes from each node
+                            final_state.update(event[node_name])
+                    
+                    # Store the results for human review
+                    st.session_state.final_state = final_state
+                    
+                    # Initialize editable lists with a template row if empty
+                    risks = final_state.get("extracted_risks", [])
+                    if not risks:
+                        risks = [{"type": "Traditional Risk", "impact": "Medium", "description": "Type to add a new risk...", "Exclude?": False}]
+                    else:
+                        for r in risks: r["Exclude?"] = False
+                    st.session_state.edited_risks = risks
+                    
+                    strengths = final_state.get("extracted_strengths", [])
+                    if not strengths:
+                        strengths = [{"type": "Financial Strength", "impact": "Medium", "description": "Type to add a new strength...", "Exclude?": False}]
+                    else:
+                        for s in strengths: s["Exclude?"] = False
+                    st.session_state.edited_strengths = strengths
+                    
+                    st.session_state.ready_for_review = True
+                    st.success("✅ AI Analysis Phase Complete. Please review the findings below.")
+                except Exception as e:
+                    st.error(f"Error during analysis: {str(e)}")
+                    st.session_state.ready_for_review = False
     
     return company_input.strip() if company_input else "", submit_button
 
@@ -207,27 +342,197 @@ def render_analysis_scoring():
     st.info("🤖 **RAG Retrieval** - Context-aware information retrieval using embeddings")
 
 
+def render_data_points():
+    """Render the detailed analysis data points tab."""
+    st.markdown("### 🧠 Analysis Data Points")
+    st.write("These are the specific data points extracted, cleaned, and analyzed to generate the risk score.")
+    
+    if st.session_state.get("analysis_complete", False) or st.session_state.get("ready_for_review", False):
+        final_state = st.session_state.get("final_state", {})
+        cleaned_data = final_state.get("cleaned_data", [])
+        
+        if cleaned_data:
+            # Flatten data for the dataframe
+            display_data = []
+            for item in cleaned_data:
+                sentiment_info = item.get("finbert_sentiment", {})
+                display_data.append({
+                    "Source Type": item.get("source_type", "Unknown").title(),
+                    "Sentiment": sentiment_info.get("label", "neutral").upper(),
+                    "Confidence": f"{sentiment_info.get('score', 0):.2f}",
+                    "Evidence Snippet": item.get("snippet", item.get("text", ""))[:500]
+                })
+            
+            import pandas as pd
+            df = pd.DataFrame(display_data)
+            
+            # Show searchable table
+            st.dataframe(
+                df,
+                use_container_width=True,
+                column_config={
+                    "Sentiment": st.column_config.TextColumn("Sentiment", width="small"),
+                    "Confidence": st.column_config.TextColumn("Conf.", width="small"),
+                    "Source Type": st.column_config.TextColumn("Source", width="small"),
+                    "Evidence Snippet": st.column_config.TextColumn("Evidence Snippet", width="large")
+                }
+            )
+        else:
+            st.warning("No processed data points found.")
+    else:
+        st.info("Data points will be available once the analysis phase completes.")
+
+
 def render_results():
     """Render results and report tab."""
     st.markdown("### Results & Report")
     
     if st.session_state.get("analysis_complete", False):
         st.success("Analysis Complete!")
-        # Use text area to output markdown exactly or raw text
-        st.text_area("Generated Risk Report", st.session_state.get("final_report", ""), height=400)
+        
+        final_state = st.session_state.get("final_state", {})
+        risk_info = final_state.get("risk_score", {"score": 0, "rating": "Unknown"})
+        
+        # Prominent Summary Metrics
+        m_col1, m_col2, m_col3 = st.columns(3)
+        with m_col1:
+            st.metric("Risk Score", f"{risk_info.get('score', 0)}/100")
+        with m_col2:
+            rating = risk_info.get("rating", "Unknown")
+            color = "green" if rating == "Low" else "orange" if rating == "Medium" else "red"
+            st.markdown(f"**Risk Rating:** <span style='color:{color}; font-size:24px;'>{rating}</span>", unsafe_allow_html=True)
+        with m_col3:
+            st.metric("Data Points", len(final_state.get("cleaned_data", [])))
+            
+        # Display Weighted Breakdown
+        breakdown = risk_info.get("breakdown", {})
+        if breakdown:
+            with st.expander("📊 View Weighted Score Breakdown", expanded=False):
+                st.markdown("This score is calculated using a **60/20/12/8** weighted distribution (re-normalized if data is missing).")
+                cols = st.columns(len(breakdown))
+                for i, (cat, cat_score) in enumerate(breakdown.items()):
+                    cat_name = cat.capitalize()
+                    if cat == "structured":
+                        cat_name = "Financial/Docs"
+                    with cols[i]:
+                        st.metric(cat_name, f"{cat_score:.1f}")
+            
+        st.markdown("---")
+        
+        # Render the actual report
+        st.markdown(st.session_state.get("final_report", ""))
         
         st.markdown("### 🔍 Raw API Data")
         with st.expander("View Financial Data (Yahoo Finance)", expanded=False):
             st.json(st.session_state.final_state.get("financial_data", []))
             
-        with st.expander("View News Data (NewsAPI)", expanded=False):
+        with st.expander("View News Data (General Web Search)", expanded=False):
             st.json(st.session_state.final_state.get("news_data", []))
+
+        with st.expander("View Targeted Financial News (NewsAPI/Tavily)", expanded=False):
+            st.json(st.session_state.final_state.get("financial_news_data", []))
 
         with st.expander("View Social Sentiment Data (Tavily)", expanded=False):
             st.json(st.session_state.final_state.get("social_data", []))
 
         with st.expander("View Review Data (Tavily)", expanded=False):
             st.json(st.session_state.final_state.get("review_data", []))
+
+        # Visual XBRL Financial Statements Display
+        xbrl_data = st.session_state.final_state.get("xbrl_parsed_data", [])
+        if xbrl_data:
+            st.markdown("### XBRL Financial Statements")
+            from frontend.xbrl_display import render_xbrl_financials
+            render_xbrl_financials(xbrl_data)
+
+        with st.expander("View Uploaded Document Data (Processed)", expanded=False):
+            st.json(st.session_state.final_state.get("doc_extracted_text", []))
+
+        with st.expander("View Uploaded Document Data (Structured)", expanded=False):
+            st.json(st.session_state.final_state.get("doc_structured_data", []))
+            
+    elif st.session_state.get("ready_for_review", False):
+        st.info("👋 AI has completed its initial scan. Review and refine the findings below.")
+        
+        from src.agents.reviewer_agent import reviewer_agent
+        
+        st.markdown("### ✍️ Analyst Review Stage")
+        st.write("Modify AI-detected risks and strengths, or add your own expert notes. Check **'Exclude?'** to remove a finding.")
+
+        # Editable Dataframes for HITL
+        impact_options = ["High", "Medium", "Low"]
+        risk_type_options = ["Traditional Risk", "Non-traditional Risk"]
+        strength_type_options = ["Financial Strength", "Market Strength"]
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("🚩 Red Flags")
+            edited_risks = st.data_editor(
+                st.session_state.edited_risks,
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "Exclude?": st.column_config.CheckboxColumn("Exclude?", default=False, help="Check to remove this risk"),
+                    "type": st.column_config.SelectboxColumn("Category", options=risk_type_options, required=True),
+                    "impact": st.column_config.SelectboxColumn("Severity", options=impact_options, required=True),
+                    "description": st.column_config.TextColumn("Risk Factor Description", required=True)
+                },
+                key="risk_editor"
+            )
+            
+        with col2:
+            st.subheader("✅ Green Flags")
+            edited_strengths = st.data_editor(
+                st.session_state.edited_strengths,
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "Exclude?": st.column_config.CheckboxColumn("Exclude?", default=False, help="Check to remove this strength"),
+                    "type": st.column_config.SelectboxColumn("Category", options=strength_type_options, required=True),
+                    "impact": st.column_config.SelectboxColumn("Significance", options=impact_options, required=True),
+                    "description": st.column_config.TextColumn("Strength Description", required=True)
+                },
+                key="strength_editor"
+            )
+
+        if st.button("📝 Finalize & Generate Report", type="primary", use_container_width=True):
+            with st.spinner("Composing final executive report with your expert edits..."):
+                try:
+                    # Filter out excluded rows and empty templates
+                    final_risks = [r for r in edited_risks if not r.get("Exclude?", False) and "Type to add" not in r.get("description", "")]
+                    final_strengths = [s for s in edited_strengths if not s.get("Exclude?", False) and "Type to add" not in s.get("description", "")]
+                    
+                    # Update state with human edits
+                    final_state = st.session_state.final_state
+                    
+                    # Mark as priority if they were edited or added by the user
+                    original_risks = final_state.get("extracted_risks", [])
+                    original_strengths = final_state.get("extracted_strengths", [])
+                    
+                    def mark_priority(current_list, original_list):
+                        orig_desc = {r.get("description") for r in original_list}
+                        for item in current_list:
+                            if item.get("description") not in orig_desc:
+                                item["priority"] = True
+                                item["source"] = "Analyst Input"
+                            else:
+                                item["priority"] = False
+                        return current_list
+
+                    final_state["extracted_risks"] = mark_priority(final_risks, original_risks)
+                    final_state["extracted_strengths"] = mark_priority(final_strengths, original_strengths)
+                    
+                    # Call reviewer agent manually
+                    output = reviewer_agent(final_state)
+                    
+                    # Update session state with final results
+                    st.session_state.final_report = output.get("final_report", "Report generation failed.")
+                    st.session_state.analysis_complete = True
+                    st.session_state.ready_for_review = False
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error during report generation: {str(e)}")
     else:
         st.info("Final report will be displayed here once analysis completes")
         
@@ -246,24 +551,28 @@ def render_analysis_pipeline():
     st.markdown("---")
     st.markdown("## 🔄 Analysis Pipeline")
     
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 Pipeline Overview",
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "📈 Results",
         "🔍 Data Collection",
         "🎯 Analysis & Scoring",
-        "📈 Results"
+        "🧠 Analysis Data Points",
+        "📊 Pipeline Overview"
     ])
     
     with tab1:
-        render_pipeline_overview()
+        render_results()
     
     with tab2:
         render_data_collection()
     
     with tab3:
         render_analysis_scoring()
-    
+        
     with tab4:
-        render_results()
+        render_data_points()
+    
+    with tab5:
+        render_pipeline_overview()
     
     # Progress section
     st.markdown("---")
