@@ -1361,10 +1361,13 @@ def _build_css(fs: int = 16) -> str:
         font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; margin:0; }}
     [data-testid="stSidebar"] .stAlert p {{ color:#1A1A2E !important; }}
     [data-testid="stSidebar"] hr {{ border-color:var(--border) !important; margin:4px 0 !important; }}
-    [data-testid="stSidebar"] details {{ border:1px solid var(--border); border-radius:6px;
-        margin-bottom:4px; background:var(--card); }}
-    [data-testid="stSidebar"] summary {{ font-size:.8rem; font-weight:600; padding:6px 10px;
-        cursor:pointer; color:#CDD0D6 !important; }}
+    [data-testid="stSidebar"] [data-testid="stExpander"] {{
+        border:1px solid var(--border); border-radius:6px;
+        margin-bottom:4px; background:var(--card);
+    }}
+    [data-testid="stSidebar"] [data-testid="stExpander"] p {{
+        font-size:.8rem !important; font-weight:600 !important;
+    }}
 
     /* ── Typography ── */
     h1 {{ color:#FFF !important; font-weight:800; font-size:1.5rem; margin:0 !important; }}
