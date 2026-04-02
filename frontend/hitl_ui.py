@@ -1347,112 +1347,138 @@ _UBS_LOGO_SVG = (
 def _build_css(fs: int = 16) -> str:
     return f"""<style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    :root {{ --fs: {fs}px; --ubs-red:#EC0000; --ubs-navy:#0E1726; --ubs-bg:#F4F5F7; }}
-    html {{ font-size: var(--fs) !important; }}
-    * {{ font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important; }}
+    :root {{ --fs:{fs}px; --red:#EC0000; --bg:#0B0E14; --card:#141820;
+             --surface:#1A1F2B; --border:#252A36; --text:#E0E2E8; --muted:#8B8FA3; }}
+    html {{ font-size:var(--fs) !important; }}
+    * {{ font-family:'Inter','Helvetica Neue',sans-serif !important; }}
 
-    /* ── App background ── */
-    [data-testid="stAppViewContainer"] {{ background:var(--ubs-bg); }}
-    [data-testid="stHeader"] {{ background:var(--ubs-navy); height:0; }}
+    /* ── Dark background ── */
+    [data-testid="stAppViewContainer"] {{ background:var(--bg); color:var(--text); }}
+    [data-testid="stHeader"] {{ background:var(--bg); }}
     .main {{ max-width:1440px; padding-top:0 !important; }}
     .block-container {{ padding-top:.5rem !important; padding-bottom:1rem !important; }}
 
-    /* ── Sidebar ── */
-    [data-testid="stSidebar"] {{ background:var(--ubs-navy); }}
-    [data-testid="stSidebar"] * {{ color:#CDD0D6 !important; }}
+    /* ── Sidebar (collapsed by default feel) ── */
+    [data-testid="stSidebar"] {{ background:#0D1017; border-right:1px solid var(--border); }}
+    [data-testid="stSidebar"] * {{ color:#9BA1B0 !important; }}
     [data-testid="stSidebar"] .stMarkdown h3 {{ color:#FFF !important; font-weight:700;
-        font-size:.88rem; letter-spacing:.03em; text-transform:uppercase; margin:0 0 4px 0; }}
+        font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; margin:0; }}
     [data-testid="stSidebar"] .stAlert p {{ color:#1A1A2E !important; }}
-    [data-testid="stSidebar"] hr {{ border-color:#2A2A3E !important; margin:6px 0 !important; }}
-    .sidebar-section {{ padding:4px 0 6px 0; }}
+    [data-testid="stSidebar"] hr {{ border-color:var(--border) !important; margin:4px 0 !important; }}
+    [data-testid="stSidebar"] details {{ border:1px solid var(--border); border-radius:6px;
+        margin-bottom:4px; background:var(--card); }}
+    [data-testid="stSidebar"] summary {{ font-size:.8rem; font-weight:600; padding:6px 10px;
+        cursor:pointer; color:#CDD0D6 !important; }}
 
-    /* ── Typography (tight spacing) ── */
-    h1 {{ color:var(--ubs-navy) !important; font-weight:800; font-size:1.6rem;
-          margin:0 0 2px 0 !important; line-height:1.2; }}
-    h2 {{ color:var(--ubs-navy) !important; font-weight:700; font-size:1.15rem;
-          border-bottom:2px solid var(--ubs-red); padding-bottom:4px;
-          margin:12px 0 6px 0 !important; }}
-    h3 {{ color:#1A1A2E !important; font-weight:600; font-size:1rem;
-          margin:8px 0 4px 0 !important; }}
-    p, li, td, th, label, .stMarkdown {{ font-size:.92rem; line-height:1.45; }}
+    /* ── Typography ── */
+    h1 {{ color:#FFF !important; font-weight:800; font-size:1.5rem; margin:0 !important; }}
+    h2 {{ color:#FFF !important; font-weight:700; font-size:1.1rem;
+          border-bottom:2px solid var(--red); padding-bottom:4px; margin:10px 0 6px 0 !important; }}
+    h3 {{ color:#DDE0E6 !important; font-weight:600; font-size:.95rem; margin:6px 0 3px 0 !important; }}
+    p, li, td, th, label, .stMarkdown, span {{ color:var(--text); font-size:.88rem; line-height:1.4; }}
 
     /* ── Tabs ── */
-    .stTabs [data-baseweb="tab-list"] {{ gap:0; }}
-    .stTabs [data-baseweb="tab-list"] button {{
-        font-size:.82rem; font-weight:600; padding:8px 14px;
-        border-bottom:3px solid transparent;
-    }}
+    .stTabs [data-baseweb="tab-list"] {{ gap:0; background:var(--card); border-radius:8px 8px 0 0;
+        border-bottom:1px solid var(--border); }}
+    .stTabs [data-baseweb="tab-list"] button {{ font-size:.78rem; font-weight:600;
+        padding:8px 14px; color:var(--muted) !important; }}
     .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
-        border-bottom-color:var(--ubs-red) !important; color:var(--ubs-red) !important;
-    }}
+        border-bottom:3px solid var(--red) !important; color:var(--red) !important; }}
+    .stTabs [data-baseweb="tab-panel"] {{ background:var(--card); border-radius:0 0 8px 8px;
+        padding:12px; border:1px solid var(--border); border-top:none; }}
 
     /* ── Buttons ── */
     .stButton>button[kind="primary"] {{
-        background:var(--ubs-red) !important; border:none; font-weight:600;
-        border-radius:6px; padding:6px 18px;
+        background:var(--red) !important; border:none; font-weight:600;
+        border-radius:6px; padding:6px 16px; color:white !important;
     }}
     .stButton>button[kind="primary"]:hover {{ background:#C70000 !important; }}
-    .stButton>button {{ border-radius:6px; font-weight:500; padding:5px 14px; }}
-    .stProgress > div > div {{ background:var(--ubs-red) !important; }}
+    .stButton>button {{ border-radius:6px; font-weight:500; padding:5px 12px;
+        background:var(--surface) !important; color:var(--text) !important;
+        border:1px solid var(--border) !important; }}
+    .stButton>button:hover {{ background:var(--card) !important; }}
+    .stProgress > div > div {{ background:var(--red) !important; }}
 
-    /* ── TOP RIBBON (everpresent) ── */
+    /* ── Inputs ── */
+    .stTextInput>div>div>input, .stSelectbox>div>div,
+    .stTextArea>div>div>textarea, .stNumberInput>div>div>input {{
+        background:var(--surface) !important; color:var(--text) !important;
+        border:1px solid var(--border) !important; border-radius:6px;
+    }}
+    .stSlider {{ color:var(--text) !important; }}
+
+    /* ── Top ribbon ── */
     .top-ribbon {{
-        background:var(--ubs-navy); color:white; padding:8px 20px;
+        background:var(--card); color:white; padding:8px 16px;
         display:flex; align-items:center; justify-content:space-between;
-        border-radius:8px; margin-bottom:10px; gap:12px; flex-wrap:wrap;
+        border-radius:8px; margin-bottom:8px; gap:10px; flex-wrap:wrap;
+        border:1px solid var(--border);
     }}
     .top-ribbon .ribbon-item {{
-        display:inline-flex; align-items:center; gap:5px;
-        font-size:.78rem; color:#B0B4BC; white-space:nowrap;
+        display:inline-flex; align-items:center; gap:4px;
+        font-size:.72rem; color:var(--muted); white-space:nowrap;
     }}
     .top-ribbon .ribbon-item b {{ color:#FFF; }}
-    .top-ribbon .ribbon-logo {{ font-size:1.2em; font-weight:900; color:white; }}
-    .top-ribbon .ribbon-sep {{ width:1px; height:18px; background:#3A3A4E; margin:0 4px; }}
+    .top-ribbon .ribbon-logo {{ font-size:1.1em; font-weight:900; color:white; }}
+    .top-ribbon .ribbon-sep {{ width:1px; height:16px; background:var(--border); margin:0 3px; }}
 
-    /* ── Metric card (tighter) ── */
+    /* ── Metric card ── */
     .metric-card {{
-        border-left:3px solid #0A5EB6; padding:8px 12px; background:white;
-        border-radius:6px; margin-bottom:6px; box-shadow:0 1px 3px rgba(0,0,0,.05);
+        border-left:3px solid #3B82F6; padding:8px 12px; background:var(--surface);
+        border-radius:6px; margin-bottom:6px; border:1px solid var(--border);
     }}
-    .metric-card .mc-label {{ font-size:.72rem; color:#6B7280; font-weight:500;
+    .metric-card .mc-label {{ font-size:.68rem; color:var(--muted); font-weight:500;
         text-transform:uppercase; letter-spacing:.04em; }}
-    .metric-card .mc-value {{ font-size:1.25rem; font-weight:700; color:#0E1726; }}
-    .metric-card .mc-delta {{ font-size:.72rem; }}
+    .metric-card .mc-value {{ font-size:1.15rem; font-weight:700; color:#FFF; }}
+    .metric-card .mc-delta {{ font-size:.68rem; }}
 
     /* ── HITL gate ── */
     .hitl-gate {{
-        background:linear-gradient(135deg,#FF6B00,#EC0000); color:white;
-        padding:12px 16px; border-radius:8px; margin:10px 0;
+        background:linear-gradient(135deg,#FF6B00,var(--red)); color:white;
+        padding:12px 16px; border-radius:8px; margin:8px 0;
         font-weight:700; border-left:5px solid #FFD700;
         animation:pulse 2s infinite;
     }}
     @keyframes pulse {{ 0%,100%{{opacity:1}} 50%{{opacity:.88}} }}
 
-    /* ── Next step box (sidebar) ── */
+    /* ── Next step box ── */
     .next-step-box {{
-        background:linear-gradient(135deg,#EC0000,#C70000);
-        color:white; padding:10px 14px; border-radius:6px;
-        margin:6px 0; font-weight:600; font-size:.82rem;
+        background:linear-gradient(135deg,var(--red),#C70000);
+        color:white; padding:8px 12px; border-radius:6px;
+        margin:4px 0; font-weight:600; font-size:.78rem;
     }}
 
     /* ── Dashboard card ── */
     .dash-card {{
-        background:white; border-radius:8px; padding:14px 18px;
-        box-shadow:0 1px 6px rgba(0,0,0,.06); margin-bottom:10px;
+        background:var(--surface); border-radius:8px; padding:12px 16px;
+        border:1px solid var(--border); margin-bottom:8px;
     }}
-    .dash-card h4 {{ margin:0 0 6px 0; font-size:.92rem; color:#0E1726; font-weight:700; }}
+    .dash-card h4 {{ margin:0 0 4px 0; font-size:.88rem; color:#FFF; font-weight:700; }}
 
     /* ── Badge ── */
-    .badge-pass {{ display:inline-block; padding:3px 10px; background:#DEF7EC;
-        border:1px solid #A7F3D0; border-radius:12px; font-weight:600;
-        font-size:.75rem; color:#065F46; }}
-    .badge-fail {{ display:inline-block; padding:3px 10px; background:#FEE2E2;
-        border:1px solid #FECACA; border-radius:12px; font-weight:600;
-        font-size:.75rem; color:#991B1B; }}
+    .badge-pass {{ display:inline-block; padding:2px 8px; background:#065F4620;
+        border:1px solid #065F46; border-radius:10px; font-weight:600;
+        font-size:.7rem; color:#34D399; }}
+    .badge-fail {{ display:inline-block; padding:2px 8px; background:#991B1B20;
+        border:1px solid #991B1B; border-radius:10px; font-weight:600;
+        font-size:.7rem; color:#F87171; }}
 
-    /* ── Expander tighter ── */
-    .streamlit-expanderHeader {{ font-size:.88rem !important; font-weight:600 !important; }}
-    details {{ margin-bottom:4px !important; }}
+    /* ── Expander ── */
+    .streamlit-expanderHeader {{ font-size:.84rem !important; font-weight:600 !important;
+        color:var(--text) !important; }}
+    details {{ margin-bottom:3px !important; }}
+    details[open] summary {{ color:var(--red) !important; }}
+
+    /* ── Tables/dataframes ── */
+    .stDataFrame {{ border-radius:6px; overflow:hidden; }}
+    .stDataFrame td, .stDataFrame th {{ font-size:.8rem !important; }}
+
+    /* ── File uploader ── */
+    [data-testid="stFileUploader"] {{ background:var(--surface); border-radius:8px;
+        border:1px dashed var(--border); }}
+
+    /* ── Toggle (Apple-ish) ── */
+    [data-testid="stToggle"] label span {{ font-size:.78rem; }}
 
     /* ── Hide Streamlit branding ── */
     #MainMenu {{ visibility:hidden; }}
@@ -1895,120 +1921,107 @@ def _dashboard_view(state: Dict[str, Any]):
 # ===========================================================================
 
 def _render_sidebar(state: Dict[str, Any]):
-    """Enterprise sidebar: workflow mode, agent config, font size, HITL status."""
+    """Sidebar: all config in collapsible sections, closed by default."""
 
-    # ── UBS Logo ──
+    # ── UBS Logo (always visible) ──
     st.sidebar.markdown(
-        f'<div style="text-align:center;padding:12px 0;border-bottom:2px solid {_UBS_RED}">'
-        f'<span style="font-size:1.6em;font-weight:800;color:{_UBS_RED}">UBS</span>'
-        f'<span style="font-size:0.85em;color:#AAA;display:block">Credit Risk Workstation</span>'
+        f'<div style="text-align:center;padding:10px 0 8px 0">'
+        f'{_UBS_LOGO_SVG}'
+        f'<div style="font-size:.7rem;color:#666;margin-top:4px">Credit Risk Workstation</div>'
         f'</div>', unsafe_allow_html=True)
 
-    # ── 1. Workflow Mode Selector ──
-    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### Workflow Mode")
-    mode_keys = list(_WORKFLOW_MODES.keys())
-    mode_labels = [_WORKFLOW_MODES[k]["label"] for k in mode_keys]
-    current_idx = mode_keys.index(st.session_state.get("workflow_mode", "deep_dive"))
-    selected = st.sidebar.radio("Assessment Type", mode_labels, index=current_idx,
-                                 key="mode_radio", label_visibility="collapsed")
-    sel_key = mode_keys[mode_labels.index(selected)]
-    st.session_state["workflow_mode"] = sel_key
-    mode = _WORKFLOW_MODES[sel_key]
-    st.sidebar.caption(mode["desc"])
-    st.sidebar.caption(f"Est. cost: {mode['cost_est']}")
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
-    # ── 2. Model & Reviewer Config ──
-    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### Model & Review Config")
-    default_model_idx = _AVAILABLE_MODELS.index(mode["default_model"]) \
-        if mode["default_model"] in _AVAILABLE_MODELS else 0
-    st.sidebar.selectbox("LLM Model", _AVAILABLE_MODELS,
-                          index=default_model_idx, key="selected_model",
-                          help="Same API key — different model for cost/quality tradeoff")
-    st.sidebar.slider("Reviewer Critique Rounds", 1, 5, mode["reviewer_rounds"],
-                       key="reviewer_rounds",
-                       help="More rounds = more thorough but higher cost")
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
-    # ── 3. Agent Toggles ──
-    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### Agent Deployment")
-    agent_cfg = mode["agents_enabled"]
-    agent_labels = {
-        "news": "News Agent", "social": "Social Media Agent",
-        "review": "Review Agent", "financial": "Financial Agent",
-        "press": "Press Release Agent", "xbrl": "XBRL Parser",
-    }
-    for akey, alabel in agent_labels.items():
-        st.sidebar.checkbox(alabel, value=agent_cfg.get(akey, True),
-                             key=f"agent_{akey}",
-                             help=f"Enable/disable {alabel} for this run")
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
-    # ── 4. Pipeline Status ──
-    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### Pipeline Status")
-    if _PIPELINE_AVAILABLE:
-        st.sidebar.success("LIVE — Agents call APIs")
-    else:
-        st.sidebar.warning("DEMO — Mock data (no cost)")
-    if _XBRL_AVAILABLE:
-        st.sidebar.success("XBRL Parser: Ready")
-    if _GUARDRAIL_AVAILABLE:
-        st.sidebar.success("Guardrails: Active")
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
-    # ── 5. Next Step Guidance ──
-    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### Next Step")
+    # ── Next Step (always visible, above all sections) ──
     has_company = bool(state.get("company_name"))
     has_score = st.session_state.get("scored", False)
-
     if not has_company:
-        st.sidebar.markdown(
-            '<div class="next-step-box">Step 1: Enter company name &amp; '
-            'click Collect &amp; Analyse</div>', unsafe_allow_html=True)
+        st.sidebar.markdown('<div class="next-step-box">Enter company &rarr; Collect &amp; Analyse</div>',
+                            unsafe_allow_html=True)
     elif not has_score:
-        st.sidebar.markdown(
-            '<div class="next-step-box">Step 2: Review data by domain, '
-            'set weights, generate score</div>', unsafe_allow_html=True)
+        st.sidebar.markdown('<div class="next-step-box">Review data &rarr; Set weights &rarr; Score</div>',
+                            unsafe_allow_html=True)
     else:
-        st.sidebar.markdown(
-            '<div class="next-step-box">Step 3: Check governance, export '
-            'report, send email</div>', unsafe_allow_html=True)
-
-    steps_done = 0
-    if has_company: steps_done += 1
-    if state.get("news_data") or state.get("doc_extracted_text"): steps_done += 1
-    if has_score: steps_done += 1
-    if state.get("final_report"): steps_done += 1
+        st.sidebar.markdown('<div class="next-step-box">Export report &rarr; Email stakeholders</div>',
+                            unsafe_allow_html=True)
+    steps_done = sum([bool(has_company),
+                      bool(state.get("news_data") or state.get("doc_extracted_text")),
+                      bool(has_score), bool(state.get("final_report"))])
     st.sidebar.progress(steps_done / 4)
-    st.sidebar.caption(f"{steps_done}/4 stages")
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-    # ── 6. Display Settings ──
-    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### Display")
-    st.sidebar.slider("Font Size", 12, 22, 16, 1, key="font_size",
-                       help="Scales all text — layout never breaks")
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+    st.sidebar.markdown("---")
 
-    # ── 7. Quick Actions ──
-    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### Actions")
+    # ── 1. Workflow Mode (expander, closed by default) ──
+    with st.sidebar.expander("Workflow Mode", expanded=False):
+        mode_keys = list(_WORKFLOW_MODES.keys())
+        mode_labels = [_WORKFLOW_MODES[k]["label"] for k in mode_keys]
+        current_idx = mode_keys.index(st.session_state.get("workflow_mode", "deep_dive"))
+        selected = st.radio("Mode", mode_labels, index=current_idx,
+                             key="mode_radio", label_visibility="collapsed")
+        sel_key = mode_keys[mode_labels.index(selected)]
+        st.session_state["workflow_mode"] = sel_key
+        st.caption(_WORKFLOW_MODES[sel_key]["desc"])
+        st.caption(f"Est. cost: {_WORKFLOW_MODES[sel_key]['cost_est']}")
+
+    # ── 2. Model & Review (expander) ──
+    mode = _WORKFLOW_MODES.get(st.session_state.get("workflow_mode", "deep_dive"), {})
+    with st.sidebar.expander("Model & Review", expanded=False):
+        default_model_idx = _AVAILABLE_MODELS.index(mode.get("default_model", "gpt-4o-mini")) \
+            if mode.get("default_model") in _AVAILABLE_MODELS else 0
+        st.selectbox("LLM Model", _AVAILABLE_MODELS,
+                      index=default_model_idx, key="selected_model")
+        st.slider("Reviewer Rounds", 1, 5, mode.get("reviewer_rounds", 3),
+                   key="reviewer_rounds")
+
+    # ── 3. Agent Toggles (expander) ──
+    with st.sidebar.expander("Agent Deployment", expanded=False):
+        agent_cfg = mode.get("agents_enabled", {})
+        for akey, alabel in [("news", "News"), ("social", "Social"), ("review", "Reviews"),
+                              ("financial", "Financial"), ("press", "Press"), ("xbrl", "XBRL")]:
+            st.checkbox(alabel, value=agent_cfg.get(akey, True), key=f"agent_{akey}")
+
+    # ── 4. Display Settings (expander) ──
+    with st.sidebar.expander("Display Settings", expanded=False):
+        st.slider("Font Size", 12, 22, 16, 1, key="font_size")
+        st.toggle("Demo Mode", value=st.session_state.get("demo_mode", False),
+                   key="sb_demo_toggle",
+                   help="Demo uses mock data ($0). Live uses real APIs.")
+        if st.session_state.get("sb_demo_toggle") != st.session_state.get("demo_mode"):
+            st.session_state["demo_mode"] = st.session_state.get("sb_demo_toggle", False)
+
+    # ── 5. Pipeline Status (expander) ──
+    with st.sidebar.expander("Pipeline Status", expanded=False):
+        if _PIPELINE_AVAILABLE:
+            st.success("Agents: LIVE")
+        else:
+            st.warning("Agents: DEMO ONLY")
+        if _XBRL_AVAILABLE:
+            st.success("XBRL Parser: Ready")
+        if _GUARDRAIL_AVAILABLE:
+            st.success("Guardrails: Active")
+
+    # ── 6. User Guide (expander) ──
+    with st.sidebar.expander("User Guide", expanded=False):
+        st.markdown("""
+**Workflow Modes**: Exploratory (quick), Deep Dive (full), Loan Sim (what-if)
+
+**Tabs**: Dashboard, Assessment, Pipeline, Loan Sim, Governance, History, Export, Testing, Guide
+
+**HITL Gates**: Approve/Reject/Redo at 3 critical points
+
+**Scoring**: Basel IRB, Altman Z, S&P, Moody's KMV, MAS FEAT
+""")
+
+    st.sidebar.markdown("---")
+
+    # ── Quick Actions (always visible at bottom) ──
     if st.sidebar.button("Reset Assessment", use_container_width=True, key="sb_reset"):
         for k in list(st.session_state.keys()):
             if k.startswith(("state", "scored", "composite", "gate_", "loan_")):
                 del st.session_state[k]
         st.rerun()
-    if has_company and st.sidebar.button("Re-run Collection", use_container_width=True,
-                                          key="sb_rerun"):
+    if has_company and st.sidebar.button("Re-run Collection", use_container_width=True, key="sb_rerun"):
         st.session_state["scored"] = False
         _phase_collect(state.get("company_name", ""), None, {})
         st.rerun()
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 
 # ===========================================================================
@@ -2252,8 +2265,8 @@ def render_hitl():
         f'  </div>'
         f'</div>', unsafe_allow_html=True)
 
-    # Quick action row below ribbon
-    qc = st.columns([1, 1, 8])
+    # Interactive controls row
+    qc = st.columns([1, 1, 1, 1, 6])
     with qc[0]:
         demo = st.toggle("Demo", value=st.session_state.get("demo_mode", False),
                           key="demo_toggle")
@@ -2264,6 +2277,14 @@ def render_hitl():
                 if k not in ("font_size", "run_history", "demo_mode"):
                     del st.session_state[k]
             st.rerun()
+    with qc[2]:
+        st.markdown(f'<span style="color:var(--muted);font-size:.72rem">Font {st.session_state.get("font_size",16)}px</span>',
+                    unsafe_allow_html=True)
+    with qc[3]:
+        hist_n = len(st.session_state.get("run_history", []))
+        if hist_n > 0:
+            st.markdown(f'<span style="color:#34D399;font-size:.72rem">{hist_n} saved runs</span>',
+                        unsafe_allow_html=True)
 
     # Phase 1: Input (always visible, prominent)
     name, files, go = _phase_input()
@@ -2408,24 +2429,24 @@ def render_hitl():
         sc1, sc2, sc3 = st.columns(3)
         with sc1:
             st.markdown(
-                f'<div class="dash-card" style="border-top:3px solid {_UBS_RED};min-height:140px">'
+                f'<div class="dash-card" style="border-top:3px solid {_UBS_RED};min-height:120px">'
                 f'<h4>1. Enter Company</h4>'
-                f'<p style="font-size:.85rem;color:#555">Type a company name above and click '
-                f'<b>Collect & Analyse</b>. Optionally upload ACRA XBRL filings.</p>'
+                f'<p style="font-size:.82rem;color:var(--muted)">Type a company name above and click '
+                f'<b style="color:var(--text)">Collect & Analyse</b>. Upload ACRA XBRL filings.</p>'
                 f'</div>', unsafe_allow_html=True)
         with sc2:
             st.markdown(
-                f'<div class="dash-card" style="border-top:3px solid #0A5EB6;min-height:140px">'
+                f'<div class="dash-card" style="border-top:3px solid #3B82F6;min-height:120px">'
                 f'<h4>2. Review & Score</h4>'
-                f'<p style="font-size:.85rem;color:#555">Review data by domain (financials, news, '
-                f'social). Set scoring weights. Generate risk score.</p>'
+                f'<p style="font-size:.82rem;color:var(--muted)">Review data by domain. '
+                f'Set scoring weights. Generate risk score.</p>'
                 f'</div>', unsafe_allow_html=True)
         with sc3:
             st.markdown(
-                f'<div class="dash-card" style="border-top:3px solid #00875A;min-height:140px">'
+                f'<div class="dash-card" style="border-top:3px solid #34D399;min-height:120px">'
                 f'<h4>3. Export & Comply</h4>'
-                f'<p style="font-size:.85rem;color:#555">Export report (JSON/MD/CSV). '
-                f'Run compliance checks. Email to stakeholders.</p>'
+                f'<p style="font-size:.82rem;color:var(--muted)">Export report. '
+                f'Run compliance checks. Email stakeholders.</p>'
                 f'</div>', unsafe_allow_html=True)
 
         # Show User Guide in expander, not full page
