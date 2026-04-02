@@ -57,6 +57,7 @@ def reviewer_agent(state: AgentState) -> dict:
     
     STYLING:
     - Use bold text for key terms.
+    - **CRITICAL: Prioritize Analyst Overrides.** If a risk or strength has `"priority": true` or `"source": "Analyst Input"`, it was manually provided by an expert. You MUST list these at the very top of their sections and prioritize their findings when writing the Executive Summary.
     - Keep it professional, data-driven, and objective.
     - Avoid flowery language; focus on clarity.
     """

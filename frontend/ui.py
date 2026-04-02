@@ -195,8 +195,15 @@ def render_company_input() -> tuple[str, bool]:
             st.markdown('</div>', unsafe_allow_html=True)
             
             if submit_button and company_input.strip():
+                # Reset analysis state for a fresh run
                 st.session_state.company_name = company_input.strip()
                 st.session_state.analysis_started = True
+                st.session_state.ready_for_review = False
+                st.session_state.analysis_complete = False
+                st.session_state.edited_risks = []
+                st.session_state.edited_strengths = []
+                st.session_state.final_report = ""
+                
                 st.success(f"✅ Analysis started for: **{st.session_state.company_name}**")
                 
                 # Prepare uploaded docs for the graph
@@ -254,8 +261,22 @@ def render_company_input() -> tuple[str, bool]:
                     
                     # Store the results for human review
                     st.session_state.final_state = final_state
-                    st.session_state.edited_risks = final_state.get("extracted_risks", [])
-                    st.session_state.edited_strengths = final_state.get("extracted_strengths", [])
+                    
+                    # Initialize editable lists with a template row if empty
+                    risks = final_state.get("extracted_risks", [])
+                    if not risks:
+                        risks = [{"type": "Traditional Risk", "impact": "Medium", "description": "Type to add a new risk...", "Exclude?": False}]
+                    else:
+                        for r in risks: r["Exclude?"] = False
+                    st.session_state.edited_risks = risks
+                    
+                    strengths = final_state.get("extracted_strengths", [])
+                    if not strengths:
+                        strengths = [{"type": "Financial Strength", "impact": "Medium", "description": "Type to add a new strength...", "Exclude?": False}]
+                    else:
+                        for s in strengths: s["Exclude?"] = False
+                    st.session_state.edited_strengths = strengths
+                    
                     st.session_state.ready_for_review = True
                     st.success("✅ AI Analysis Phase Complete. Please review the findings below.")
                 except Exception as e:
@@ -319,6 +340,47 @@ def render_analysis_scoring():
     
     st.markdown("---")
     st.info("🤖 **RAG Retrieval** - Context-aware information retrieval using embeddings")
+
+
+def render_data_points():
+    """Render the detailed analysis data points tab."""
+    st.markdown("### 🧠 Analysis Data Points")
+    st.write("These are the specific data points extracted, cleaned, and analyzed to generate the risk score.")
+    
+    if st.session_state.get("analysis_complete", False) or st.session_state.get("ready_for_review", False):
+        final_state = st.session_state.get("final_state", {})
+        cleaned_data = final_state.get("cleaned_data", [])
+        
+        if cleaned_data:
+            # Flatten data for the dataframe
+            display_data = []
+            for item in cleaned_data:
+                sentiment_info = item.get("finbert_sentiment", {})
+                display_data.append({
+                    "Source Type": item.get("source_type", "Unknown").title(),
+                    "Sentiment": sentiment_info.get("label", "neutral").upper(),
+                    "Confidence": f"{sentiment_info.get('score', 0):.2f}",
+                    "Evidence Snippet": item.get("snippet", item.get("text", ""))[:500]
+                })
+            
+            import pandas as pd
+            df = pd.DataFrame(display_data)
+            
+            # Show searchable table
+            st.dataframe(
+                df,
+                use_container_width=True,
+                column_config={
+                    "Sentiment": st.column_config.TextColumn("Sentiment", width="small"),
+                    "Confidence": st.column_config.TextColumn("Conf.", width="small"),
+                    "Source Type": st.column_config.TextColumn("Source", width="small"),
+                    "Evidence Snippet": st.column_config.TextColumn("Evidence Snippet", width="large")
+                }
+            )
+        else:
+            st.warning("No processed data points found.")
+    else:
+        st.info("Data points will be available once the analysis phase completes.")
 
 
 def render_results():
@@ -395,7 +457,7 @@ def render_results():
         from src.agents.reviewer_agent import reviewer_agent
         
         st.markdown("### ✍️ Analyst Review Stage")
-        st.write("Modify AI-detected risks and strengths, or add your own expert notes.")
+        st.write("Modify AI-detected risks and strengths, or add your own expert notes. Check **'Exclude?'** to remove a finding.")
 
         # Editable Dataframes for HITL
         impact_options = ["High", "Medium", "Low"]
@@ -411,6 +473,7 @@ def render_results():
                 num_rows="dynamic",
                 use_container_width=True,
                 column_config={
+                    "Exclude?": st.column_config.CheckboxColumn("Exclude?", default=False, help="Check to remove this risk"),
                     "type": st.column_config.SelectboxColumn("Category", options=risk_type_options, required=True),
                     "impact": st.column_config.SelectboxColumn("Severity", options=impact_options, required=True),
                     "description": st.column_config.TextColumn("Risk Factor Description", required=True)
@@ -425,6 +488,7 @@ def render_results():
                 num_rows="dynamic",
                 use_container_width=True,
                 column_config={
+                    "Exclude?": st.column_config.CheckboxColumn("Exclude?", default=False, help="Check to remove this strength"),
                     "type": st.column_config.SelectboxColumn("Category", options=strength_type_options, required=True),
                     "impact": st.column_config.SelectboxColumn("Significance", options=impact_options, required=True),
                     "description": st.column_config.TextColumn("Strength Description", required=True)
@@ -435,10 +499,29 @@ def render_results():
         if st.button("📝 Finalize & Generate Report", type="primary", use_container_width=True):
             with st.spinner("Composing final executive report with your expert edits..."):
                 try:
+                    # Filter out excluded rows and empty templates
+                    final_risks = [r for r in edited_risks if not r.get("Exclude?", False) and "Type to add" not in r.get("description", "")]
+                    final_strengths = [s for s in edited_strengths if not s.get("Exclude?", False) and "Type to add" not in s.get("description", "")]
+                    
                     # Update state with human edits
                     final_state = st.session_state.final_state
-                    final_state["extracted_risks"] = edited_risks
-                    final_state["extracted_strengths"] = edited_strengths
+                    
+                    # Mark as priority if they were edited or added by the user
+                    original_risks = final_state.get("extracted_risks", [])
+                    original_strengths = final_state.get("extracted_strengths", [])
+                    
+                    def mark_priority(current_list, original_list):
+                        orig_desc = {r.get("description") for r in original_list}
+                        for item in current_list:
+                            if item.get("description") not in orig_desc:
+                                item["priority"] = True
+                                item["source"] = "Analyst Input"
+                            else:
+                                item["priority"] = False
+                        return current_list
+
+                    final_state["extracted_risks"] = mark_priority(final_risks, original_risks)
+                    final_state["extracted_strengths"] = mark_priority(final_strengths, original_strengths)
                     
                     # Call reviewer agent manually
                     output = reviewer_agent(final_state)
@@ -468,10 +551,11 @@ def render_analysis_pipeline():
     st.markdown("---")
     st.markdown("## 🔄 Analysis Pipeline")
     
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📈 Results",
         "🔍 Data Collection",
         "🎯 Analysis & Scoring",
+        "🧠 Analysis Data Points",
         "📊 Pipeline Overview"
     ])
     
@@ -483,8 +567,11 @@ def render_analysis_pipeline():
     
     with tab3:
         render_analysis_scoring()
-    
+        
     with tab4:
+        render_data_points()
+    
+    with tab5:
         render_pipeline_overview()
     
     # Progress section
