@@ -1268,40 +1268,98 @@ def _pipe_step_report(state: Dict):
 
 
 # ===========================================================================
-# UBS ENTERPRISE CSS
+# UBS ENTERPRISE CSS  (font-size driven by --fs custom property)
 # ===========================================================================
 
-_UBS_CSS = """
-<style>
+def _build_css(fs: int = 16) -> str:
+    """Build CSS with user-chosen base font size.  All rem/em units derive from
+    the root --fs variable so nothing overlaps when the user scales text."""
+    return f"""<style>
+    :root {{ --fs: {fs}px; }}
+    html {{ font-size: var(--fs) !important; }}
     /* UBS Enterprise Theme */
-    [data-testid="stAppViewContainer"] { background-color: #F5F5F7; }
-    [data-testid="stHeader"] { background-color: #0E1726; }
-    [data-testid="stSidebar"] { background-color: #0E1726; color: #FFFFFF; }
-    [data-testid="stSidebar"] * { color: #E0E0E8 !important; }
-    [data-testid="stSidebar"] .stMarkdown h3 { color: #FFFFFF !important; font-weight: 600; }
-    [data-testid="stSidebar"] .stAlert p { color: #1A1A2E !important; }
-    .main { max-width: 1400px; }
-    h1 { color: #0E1726 !important; font-family: 'Helvetica Neue', sans-serif; font-weight: 700; }
-    h2 { color: #0E1726 !important; border-bottom: 2px solid #EC0000; padding-bottom: 6px; }
-    h3 { color: #1A1A2E !important; }
-    .stTabs [data-baseweb="tab-list"] button { font-size: 15px; font-weight: 600; }
-    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-        border-bottom-color: #EC0000 !important; color: #EC0000 !important;
-    }
-    .stButton>button[kind="primary"] {
-        background-color: #EC0000 !important; border: none; font-weight: 600;
-    }
-    .stButton>button[kind="primary"]:hover { background-color: #C70000 !important; }
-    .stProgress > div > div { background-color: #EC0000 !important; }
-    /* Sidebar next-step indicator */
-    .next-step-box {
-        background: linear-gradient(135deg, #EC0000 0%, #C70000 100%);
-        color: white; padding: 12px 16px; border-radius: 8px;
-        margin: 8px 0; font-weight: 600; font-size: 0.92em;
-    }
-    .sidebar-section { padding: 8px 0; border-bottom: 1px solid #2A2A3E; margin-bottom: 8px; }
-</style>
-"""
+    [data-testid="stAppViewContainer"] {{ background:#F5F5F7; font-size:1rem; }}
+    [data-testid="stHeader"] {{ background:#0E1726; }}
+    [data-testid="stSidebar"] {{ background:#0E1726; color:#FFF; overflow-y:auto; }}
+    [data-testid="stSidebar"] * {{ color:#E0E0E8 !important; font-size:.92rem; }}
+    [data-testid="stSidebar"] .stMarkdown h3 {{ color:#FFF !important; font-weight:600; font-size:1rem; }}
+    [data-testid="stSidebar"] .stAlert p {{ color:#1A1A2E !important; }}
+    .main {{ max-width:1400px; }}
+    h1 {{ color:#0E1726 !important; font-family:'Helvetica Neue',sans-serif; font-weight:700; font-size:1.8rem; }}
+    h2 {{ color:#0E1726 !important; border-bottom:2px solid #EC0000; padding-bottom:6px; font-size:1.35rem; }}
+    h3 {{ color:#1A1A2E !important; font-size:1.1rem; }}
+    p, li, span, td, th, label {{ font-size:1rem; }}
+    .stTabs [data-baseweb="tab-list"] button {{ font-size:.95rem; font-weight:600; }}
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
+        border-bottom-color:#EC0000 !important; color:#EC0000 !important;
+    }}
+    .stButton>button[kind="primary"] {{
+        background:#EC0000 !important; border:none; font-weight:600;
+    }}
+    .stButton>button[kind="primary"]:hover {{ background:#C70000 !important; }}
+    .stProgress > div > div {{ background:#EC0000 !important; }}
+    /* Sidebar helper classes */
+    .next-step-box {{
+        background:linear-gradient(135deg,#EC0000 0%,#C70000 100%);
+        color:white; padding:12px 16px; border-radius:8px;
+        margin:8px 0; font-weight:600; font-size:.92rem;
+    }}
+    .sidebar-section {{ padding:8px 0; border-bottom:1px solid #2A2A3E; margin-bottom:8px; }}
+    /* HITL decision gate notification */
+    .hitl-gate {{
+        background:linear-gradient(135deg,#FF6B00 0%,#EC0000 100%);
+        color:white; padding:14px 18px; border-radius:10px;
+        margin:12px 0; font-weight:700; font-size:1rem;
+        border-left:5px solid #FFD700; animation:pulse 2s infinite;
+    }}
+    @keyframes pulse {{ 0%,100%{{opacity:1}} 50%{{opacity:.85}} }}
+    /* Dashboard card */
+    .dash-card {{
+        background:white; border-radius:10px; padding:16px 20px;
+        box-shadow:0 2px 8px rgba(0,0,0,.08); margin-bottom:12px;
+    }}
+    .dash-card h4 {{ margin:0 0 8px 0; font-size:1rem; color:#0E1726; }}
+</style>"""
+
+
+# ===========================================================================
+# WORKFLOW MODES  (maps real UBS analyst scenarios to agent configs)
+# ===========================================================================
+
+_WORKFLOW_MODES = {
+    "exploratory": {
+        "label": "Exploratory (New Client Call)",
+        "desc": "Quick 5-min snapshot for an initial RM call. Light-touch data collection, "
+                "skip press releases and social media. Uses fast model.",
+        "agents_enabled": {"news": True, "social": False, "review": False,
+                           "financial": True, "press": False, "xbrl": True},
+        "default_model": "gpt-4o-mini",
+        "reviewer_rounds": 1,
+        "cost_est": "~$0.005",
+    },
+    "deep_dive": {
+        "label": "Deep Dive (Annual Review)",
+        "desc": "Full 8-agent pipeline for established client. All data sources, "
+                "all guardrails, multiple reviewer critique rounds.",
+        "agents_enabled": {"news": True, "social": True, "review": True,
+                           "financial": True, "press": True, "xbrl": True},
+        "default_model": "gpt-4o",
+        "reviewer_rounds": 3,
+        "cost_est": "~$0.03",
+    },
+    "loan_simulation": {
+        "label": "Loan Simulation (New Facility)",
+        "desc": "Client requesting a new loan. Enter hypothetical loan amount to see "
+                "how D/E ratio, coverage, and risk score change. Re-uses cached data.",
+        "agents_enabled": {"news": True, "social": False, "review": True,
+                           "financial": True, "press": True, "xbrl": True},
+        "default_model": "gpt-4o-mini",
+        "reviewer_rounds": 2,
+        "cost_est": "~$0.01",
+    },
+}
+
+_AVAILABLE_MODELS = ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "claude-sonnet-4-5"]
 
 
 # ===========================================================================
@@ -1489,20 +1547,268 @@ def _phase_email_report(state: Dict[str, Any]):
 
 
 # ===========================================================================
-# SIDEBAR: WORKFLOW GUIDANCE
+# HITL DECISION GATE  (pulsing notification for analyst input)
+# ===========================================================================
+
+def _hitl_gate(title: str, message: str, gate_key: str,
+               options: List[str] = None) -> Optional[str]:
+    """Show a pulsing HITL decision gate.  Returns chosen action or None."""
+    if options is None:
+        options = ["Approve & Continue", "Reject & Stop", "Redo This Step"]
+    st.markdown(
+        f'<div class="hitl-gate">'
+        f'<strong>DECISION REQUIRED: {title}</strong><br/>'
+        f'<span style="font-weight:400;font-size:.9em">{message}</span>'
+        f'</div>', unsafe_allow_html=True)
+    cols = st.columns(len(options))
+    for i, opt in enumerate(options):
+        with cols[i]:
+            if st.button(opt, key=f"gate_{gate_key}_{i}", use_container_width=True,
+                         type="primary" if i == 0 else "secondary"):
+                st.session_state[f"gate_{gate_key}"] = opt
+                return opt
+    return st.session_state.get(f"gate_{gate_key}")
+
+
+# ===========================================================================
+# LOAN SIMULATION  (what-if scenario for new facility)
+# ===========================================================================
+
+def _loan_simulation(state: Dict[str, Any]):
+    """What-if: add a hypothetical loan and see how ratios change."""
+    st.markdown("## Loan Simulation")
+    st.caption("Enter a hypothetical loan amount to see how key ratios shift. "
+               "This does NOT re-run the pipeline — it recalculates from cached XBRL data.")
+
+    xbrl_docs = [d for d in state.get("doc_extracted_text", []) if d.get("type") == "XBRL_STRUCTURED"]
+    if not xbrl_docs:
+        st.info("Upload an XBRL filing first to enable loan simulation.")
+        return
+
+    p = xbrl_docs[0].get("xbrl_parsed", {})
+    bs = p.get("balance_sheet", {})
+    inc = p.get("income_statement", {})
+    ratios = p.get("computed_ratios", {})
+
+    loan = st.number_input("Hypothetical Loan Amount (SGD)", min_value=0,
+                           value=10_000_000, step=1_000_000, key="loan_amt",
+                           help="How much new debt the client is requesting")
+    interest_rate = st.slider("Assumed Interest Rate (%)", 1.0, 15.0, 5.0, 0.5,
+                              key="loan_rate") / 100
+
+    # Recalculate
+    new_liab = (bs.get("liabilities") or 0) + loan
+    new_equity = bs.get("equity") or 1
+    new_de = new_liab / new_equity if new_equity else 99
+    new_cl = (bs.get("current_liabilities") or 0) + loan * 0.3  # 30% short-term
+    new_cr = (bs.get("current_assets") or 0) / new_cl if new_cl else 0
+    annual_interest = loan * interest_rate
+    ebit = inc.get("profit_loss_before_tax", 0)
+    old_interest = (ebit / ratios.get("interest_coverage", 1)) if ratios.get("interest_coverage") else 0
+    new_ic = ebit / (old_interest + annual_interest) if (old_interest + annual_interest) > 0 else None
+
+    # Show comparison table
+    st.markdown("### Impact Analysis")
+    comparison = pd.DataFrame({
+        "Metric": ["Debt/Equity", "Current Ratio", "Interest Coverage",
+                    "New Annual Interest Cost", "Total Liabilities"],
+        "Before": [_fmt(ratios.get("debt_to_equity")), _fmt(ratios.get("current_ratio")),
+                    _fmt(ratios.get("interest_coverage")),
+                    _fmt(old_interest), _fmt(bs.get("liabilities"))],
+        "After Loan": [f"{new_de:.2f}", f"{new_cr:.2f}",
+                       _fmt(new_ic) if new_ic else "N/A",
+                       _fmt(old_interest + annual_interest), _fmt(new_liab)],
+        "Change": [
+            f"+{new_de - (ratios.get('debt_to_equity') or 0):.2f}",
+            f"{new_cr - (ratios.get('current_ratio') or 0):.2f}",
+            f"{(new_ic or 0) - (ratios.get('interest_coverage') or 0):.2f}" if new_ic else "N/A",
+            f"+{_fmt(annual_interest)}",
+            f"+{_fmt(loan)}",
+        ],
+    })
+    st.dataframe(comparison, use_container_width=True, hide_index=True)
+
+    # Risk assessment shift
+    risk_shift = 0
+    if new_de > 3.0: risk_shift += 20
+    elif new_de > 2.0: risk_shift += 10
+    if new_cr < 1.0: risk_shift += 15
+    if new_ic and new_ic < 1.5: risk_shift += 15
+    base_score = state.get("risk_score", {}).get("score", 50)
+    sim_score = min(100, base_score + risk_shift)
+
+    c1, c2, c3 = st.columns(3)
+    with c1: _metric("Original Score", f"{base_score}/100", color="blue")
+    with c2: _metric("Simulated Score", f"{sim_score}/100",
+                      delta=f"+{risk_shift}" if risk_shift else "No change",
+                      color="red" if risk_shift > 10 else "orange" if risk_shift > 0 else "green")
+    with c3:
+        new_rating = "Low" if sim_score < 33 else "Medium" if sim_score < 67 else "High"
+        _metric("Simulated Rating", new_rating,
+                color="red" if new_rating == "High" else "orange" if new_rating == "Medium" else "green")
+
+    _risk_gauge(sim_score)
+
+
+# ===========================================================================
+# TOGGLEABLE DASHBOARD  (metrics grouped by agent process)
+# ===========================================================================
+
+def _dashboard_view(state: Dict[str, Any]):
+    """Toggleable dashboard panels grouped by agent/process."""
+    st.markdown("## Analytics Dashboard")
+    st.caption("Toggle panels on/off. Grouped by agent process for quick scanning.")
+
+    # Dashboard toggles in columns
+    tc1, tc2, tc3, tc4 = st.columns(4)
+    with tc1: show_collection = st.checkbox("Collection Agents", value=True, key="db_coll")
+    with tc2: show_analysis = st.checkbox("Analysis & Scoring", value=True, key="db_anal")
+    with tc3: show_guardrails = st.checkbox("Guardrails & Safety", value=True, key="db_guard")
+    with tc4: show_quality = st.checkbox("Data Quality", value=True, key="db_qual")
+
+    if show_collection:
+        st.markdown('<div class="dash-card"><h4>Collection Agents</h4>', unsafe_allow_html=True)
+        news = state.get("news_data", [])
+        social = state.get("social_data", [])
+        reviews = state.get("review_data", [])
+        financial = state.get("financial_data", [])
+        press_events = state.get("press_release_analysis", {}).get("events", [])
+        xbrl = [d for d in state.get("doc_extracted_text", []) if d.get("type") == "XBRL_STRUCTURED"]
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            _metric("News Agent", f"{len(news)} articles", color="blue")
+            _metric("Social Agent", f"{len(social)} posts", color="blue")
+        with c2:
+            _metric("Review Agent", f"{len(reviews)} reviews", color="blue")
+            _metric("Financial Agent", f"{len(financial)} metrics", color="blue")
+        with c3:
+            _metric("Press Release Agent", f"{len(press_events)} events", color="blue")
+            _metric("Document Processor", f"{len(xbrl)} XBRL docs", color="blue")
+
+        # Sentiment overview
+        all_text = news + social
+        if all_text:
+            sc = _sentiment_counts(all_text)
+            st.bar_chart(pd.DataFrame({"Count": sc}, index=["positive", "negative", "neutral"]))
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    if show_analysis:
+        st.markdown('<div class="dash-card"><h4>Analysis & Scoring</h4>', unsafe_allow_html=True)
+        risks = state.get("extracted_risks", [])
+        strengths = state.get("extracted_strengths", [])
+        score_data = state.get("risk_score", {})
+
+        c1, c2, c3, c4 = st.columns(4)
+        with c1: _metric("Risk Signals", len(risks), color="red")
+        with c2: _metric("Strength Signals", len(strengths), color="green")
+        with c3: _metric("Risk Score", f"{score_data.get('score', '—')}/100",
+                          color="red" if score_data.get("score", 0) >= 67 else
+                                 "orange" if score_data.get("score", 0) >= 34 else "green")
+        with c4: _metric("Confidence", f"{score_data.get('confidence_score', 0)*100:.0f}%"
+                          if isinstance(score_data.get("confidence_score"), (int, float)) else "—",
+                          color="blue")
+
+        if risks:
+            type_counts = {}
+            for r in risks:
+                t = r.get("type", "Other")
+                type_counts[t] = type_counts.get(t, 0) + 1
+            st.bar_chart(pd.DataFrame({"Count": type_counts}))
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    if show_guardrails:
+        st.markdown('<div class="dash-card"><h4>Guardrails & Safety</h4>', unsafe_allow_html=True)
+        warnings = state.get("guardrail_warnings", [])
+        c1, c2, c3, c4, c5 = st.columns(5)
+        with c1: _badge("Input Validated")
+        with c2: _badge("Bias Checked")
+        with c3: _badge("Hallucination Check")
+        with c4: _badge("MAS FEAT")
+        with c5: _badge("EU AI Act")
+        if warnings:
+            st.warning(f"{len(warnings)} guardrail warnings")
+            for w in warnings:
+                st.markdown(f"- {w}")
+        else:
+            st.success("All guardrails passed — 0 warnings")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    if show_quality:
+        st.markdown('<div class="dash-card"><h4>Data Quality & Coverage</h4>', unsafe_allow_html=True)
+        sources = {"news": len(state.get("news_data", [])),
+                   "social": len(state.get("social_data", [])),
+                   "reviews": len(state.get("review_data", [])),
+                   "financial": len(state.get("financial_data", [])),
+                   "press": len(state.get("press_release_analysis", {}).get("events", [])),
+                   "xbrl": len([d for d in state.get("doc_extracted_text", [])
+                               if d.get("type") == "XBRL_STRUCTURED"])}
+        coverage = sum(1 for v in sources.values() if v > 0) / len(sources)
+        _metric("Source Coverage", f"{coverage*100:.0f}%",
+                delta=f"{sum(1 for v in sources.values() if v > 0)}/{len(sources)} sources",
+                color="green" if coverage > 0.6 else "orange")
+        st.bar_chart(pd.DataFrame({"Items": sources}))
+        st.markdown('</div>', unsafe_allow_html=True)
+
+
+# ===========================================================================
+# SIDEBAR: FULL ENTERPRISE TASKBAR
 # ===========================================================================
 
 def _render_sidebar(state: Dict[str, Any]):
-    """Enterprise sidebar with pipeline status, next-step guidance, and controls."""
+    """Enterprise sidebar: workflow mode, agent config, font size, HITL status."""
 
-    # UBS Logo / Title
+    # ── UBS Logo ──
     st.sidebar.markdown(
         f'<div style="text-align:center;padding:12px 0;border-bottom:2px solid {_UBS_RED}">'
         f'<span style="font-size:1.6em;font-weight:800;color:{_UBS_RED}">UBS</span>'
-        f'<span style="font-size:0.9em;color:#AAA;display:block">Credit Risk Workstation</span>'
+        f'<span style="font-size:0.85em;color:#AAA;display:block">Credit Risk Workstation</span>'
         f'</div>', unsafe_allow_html=True)
 
-    # ── Pipeline Status ──
+    # ── 1. Workflow Mode Selector ──
+    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    st.sidebar.markdown("### Workflow Mode")
+    mode_keys = list(_WORKFLOW_MODES.keys())
+    mode_labels = [_WORKFLOW_MODES[k]["label"] for k in mode_keys]
+    current_idx = mode_keys.index(st.session_state.get("workflow_mode", "deep_dive"))
+    selected = st.sidebar.radio("Assessment Type", mode_labels, index=current_idx,
+                                 key="mode_radio", label_visibility="collapsed")
+    sel_key = mode_keys[mode_labels.index(selected)]
+    st.session_state["workflow_mode"] = sel_key
+    mode = _WORKFLOW_MODES[sel_key]
+    st.sidebar.caption(mode["desc"])
+    st.sidebar.caption(f"Est. cost: {mode['cost_est']}")
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
+    # ── 2. Model & Reviewer Config ──
+    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    st.sidebar.markdown("### Model & Review Config")
+    default_model_idx = _AVAILABLE_MODELS.index(mode["default_model"]) \
+        if mode["default_model"] in _AVAILABLE_MODELS else 0
+    st.sidebar.selectbox("LLM Model", _AVAILABLE_MODELS,
+                          index=default_model_idx, key="selected_model",
+                          help="Same API key — different model for cost/quality tradeoff")
+    st.sidebar.slider("Reviewer Critique Rounds", 1, 5, mode["reviewer_rounds"],
+                       key="reviewer_rounds",
+                       help="More rounds = more thorough but higher cost")
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
+    # ── 3. Agent Toggles ──
+    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    st.sidebar.markdown("### Agent Deployment")
+    agent_cfg = mode["agents_enabled"]
+    agent_labels = {
+        "news": "News Agent", "social": "Social Media Agent",
+        "review": "Review Agent", "financial": "Financial Agent",
+        "press": "Press Release Agent", "xbrl": "XBRL Parser",
+    }
+    for akey, alabel in agent_labels.items():
+        st.sidebar.checkbox(alabel, value=agent_cfg.get(akey, True),
+                             key=f"agent_{akey}",
+                             help=f"Enable/disable {alabel} for this run")
+    st.sidebar.markdown('</div>', unsafe_allow_html=True)
+
+    # ── 4. Pipeline Status ──
     st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
     st.sidebar.markdown("### Pipeline Status")
     if _PIPELINE_AVAILABLE:
@@ -1515,82 +1821,53 @@ def _render_sidebar(state: Dict[str, Any]):
         st.sidebar.success("Guardrails: Active")
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Next Step Guidance ──
+    # ── 5. Next Step Guidance ──
     st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### What To Do Next")
+    st.sidebar.markdown("### Next Step")
     has_company = bool(state.get("company_name"))
     has_score = st.session_state.get("scored", False)
 
     if not has_company:
         st.sidebar.markdown(
-            '<div class="next-step-box">1. Enter a company name and click '
-            '"Collect & Analyse"</div>', unsafe_allow_html=True)
+            '<div class="next-step-box">Step 1: Enter company name &amp; '
+            'click Collect &amp; Analyse</div>', unsafe_allow_html=True)
     elif not has_score:
         st.sidebar.markdown(
-            '<div class="next-step-box">2. Review data by domain, then '
-            'set weights and click "Generate Weighted Risk Score"</div>',
-            unsafe_allow_html=True)
+            '<div class="next-step-box">Step 2: Review data by domain, '
+            'set weights, generate score</div>', unsafe_allow_html=True)
     else:
         st.sidebar.markdown(
-            '<div class="next-step-box">3. Review the report, check governance '
-            'compliance, and export / email the assessment</div>',
-            unsafe_allow_html=True)
+            '<div class="next-step-box">Step 3: Check governance, export '
+            'report, send email</div>', unsafe_allow_html=True)
 
-    # Progress tracker
     steps_done = 0
     if has_company: steps_done += 1
     if state.get("news_data") or state.get("doc_extracted_text"): steps_done += 1
     if has_score: steps_done += 1
     if state.get("final_report"): steps_done += 1
     st.sidebar.progress(steps_done / 4)
-    st.sidebar.caption(f"{steps_done}/4 workflow stages completed")
+    st.sidebar.caption(f"{steps_done}/4 stages")
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Data Treatment ──
+    # ── 6. Display Settings ──
     st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### Data Treatment")
-    st.sidebar.markdown(
-        "- **Structured**: XBRL → deterministic (0 tokens)\n"
-        "- **Semi-structured**: News/press → FinBERT sentiment\n"
-        "- **Unstructured**: Social/reviews → keyword + rating"
-    )
+    st.sidebar.markdown("### Display")
+    st.sidebar.slider("Font Size", 12, 22, 16, 1, key="font_size",
+                       help="Scales all text — layout never breaks")
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Scoring Frameworks ──
+    # ── 7. Quick Actions ──
     st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### Scoring Frameworks")
-    st.sidebar.markdown(
-        "- **Basel IRB**: PD/LGD, financials-heavy\n"
-        "- **Altman Z-Score**: 5 ratio zones\n"
-        "- **S&P Global**: Business + Financial Risk\n"
-        "- **Moody's KMV**: Distance-to-Default\n"
-        "- **MAS FEAT**: SG regulatory balanced"
-    )
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
-    # ── Governance ──
-    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### AI Governance")
-    st.sidebar.markdown(
-        "- IMDA AI Verify: 7/7 principles\n"
-        "- Project Moonshot: Red-team tested\n"
-        "- MAS FEAT: 4/4 principles\n"
-        "- EU AI Act: 7/7 requirements"
-    )
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
-
-    # ── Quick Actions ──
-    st.sidebar.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.sidebar.markdown("### Quick Actions")
+    st.sidebar.markdown("### Actions")
     if st.sidebar.button("Reset Assessment", use_container_width=True, key="sb_reset"):
-        for k in ["state", "scored", "composite_score", "composite_rating"]:
-            if k in st.session_state:
+        for k in list(st.session_state.keys()):
+            if k.startswith(("state", "scored", "composite", "gate_", "loan_")):
                 del st.session_state[k]
         st.rerun()
-    if has_company and st.sidebar.button("Re-run Collection", use_container_width=True, key="sb_rerun"):
+    if has_company and st.sidebar.button("Re-run Collection", use_container_width=True,
+                                          key="sb_rerun"):
         st.session_state["scored"] = False
-        company = state.get("company_name", "")
-        _phase_collect(company, None, {})
+        _phase_collect(state.get("company_name", ""), None, {})
         st.rerun()
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
@@ -1601,10 +1878,12 @@ def _render_sidebar(state: Dict[str, Any]):
 
 def render_hitl():
     st.set_page_config(page_title="G5-AAFS | UBS Credit Risk", page_icon="🏦", layout="wide")
-    st.markdown(_UBS_CSS, unsafe_allow_html=True)
 
     # Session defaults
-    for k, v in {"state": {}, "scored": False, "composite_score": None}.items():
+    defaults = {"state": {}, "scored": False, "composite_score": None,
+                "workflow_mode": "deep_dive", "font_size": 16,
+                "selected_model": "gpt-4o-mini", "reviewer_rounds": 3}
+    for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
 
@@ -1613,58 +1892,116 @@ def render_hitl():
     # ── SIDEBAR (always visible) ──
     _render_sidebar(state)
 
+    # ── INJECT CSS with user's font size ──
+    st.markdown(_build_css(st.session_state.get("font_size", 16)), unsafe_allow_html=True)
+
     # ── HEADER ──
     hc1, hc2 = st.columns([8, 2])
     with hc1:
         st.title("G5-AAFS: Credit Risk Assessment")
-        st.caption("UBS Credit Officer Workstation · Human-in-the-Loop · Multi-Agent Pipeline")
+        mode_label = _WORKFLOW_MODES.get(st.session_state.get("workflow_mode", "deep_dive"), {}).get("label", "")
+        st.caption(f"UBS Credit Officer Workstation · {mode_label} · "
+                   f"Model: {st.session_state.get('selected_model', 'gpt-4o-mini')}")
     with hc2:
         st.markdown(
             f'<div style="text-align:right;padding-top:16px">'
             f'<span style="font-size:2em;font-weight:800;color:{_UBS_RED}">UBS</span>'
             f'</div>', unsafe_allow_html=True)
 
+    # ── HITL GATE: Data Collection Approval ──
     # Phase 1: Input (always visible)
     name, files, go = _phase_input()
 
     # Phase 2: Collect
     if go and name:
         st.session_state["scored"] = False
+        # Show agent config confirmation
+        mode = _WORKFLOW_MODES.get(st.session_state.get("workflow_mode", "deep_dive"), {})
+        enabled = [k for k, v in {
+            "News": st.session_state.get("agent_news", True),
+            "Social": st.session_state.get("agent_social", True),
+            "Reviews": st.session_state.get("agent_review", True),
+            "Financial": st.session_state.get("agent_financial", True),
+            "Press": st.session_state.get("agent_press", True),
+            "XBRL": st.session_state.get("agent_xbrl", True),
+        }.items() if v]
+        st.info(f"Running with agents: {', '.join(enabled)} | "
+                f"Model: {st.session_state.get('selected_model', 'gpt-4o-mini')} | "
+                f"Reviewer rounds: {st.session_state.get('reviewer_rounds', 3)}")
         _phase_collect(name, files, {})
 
     # Refresh state after collection
     state = st.session_state.get("state", {})
 
-    # Phases 3+: only show if we have data
+    # ── MAIN CONTENT (only if we have data) ──
     if state.get("company_name"):
         st.markdown("---")
 
-        # ── TOP-LEVEL TABS ──
-        tab_assess, tab_pipeline, tab_governance, tab_report = st.tabs([
-            "Credit Assessment",
-            "Pipeline Trace",
-            "AI Governance",
-            "Report & Email"
-        ])
+        # HITL gate after data collection
+        gate_result = st.session_state.get("gate_collection_review")
+        if not gate_result:
+            gate_result = _hitl_gate(
+                "Data Collection Complete",
+                f"Review the collected data for {state.get('company_name', '')}. "
+                f"Proceed to scoring, or re-run with different agent configuration?",
+                "collection_review",
+                ["Approve & Continue", "Re-run with Changes", "Stop Assessment"]
+            )
 
-        with tab_assess:
-            st.caption("Review collected intelligence by data domain, "
-                       "set your scoring weights, and generate the final risk score.")
-            _phase_review(state)
-            weights = _phase_weights(state)
-            _phase_score(state, weights)
-            _phase_report(state)
+        if gate_result == "Stop Assessment":
+            st.warning("Assessment stopped by analyst. Reset from sidebar to start over.")
+        elif gate_result == "Re-run with Changes":
+            st.info("Adjust agent toggles in the sidebar, then click Re-run Collection.")
+        else:
+            # ── TOP-LEVEL TABS ──
+            tab_dash, tab_assess, tab_pipeline, tab_loan, tab_governance, tab_report = st.tabs([
+                "Dashboard",
+                "Credit Assessment",
+                "Pipeline Trace",
+                "Loan Simulation",
+                "AI Governance",
+                "Report & Email",
+            ])
 
-        with tab_pipeline:
-            st.caption("Step-by-step trace of what each agent did. "
-                       "Expand any stage to inspect inputs, outputs, and diagnostics.")
-            _pipeline_view(state)
+            with tab_dash:
+                _dashboard_view(state)
 
-        with tab_governance:
-            _phase_governance(state)
+            with tab_assess:
+                _phase_review(state)
+                weights = _phase_weights(state)
 
-        with tab_report:
-            _phase_email_report(state)
+                # HITL gate before scoring
+                score_gate = _hitl_gate(
+                    "Confirm Weights Before Scoring",
+                    "You have set scoring weights above. Generate the risk score now?",
+                    "weight_confirm",
+                    ["Generate Score", "Adjust Weights"]
+                )
+                if score_gate == "Generate Score":
+                    _phase_score(state, weights)
+                    _phase_report(state)
+
+            with tab_pipeline:
+                _pipeline_view(state)
+
+            with tab_loan:
+                if st.session_state.get("workflow_mode") == "loan_simulation":
+                    _loan_simulation(state)
+                else:
+                    st.info("Switch to **Loan Simulation** mode in the sidebar to enable this tab.")
+                    if st.button("Switch to Loan Simulation Mode", key="switch_loan"):
+                        st.session_state["workflow_mode"] = "loan_simulation"
+                        st.rerun()
+
+            with tab_governance:
+                _phase_governance(state)
+
+            with tab_report:
+                # HITL gate before report export
+                if st.session_state.get("scored"):
+                    _phase_email_report(state)
+                else:
+                    st.info("Complete the Credit Assessment tab first to unlock report export.")
 
     # ── FOOTER ──
     st.markdown("---")
