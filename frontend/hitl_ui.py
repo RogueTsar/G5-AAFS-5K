@@ -1354,16 +1354,21 @@ def _build_css(fs: int = 16) -> str:
     .main {{ max-width:1440px; padding-top:0 !important; }}
     .block-container {{ padding-top:.5rem !important; padding-bottom:1rem !important; }}
 
-    /* ── Sidebar (collapsed by default feel) ── */
+    /* ── Sidebar (compact, narrow) ── */
     [data-testid="stSidebar"] {{ background:#0D1017; border-right:1px solid var(--border); }}
+    [data-testid="stSidebar"] > div:first-child {{ width:220px !important; }}
     [data-testid="stSidebar"] p, [data-testid="stSidebar"] span,
     [data-testid="stSidebar"] label, [data-testid="stSidebar"] li,
-    [data-testid="stSidebar"] .stMarkdown {{ color:#9BA1B0 !important; }}
+    [data-testid="stSidebar"] .stMarkdown {{ color:#9BA1B0 !important;
+        font-size:.72rem !important; line-height:1.3 !important; }}
     [data-testid="stSidebar"] .stMarkdown h3 {{ color:#FFF !important; font-weight:700;
-        font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; margin:0; }}
+        font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; margin:0; }}
     [data-testid="stSidebar"] .stAlert p {{ color:#1A1A2E !important; }}
-    [data-testid="stSidebar"] hr {{ border-color:var(--border) !important; margin:4px 0 !important; }}
-    /* sidebar compact */
+    [data-testid="stSidebar"] hr {{ border-color:var(--border) !important; margin:3px 0 !important; }}
+    [data-testid="stSidebar"] .stRadio label {{ font-size:.72rem !important; padding:1px 0 !important; }}
+    [data-testid="stSidebar"] .stCheckbox label {{ font-size:.7rem !important; padding:0 !important; }}
+    [data-testid="stSidebar"] .stSlider {{ padding:0 !important; }}
+    [data-testid="stSidebar"] .stCaption {{ font-size:.62rem !important; }}
 
     /* ── Typography ── */
     h1 {{ color:#FFF !important; font-weight:800; font-size:1.5rem; margin:0 !important; }}
@@ -1404,10 +1409,11 @@ def _build_css(fs: int = 16) -> str:
 
     /* ── Top ribbon ── */
     .top-ribbon {{
-        background:var(--card); color:white; padding:8px 16px;
+        background:var(--card); color:white; padding:6px 14px;
         display:flex; align-items:center; justify-content:space-between;
-        border-radius:8px; margin-bottom:8px; gap:10px; flex-wrap:wrap;
+        border-radius:0 0 8px 8px; margin-bottom:6px; gap:8px; flex-wrap:wrap;
         border:1px solid var(--border);
+        position:sticky; top:0; z-index:999;
     }}
     .top-ribbon .ribbon-item {{
         display:inline-flex; align-items:center; gap:4px;
@@ -1486,34 +1492,39 @@ def _build_css(fs: int = 16) -> str:
 
 _WORKFLOW_MODES = {
     "exploratory": {
-        "label": "Exploratory (New Client Call)",
-        "desc": "Quick 5-min snapshot for an initial RM call. Light-touch data collection, "
-                "skip press releases and social media. Uses fast model.",
+        "label": "Quick Screen (New Client)",
+        "desc": "5-min snapshot for initial client call. Skips social/press agents. "
+                "Fast model, 1 review round.",
         "agents_enabled": {"news": True, "social": False, "review": False,
                            "financial": True, "press": False, "xbrl": True},
         "default_model": "gpt-4o-mini",
         "reviewer_rounds": 1,
         "cost_est": "~$0.005",
+        "temperature": 0.0,
+        "max_tokens_per_agent": 500,
     },
     "deep_dive": {
-        "label": "Deep Dive (Annual Review)",
-        "desc": "Full 8-agent pipeline for established client. All data sources, "
-                "all guardrails, multiple reviewer critique rounds.",
+        "label": "Full Assessment (Annual Review)",
+        "desc": "Comprehensive multi-source analysis for credit committee. All agents, "
+                "all data sources, 3 review rounds.",
         "agents_enabled": {"news": True, "social": True, "review": True,
                            "financial": True, "press": True, "xbrl": True},
         "default_model": "gpt-4o",
         "reviewer_rounds": 3,
         "cost_est": "~$0.03",
+        "temperature": 0.1,
+        "max_tokens_per_agent": 1500,
     },
     "loan_simulation": {
-        "label": "Loan Simulation (New Facility)",
-        "desc": "Client requesting a new loan. Enter hypothetical loan amount to see "
-                "how D/E ratio, coverage, and risk score change. Re-uses cached data.",
+        "label": "Loan Simulation (What-If)",
+        "desc": "Enter a loan amount to see how D/E ratio, coverage, and risk score change.",
         "agents_enabled": {"news": True, "social": False, "review": True,
                            "financial": True, "press": True, "xbrl": True},
         "default_model": "gpt-4o-mini",
         "reviewer_rounds": 2,
         "cost_est": "~$0.01",
+        "temperature": 0.0,
+        "max_tokens_per_agent": 800,
     },
 }
 
@@ -1914,53 +1925,65 @@ def _dashboard_view(state: Dict[str, Any]):
 # ===========================================================================
 
 def _render_sidebar(state: Dict[str, Any]):
-    """Sidebar: flat compact sections, no expanders (avoids Streamlit icon bug)."""
+    """Sidebar: ultra-compact, no expanders, smart defaults."""
     sb = st.sidebar
-
-    # ── Logo ──
-    sb.markdown(
-        f'<div style="text-align:center;padding:8px 0 6px 0">'
-        f'{_UBS_LOGO_SVG}'
-        f'<div style="font-size:.65rem;color:#555;margin-top:3px">Credit Risk Workstation</div>'
-        f'</div>', unsafe_allow_html=True)
-
-    # ── Next Step ──
     has_company = bool(state.get("company_name"))
     has_score = st.session_state.get("scored", False)
-    if not has_company:
-        sb.markdown('<div class="next-step-box">Enter company, click Collect</div>', unsafe_allow_html=True)
-    elif not has_score:
-        sb.markdown('<div class="next-step-box">Review data, set weights, score</div>', unsafe_allow_html=True)
-    else:
-        sb.markdown('<div class="next-step-box">Export report, email team</div>', unsafe_allow_html=True)
+
+    # ── Logo ──
+    sb.markdown(f'<div style="text-align:center;padding:6px 0 4px 0">{_UBS_LOGO_SVG}</div>',
+                unsafe_allow_html=True)
+
+    # ── Next Step + Progress ──
+    step_text = "Enter company" if not has_company else "Review & Score" if not has_score else "Export"
+    sb.markdown(f'<div class="next-step-box">{step_text}</div>', unsafe_allow_html=True)
     steps = sum([bool(has_company), bool(state.get("news_data") or state.get("doc_extracted_text")),
                  bool(has_score), bool(state.get("final_report"))])
     sb.progress(steps / 4)
-    sb.caption(f"{steps}/4")
 
-    # ── Workflow Mode ──
+    # ── Timer / Cost (if run) ──
+    elapsed = st.session_state.get("last_elapsed", 0)
+    cost = st.session_state.get("last_cost_est", 0)
+    if elapsed > 0:
+        sb.markdown(f'<div style="font-size:.65rem;color:#34D399;padding:2px 0">'
+                    f'Last run: {elapsed:.1f}s | ${cost:.4f}</div>', unsafe_allow_html=True)
+
     sb.markdown("---")
+
+    # ── Workflow ──
+    sb.caption("WORKFLOW")
     mode_keys = list(_WORKFLOW_MODES.keys())
     mode_labels = [_WORKFLOW_MODES[k]["label"] for k in mode_keys]
     current_idx = mode_keys.index(st.session_state.get("workflow_mode", "deep_dive"))
-    selected = sb.radio("Workflow", mode_labels, index=current_idx,
-                         key="mode_radio", label_visibility="visible")
+    selected = sb.radio("Mode", mode_labels, index=current_idx, key="mode_radio",
+                         label_visibility="collapsed")
     sel_key = mode_keys[mode_labels.index(selected)]
     st.session_state["workflow_mode"] = sel_key
     mode = _WORKFLOW_MODES[sel_key]
-    sb.caption(f"{mode['cost_est']} est.")
+    sb.caption(mode["desc"][:80])
 
-    # ── Model ──
     sb.markdown("---")
+
+    # ── Model + Rounds ──
+    sb.caption("MODEL")
     default_model_idx = _AVAILABLE_MODELS.index(mode.get("default_model", "gpt-4o-mini")) \
         if mode.get("default_model") in _AVAILABLE_MODELS else 0
-    sb.selectbox("Model", _AVAILABLE_MODELS, index=default_model_idx, key="selected_model")
-    sb.slider("Rounds", 1, 5, mode.get("reviewer_rounds", 3), key="reviewer_rounds")
+    sb.selectbox("LLM", _AVAILABLE_MODELS, index=default_model_idx, key="selected_model",
+                  label_visibility="collapsed")
+    sb.slider("Reviewer rounds", 1, 5, mode.get("reviewer_rounds", 3), key="reviewer_rounds")
+
+    # ── Auto-run (skip HITL gates) ──
+    sb.checkbox("Auto-run (skip review gates)", key="auto_run",
+                 help="Run straight through without HITL approval gates")
+
+    sb.markdown("---")
 
     # ── Agents ──
-    sb.markdown("---")
     sb.caption("AGENTS")
     agent_cfg = mode.get("agents_enabled", {})
+    if not has_company:
+        sb.markdown('<span style="font-size:.6rem;color:#D4760A">Run assessment for recommended settings</span>',
+                    unsafe_allow_html=True)
     ac1, ac2 = sb.columns(2)
     with ac1:
         st.checkbox("News", value=agent_cfg.get("news", True), key="agent_news")
@@ -1971,17 +1994,24 @@ def _render_sidebar(state: Dict[str, Any]):
         st.checkbox("Press", value=agent_cfg.get("press", True), key="agent_press")
         st.checkbox("XBRL", value=agent_cfg.get("xbrl", True), key="agent_xbrl")
 
-    # ── Actions ──
     sb.markdown("---")
-    if sb.button("Reset", use_container_width=True, key="sb_reset"):
-        for k in list(st.session_state.keys()):
-            if k.startswith(("state", "scored", "composite", "gate_", "loan_")):
-                del st.session_state[k]
-        st.rerun()
-    if has_company and sb.button("Re-run", use_container_width=True, key="sb_rerun"):
-        st.session_state["scored"] = False
-        _phase_collect(state.get("company_name", ""), None, {})
-        st.rerun()
+
+    # ── Actions ──
+    ac1, ac2 = sb.columns(2)
+    with ac1:
+        if st.button("Reset", use_container_width=True, key="sb_reset"):
+            for k in list(st.session_state.keys()):
+                if k.startswith(("state", "scored", "composite", "gate_", "loan_")):
+                    del st.session_state[k]
+            st.rerun()
+    with ac2:
+        if has_company and st.button("Re-run", use_container_width=True, key="sb_rerun"):
+            st.session_state["scored"] = False
+            _phase_collect(state.get("company_name", ""), None, {})
+            st.rerun()
+
+    # ── Guide link ──
+    sb.caption("[User Guide is in the Guide tab]")
 
 
 # ===========================================================================
@@ -1993,82 +2023,246 @@ def _render_sidebar(state: Dict[str, Any]):
 # ===========================================================================
 
 def _tab_testing(state: Dict[str, Any]):
-    """Run evals and guardrails from the UI with buttons."""
+    """Comprehensive testing tab: guardrails config + eval suite with per-item checkboxes."""
+    import subprocess, sys, re
+
     st.markdown("## Testing & Evaluation")
-    st.caption("Run guardrail checks and evaluation suite directly. Uses your API keys.")
+    st.caption("Configure guardrail modules, run live checks, and execute the evaluation suite.")
 
-    t1, t2 = st.tabs(["Guardrail Tests", "Evaluation Suite"])
+    # -- Helper: parse pytest output into structured pass/fail counts --
+    def _parse_pytest_summary(stdout: str):
+        """Return (passed, failed, errors, warnings, total) from pytest output."""
+        passed = failed = errors = warnings_count = 0
+        m = re.search(r"(\d+) passed", stdout)
+        if m:
+            passed = int(m.group(1))
+        m = re.search(r"(\d+) failed", stdout)
+        if m:
+            failed = int(m.group(1))
+        m = re.search(r"(\d+) error", stdout)
+        if m:
+            errors = int(m.group(1))
+        m = re.search(r"(\d+) warning", stdout)
+        if m:
+            warnings_count = int(m.group(1))
+        total = passed + failed + errors
+        return passed, failed, errors, warnings_count, total
 
-    with t1:
-        st.markdown("### Guardrail Tests (0 API cost)")
-        st.markdown("Tests all 6 guardrail modules: input validation, output enforcement, "
-                     "hallucination detection, bias/fairness, cascade prevention, content safety.")
-        if st.button("Run Guardrail Tests", type="primary", key="run_guardrails",
-                      use_container_width=True):
-            with st.status("Running guardrail tests...", expanded=True) as status:
-                import subprocess, sys
-                result = subprocess.run(
-                    [sys.executable, "-m", "pytest", "tests/test_guardrails/", "-v", "--tb=short"],
-                    capture_output=True, text=True, cwd=_ROOT, timeout=60)
-                st.code(result.stdout[-3000:] if len(result.stdout) > 3000 else result.stdout)
-                if result.returncode == 0:
-                    status.update(label="All guardrail tests PASSED", state="complete")
+    def _render_pytest_results(result, label: str):
+        """Show structured pass/fail badges instead of raw output."""
+        passed, failed, errors, warns, total = _parse_pytest_summary(result.stdout)
+        if result.returncode == 0:
+            st.success(f"{label}: ALL {passed} tests PASSED")
+        else:
+            st.error(f"{label}: {failed} failed, {errors} errors out of {total} tests")
+        col_p, col_f, col_e = st.columns(3)
+        col_p.metric("Passed", passed)
+        col_f.metric("Failed", failed)
+        col_e.metric("Errors", errors)
+        if failed > 0 or errors > 0:
+            st.markdown("**Failure details:**")
+            st.code(result.stdout[-3000:] if len(result.stdout) > 3000 else result.stdout)
+            if result.stderr:
+                st.code(result.stderr[-2000:])
+
+    # =====================================================================
+    # SECTION 1: GUARDRAILS CONFIGURATION
+    # =====================================================================
+    st.markdown("---")
+    st.markdown("### Guardrails Configuration")
+    st.caption("Enable or disable individual guardrail modules, then run tests or live checks.")
+
+    guard_modules = [
+        ("guard_input",         "Input Validation",        "Sanitises user-supplied company names, tickers, and free-text fields before they reach any agent."),
+        ("guard_output",        "Output Enforcement",      "Validates agent outputs against expected schema, length limits, and required sections."),
+        ("guard_hallucination", "Hallucination Detection",  "Cross-references generated claims against retrieved source documents to flag unsupported statements."),
+        ("guard_bias",          "Bias / Fairness",         "Checks for sector, geography, or size bias in scoring weights and final risk ratings."),
+        ("guard_cascade",       "Cascade Guard",           "Detects and halts runaway agent loops, token budget overruns, and infinite retry cycles."),
+        ("guard_content",       "Content Safety",          "Blocks prompt injection, PII leakage, and disallowed content in both inputs and outputs."),
+    ]
+
+    # Render checkboxes (2 columns)
+    gc1, gc2 = st.columns(2)
+    enabled_guards = {}
+    for idx, (key, label, desc) in enumerate(guard_modules):
+        col = gc1 if idx < 3 else gc2
+        with col:
+            enabled_guards[key] = st.checkbox(f"**{label}**", value=True, key=key,
+                                               help=desc)
+            st.caption(desc)
+
+    # Action buttons row
+    btn_g1, btn_g2 = st.columns(2)
+
+    with btn_g1:
+        run_all_guards = st.button("Run All Guardrails (pytest)",
+                                    type="primary", key="run_all_guardrails",
+                                    use_container_width=True)
+    with btn_g2:
+        has_live_data = bool(state.get("company_name") and _GUARDRAIL_AVAILABLE)
+        run_live = st.button("Run Live Check (current state)",
+                              key="run_live_guard",
+                              use_container_width=True,
+                              disabled=not has_live_data)
+        if not has_live_data:
+            st.caption("Requires an active assessment and guardrail modules installed.")
+
+    # Run All Guardrails via pytest
+    if run_all_guards:
+        with st.status("Running guardrail test suite...", expanded=True) as status:
+            result = subprocess.run(
+                [sys.executable, "-m", "pytest", "tests/test_guardrails/", "-v", "--tb=short"],
+                capture_output=True, text=True, cwd=_ROOT, timeout=60)
+            _render_pytest_results(result, "Guardrail Suite")
+            if result.returncode == 0:
+                status.update(label="All guardrail tests PASSED", state="complete")
+            else:
+                status.update(label="Some guardrail tests FAILED", state="error")
+
+    # Run Live Guardrail Check on current state
+    if run_live and has_live_data:
+        with st.status("Running live guardrail check...", expanded=True) as status:
+            runner = GuardrailRunner()
+            live_warnings = []
+
+            # Input validation
+            sanitized, valid, warnings = runner.validate_input(state["company_name"])
+            if valid:
+                st.success("Input Validation: PASS")
+            else:
+                st.error("Input Validation: FAIL")
+            for w in warnings:
+                live_warnings.append(("medium", f"Input: {w}"))
+
+            # Report validation
+            report = state.get("final_report", "")
+            if report:
+                cleaned, summary = runner.validate_final_report(report, state)
+                checks_passed = summary.get("checks_passed", 0)
+                total_checks = summary.get("total_checks", 0)
+                if checks_passed == total_checks:
+                    st.success(f"Report Validation: {checks_passed}/{total_checks} checks passed")
                 else:
-                    st.code(result.stderr[-2000:] if result.stderr else "")
-                    status.update(label="Some tests FAILED", state="error")
+                    st.warning(f"Report Validation: {checks_passed}/{total_checks} checks passed")
+                    for issue in summary.get("issues", []):
+                        live_warnings.append(("high", f"Report: {issue}"))
+            else:
+                st.info("No final report generated yet -- skipping report validation.")
 
-        # Live guardrail check on current state
-        if state.get("company_name") and _GUARDRAIL_AVAILABLE:
-            st.markdown("### Live Guardrail Check (current assessment)")
-            if st.button("Run Guardrails on Current Data", key="run_live_guard"):
-                with st.status("Checking...") as status:
-                    runner = GuardrailRunner()
-                    # Input check
-                    sanitized, valid, warnings = runner.validate_input(state["company_name"])
-                    st.write(f"Input validation: {'PASS' if valid else 'FAIL'}")
-                    for w in warnings:
-                        st.warning(w)
-                    # Report check
-                    report = state.get("final_report", "")
-                    if report:
-                        cleaned, summary = runner.validate_final_report(report, state)
-                        st.write(f"Report validation: {summary.get('checks_passed', 0)}/{summary.get('total_checks', 0)} checks passed")
-                    status.update(label="Guardrail check complete", state="complete")
+            # Store warnings in state for persistence
+            state["guardrail_warnings"] = live_warnings
+            status.update(label="Live guardrail check complete", state="complete")
 
-    with t2:
-        st.markdown("### Evaluation Suite")
-        st.markdown("Runs behavioral tests, safety evals, synthetic company backtesting.")
+    # Show any flagged warnings (from live check or prior runs)
+    gw = state.get("guardrail_warnings", [])
+    if gw:
+        st.markdown("#### Flagged Warnings")
+        for severity, msg in gw:
+            if severity == "high":
+                st.markdown(f":red_circle: **HIGH** -- {msg}")
+            elif severity == "medium":
+                st.markdown(f":large_orange_circle: **MEDIUM** -- {msg}")
+            else:
+                st.markdown(f":large_yellow_circle: **LOW** -- {msg}")
 
-        ec1, ec2 = st.columns(2)
-        with ec1:
-            suite = st.selectbox("Test Suite", ["All Tests", "Safety Evals", "Behavioral",
-                                                 "Synthetic Companies", "Distress Backtest"],
-                                  key="eval_suite")
-        with ec2:
-            st.caption("Estimated cost: ~$0 (mock mode) or ~$0.05 (live)")
+    # =====================================================================
+    # SECTION 2: EVALUATION SUITE
+    # =====================================================================
+    st.markdown("---")
+    st.markdown("### Evaluation Suite")
+    st.caption("Select which evaluation suites to run. Only checked items are executed.")
 
-        suite_map = {
-            "All Tests": "tests/test_evals/",
-            "Safety Evals": "tests/test_evals/test_safety_evals.py",
-            "Behavioral": "tests/test_evals/test_behavioral.py",
-            "Synthetic Companies": "tests/test_evals/test_synthetic_suite.py",
-            "Distress Backtest": "tests/test_evals/test_distress_backtest.py",
-        }
+    eval_suites = [
+        ("eval_behavioral",  "Behavioral Tests",     True,
+         "Tests refusal, scope adherence, sycophancy drift. Open-source (pytest). ~2s",
+         "tests/test_evals/test_behavioral.py"),
+        ("eval_safety",      "Safety Evals",         True,
+         "Prompt injection, entity spoofing, cascade failure. Open-source (pytest). ~3s",
+         "tests/test_evals/test_safety_evals.py"),
+        ("eval_synthetic",   "Synthetic Companies",   True,
+         "30 companies: healthy, distressed, ambiguous. Domain-specific. ~5s",
+         "tests/test_evals/test_synthetic_suite.py"),
+        ("eval_distress",    "Distress Backtest",     True,
+         "10 historical defaults (SVB, Evergrande, FTX). Domain-specific. ~3s",
+         "tests/test_evals/test_distress_backtest.py"),
+        ("eval_moonshot",    "Project Moonshot",      False,
+         "IMDA red-teaming toolkit. Gov-developed. Requires setup.",
+         "tests/test_evals/test_moonshot.py"),
+        ("eval_llm_judge",   "LLM-as-Judge",          False,
+         "Uses LLM to evaluate agent output quality. ~$0.01/run",
+         "tests/test_evals/test_llm_judge.py"),
+    ]
 
-        if st.button("Run Evaluation Suite", type="primary", key="run_evals",
-                      use_container_width=True):
-            with st.status(f"Running {suite}...", expanded=True) as status:
-                import subprocess, sys
-                path = suite_map.get(suite, "tests/test_evals/")
-                result = subprocess.run(
-                    [sys.executable, "-m", "pytest", path, "-v", "--tb=short"],
-                    capture_output=True, text=True, cwd=_ROOT, timeout=120)
-                st.code(result.stdout[-3000:] if len(result.stdout) > 3000 else result.stdout)
-                if result.returncode == 0:
-                    status.update(label=f"{suite}: ALL PASSED", state="complete")
-                else:
-                    st.code(result.stderr[-2000:] if result.stderr else "")
-                    status.update(label=f"{suite}: SOME FAILED", state="error")
+    # Render checkboxes (2 columns)
+    ev1, ev2 = st.columns(2)
+    selected_evals = {}
+    for idx, (key, label, default, desc, path) in enumerate(eval_suites):
+        col = ev1 if idx < 3 else ev2
+        with col:
+            selected_evals[key] = st.checkbox(f"**{label}**", value=default, key=key,
+                                               help=desc)
+            st.caption(desc)
+
+    # Run button
+    any_selected = any(selected_evals.values())
+    run_evals = st.button("Run Selected Evals", type="primary", key="run_selected_evals",
+                           use_container_width=True, disabled=not any_selected)
+    if not any_selected:
+        st.caption("Check at least one eval suite above to enable this button.")
+
+    if run_evals and any_selected:
+        # Build list of paths to run
+        paths_to_run = [
+            (label, path)
+            for key, label, _default, _desc, path in eval_suites
+            if selected_evals.get(key, False)
+        ]
+
+        with st.status(f"Running {len(paths_to_run)} eval suite(s)...", expanded=True) as status:
+            overall_passed = 0
+            overall_failed = 0
+            overall_errors = 0
+            suite_results = []
+
+            for suite_label, suite_path in paths_to_run:
+                st.markdown(f"**Running: {suite_label}**")
+                try:
+                    result = subprocess.run(
+                        [sys.executable, "-m", "pytest", suite_path, "-v", "--tb=short"],
+                        capture_output=True, text=True, cwd=_ROOT, timeout=120)
+                    p, f, e, w, t = _parse_pytest_summary(result.stdout)
+                    overall_passed += p
+                    overall_failed += f
+                    overall_errors += e
+                    if result.returncode == 0:
+                        st.success(f"{suite_label}: {p} passed")
+                    else:
+                        st.error(f"{suite_label}: {f} failed, {e} errors out of {t}")
+                        st.code(result.stdout[-2000:] if len(result.stdout) > 2000 else result.stdout)
+                    suite_results.append((suite_label, p, f, e))
+                except subprocess.TimeoutExpired:
+                    st.error(f"{suite_label}: TIMED OUT (>120s)")
+                    suite_results.append((suite_label, 0, 0, 1))
+                    overall_errors += 1
+                except Exception as exc:
+                    st.error(f"{suite_label}: ERROR -- {exc}")
+                    suite_results.append((suite_label, 0, 0, 1))
+                    overall_errors += 1
+
+            # Summary row
+            st.markdown("---")
+            st.markdown("#### Overall Results")
+            sc1, sc2, sc3 = st.columns(3)
+            sc1.metric("Total Passed", overall_passed)
+            sc2.metric("Total Failed", overall_failed)
+            sc3.metric("Total Errors", overall_errors)
+
+            if overall_failed == 0 and overall_errors == 0:
+                status.update(label=f"All {overall_passed} tests PASSED across {len(paths_to_run)} suite(s)",
+                              state="complete")
+            else:
+                status.update(label=f"{overall_failed} failures, {overall_errors} errors across {len(paths_to_run)} suite(s)",
+                              state="error")
 
 
 # ===========================================================================
@@ -2225,28 +2419,24 @@ def render_hitl():
         f'  </div>'
         f'</div>', unsafe_allow_html=True)
 
-    # Interactive controls row
-    qc = st.columns([1, 1, 1, 7])
+    # Compact controls row
+    qc = st.columns([1, 1, 1, 1, 6])
     with qc[0]:
+        if st.button("A-", key="fs_down", use_container_width=True):
+            st.session_state["font_size"] = max(12, st.session_state.get("font_size", 16) - 1)
+            st.rerun()
+    with qc[1]:
+        if st.button("A+", key="fs_up", use_container_width=True):
+            st.session_state["font_size"] = min(22, st.session_state.get("font_size", 16) + 1)
+            st.rerun()
+    with qc[2]:
         if st.button("Reset", key="ribbon_reset", use_container_width=True):
             for k in list(st.session_state.keys()):
                 if k not in ("font_size", "run_history"):
                     del st.session_state[k]
             st.rerun()
-    with qc[1]:
-        fs = st.session_state.get("font_size", 16)
-        fc1, fc2 = st.columns(2)
-        with fc1:
-            if st.button("A-", key="fs_down"):
-                st.session_state["font_size"] = max(12, fs - 1)
-                st.rerun()
-        with fc2:
-            if st.button("A+", key="fs_up"):
-                st.session_state["font_size"] = min(22, fs + 1)
-                st.rerun()
-    with qc[2]:
-        hist_n = len(st.session_state.get("run_history", []))
-        st.markdown(f'<span style="color:#34D399;font-size:.72rem">{hist_n} runs saved</span>',
+    with qc[3]:
+        st.markdown(f'<span style="font-size:.65rem;color:var(--muted)">{st.session_state.get("font_size",16)}px</span>',
                     unsafe_allow_html=True)
 
     # Phase 1: Input (always visible, prominent)
@@ -2276,14 +2466,18 @@ def render_hitl():
     # ── MAIN CONTENT ──
     if state.get("company_name"):
         # HITL gate after collection
-        gate_result = st.session_state.get("gate_collection_review")
-        if not gate_result:
-            gate_result = _hitl_gate(
-                "Data Collection Complete",
-                f"Review collected data for {state.get('company_name', '')}. "
-                f"Proceed, re-run, or stop?",
-                "collection_review",
-                ["Approve & Continue", "Re-run with Changes", "Stop Assessment"])
+        auto_run = st.session_state.get("auto_run", False)
+        if auto_run:
+            gate_result = "Approve & Continue"
+        else:
+            gate_result = st.session_state.get("gate_collection_review")
+            if not gate_result:
+                gate_result = _hitl_gate(
+                    "Data Collection Complete",
+                    f"Review collected data for {state.get('company_name', '')}. "
+                    f"Proceed, re-run, or stop?",
+                    "collection_review",
+                    ["Approve & Continue", "Re-run with Changes", "Stop Assessment"])
 
         if gate_result == "Stop Assessment":
             st.warning("Assessment stopped. Reset from ribbon or sidebar to start over.")
@@ -2328,11 +2522,14 @@ def render_hitl():
             with tabs[1]:  # Credit Assessment
                 _phase_review(state)
                 weights = _phase_weights(state)
-                score_gate = _hitl_gate(
-                    "Confirm Weights",
-                    "Generate the risk score with these weights?",
-                    "weight_confirm",
-                    ["Generate Score", "Adjust Weights"])
+                if auto_run:
+                    score_gate = "Generate Score"
+                else:
+                    score_gate = _hitl_gate(
+                        "Confirm Weights",
+                        "Generate the risk score with these weights?",
+                        "weight_confirm",
+                        ["Generate Score", "Adjust Weights"])
                 if score_gate == "Generate Score":
                     _phase_score(state, weights)
                     _phase_report(state)
@@ -2348,6 +2545,40 @@ def render_hitl():
 
             with tabs[2]:  # Pipeline Trace
                 _pipeline_view(state)
+                # Explainer Agent — analyze any agent output
+                st.markdown("---")
+                st.markdown("### Explain Agent Output")
+                st.caption("Paste any agent output excerpt to check for reasoning errors, "
+                           "oversimplification, or epistemic issues.")
+                excerpt = st.text_area("Paste excerpt to analyze", height=100,
+                                       key="explainer_input",
+                                       placeholder="Paste agent output text here...")
+                if st.button("Analyze Reasoning", key="run_explainer", type="primary"):
+                    if excerpt.strip():
+                        with st.status("Running explainer agent...") as status:
+                            try:
+                                from src.agents.explainer_agent import explainer_agent
+                                result = explainer_agent(state, excerpt.strip())
+                                issues = result.get("explainer_issues", [])
+                                if issues:
+                                    for iss in issues:
+                                        sev = iss.get("severity", "LOW")
+                                        sev_color = "#EC0000" if sev == "HIGH" else "#D4760A" if sev == "MEDIUM" else "#00875A"
+                                        st.markdown(
+                                            f'<div class="metric-card" style="border-left-color:{sev_color}">'
+                                            f'<div class="mc-label">{iss.get("category", "?")} — {sev}</div>'
+                                            f'<div style="font-size:.85rem;color:var(--text)">'
+                                            f'<b>Original:</b> {iss.get("original_text", "")}<br/>'
+                                            f'<b>Issue:</b> {iss.get("correction", "")}'
+                                            f'</div></div>', unsafe_allow_html=True)
+                                else:
+                                    st.success("No reasoning issues found.")
+                                status.update(label=result.get("explainer_summary", "Done"), state="complete")
+                            except Exception as e:
+                                st.error(f"Explainer failed: {e}")
+                                status.update(label="Failed", state="error")
+                    else:
+                        st.warning("Paste some text first.")
 
             with tabs[3]:  # Loan Simulation
                 if st.session_state.get("workflow_mode") == "loan_simulation":
