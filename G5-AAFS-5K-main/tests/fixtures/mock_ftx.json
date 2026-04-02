@@ -1,0 +1,25 @@
+{
+  "company_name": "FTX Trading Ltd",
+  "news_data": [
+    {"title": "FTX Files for Bankruptcy After Liquidity Crisis", "snippet": "Crypto exchange collapsed within days after rival Binance pulled out of rescue acquisition deal.", "url": "https://example.com/news/ftx-bankruptcy", "source_type": "news", "published_date": "2022-11-11"},
+    {"title": "FTX Misused $8B in Customer Funds, Investigation Reveals", "snippet": "Customer deposits were secretly funneled to Alameda Research, SBF's proprietary trading firm.", "url": "https://example.com/news/ftx-customer-funds", "source_type": "news", "published_date": "2022-11-12"},
+    {"title": "Sam Bankman-Fried Found Guilty on All Seven Fraud Counts", "snippet": "FTX founder convicted of wire fraud, conspiracy, and money laundering, facing up to 110 years in prison.", "url": "https://example.com/news/ftx-sbf-guilty", "source_type": "news", "published_date": "2023-11-02"},
+    {"title": "FTX Bankruptcy Estate Recovers $7.3B for Creditors", "snippet": "New management under John Ray III clawed back assets from insiders, venture investments, and property.", "url": "https://example.com/news/ftx-recovery", "source_type": "news", "published_date": "2024-02-15"},
+    {"title": "FTX Collapse Triggers Global Crypto Regulatory Crackdown", "snippet": "US, EU, and Asian regulators accelerate crypto exchange licensing and proof-of-reserves requirements.", "url": "https://example.com/news/ftx-regulation", "source_type": "news", "published_date": "2023-01-20"}
+  ],
+  "social_data": [
+    {"title": "FTX Stole My Life Savings", "snippet": "Had $340K on FTX. Withdrawal disabled overnight. I trusted their proof of reserves marketing. Devastated.", "url": "https://example.com/social/ftx-victim", "source_type": "social", "platform": "reddit"},
+    {"title": "SBF Conviction Reaction", "snippet": "Justice served but money is gone. The celebrity endorsements and stadium naming deal made people trust a Ponzi.", "url": "https://example.com/social/ftx-verdict", "source_type": "social", "platform": "twitter"},
+    {"title": "Not Your Keys Not Your Coins Validated", "snippet": "FTX proved the oldest crypto lesson. Self-custody is the only way. Never trust a centralized exchange fully.", "url": "https://example.com/social/ftx-self-custody", "source_type": "social", "platform": "reddit"}
+  ],
+  "review_data": [
+    {"title": "FTX Employee Review — Engineering", "snippet": "No internal controls, no board oversight, accounting done on QuickBooks. It was chaos disguised as genius.", "url": "https://example.com/reviews/ftx-eng", "source_type": "review", "rating": 1.4},
+    {"title": "FTX Employee Review — Operations", "snippet": "Bahamas office was a frat house. Decisions made by a small inner circle. HR was nonexistent.", "url": "https://example.com/reviews/ftx-ops", "source_type": "review", "rating": 1.2}
+  ],
+  "financial_data": [
+    {"metric": "Customer Funds Misappropriated", "value": "~$8B", "source_type": "financial", "period": "Nov 2022"},
+    {"metric": "Balance Sheet Hole", "value": "$8-10B shortfall", "source_type": "financial", "period": "Nov 2022"},
+    {"metric": "Peak Valuation (Pre-Collapse)", "value": "$32B (effectively zero)", "source_type": "financial", "period": "Jan 2022 vs Nov 2022"}
+  ],
+  "doc_extracted_text": []
+}

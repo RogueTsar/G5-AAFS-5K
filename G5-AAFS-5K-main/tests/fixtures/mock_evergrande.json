@@ -1,0 +1,25 @@
+{
+  "company_name": "China Evergrande Group",
+  "news_data": [
+    {"title": "Evergrande Defaults on $300B in Liabilities", "snippet": "China's largest property developer missed coupon payments on offshore bonds, triggering formal default.", "url": "https://example.com/news/evergrande-default", "source_type": "news", "published_date": "2021-12-09"},
+    {"title": "Evergrande Debt Crisis Shakes Global Markets", "snippet": "Fears of systemic contagion spread as Evergrande's $300B debt pile raised concerns across China's property sector.", "url": "https://example.com/news/evergrande-crisis", "source_type": "news", "published_date": "2021-09-20"},
+    {"title": "Evergrande Restructuring Plan Rejected by Creditors", "snippet": "Offshore bondholders rejected the proposed debt restructuring, calling recovery terms insufficient.", "url": "https://example.com/news/evergrande-restructuring", "source_type": "news", "published_date": "2023-09-25"},
+    {"title": "Hong Kong Court Orders Evergrande Liquidation", "snippet": "A Hong Kong judge ordered the wind-up of China Evergrande after failed negotiations with creditors.", "url": "https://example.com/news/evergrande-liquidation", "source_type": "news", "published_date": "2024-01-29"},
+    {"title": "Evergrande Chairman Hui Ka Yan Detained", "snippet": "Founder placed under police surveillance amid investigations into fund transfers and asset concealment.", "url": "https://example.com/news/evergrande-chairman", "source_type": "news", "published_date": "2023-09-28"}
+  ],
+  "social_data": [
+    {"title": "Evergrande Homebuyers Protest Unfinished Units", "snippet": "Thousands of families paid for apartments that were never completed. Protests erupting across multiple cities.", "url": "https://example.com/social/evergrande-protest", "source_type": "social", "platform": "twitter"},
+    {"title": "Evergrande Bondholder Discussion", "snippet": "Recovery rate will be under 5 cents on the dollar. This is a total wipeout for offshore investors.", "url": "https://example.com/social/evergrande-bonds", "source_type": "social", "platform": "reddit"},
+    {"title": "China Property Sector Meltdown", "snippet": "Evergrande was just the first domino. Country Garden, Sunac, and Kaisa all followed into distress.", "url": "https://example.com/social/evergrande-contagion", "source_type": "social", "platform": "twitter"}
+  ],
+  "review_data": [
+    {"title": "Evergrande Employee Review — Sales Manager", "snippet": "Company stopped paying salaries months ago. Projects halted. Everyone looking for new jobs.", "url": "https://example.com/reviews/evergrande-sales", "source_type": "review", "rating": 1.2},
+    {"title": "Evergrande Employee Review — Engineer", "snippet": "Construction sites abandoned. Suppliers unpaid. The scale of the collapse is hard to comprehend.", "url": "https://example.com/reviews/evergrande-eng", "source_type": "review", "rating": 1.0}
+  ],
+  "financial_data": [
+    {"metric": "Total Liabilities", "value": "$328B", "source_type": "financial", "period": "H1 2023"},
+    {"metric": "Net Equity", "value": "-$79.1B", "source_type": "financial", "period": "H1 2023"},
+    {"metric": "Net Loss", "value": "-$81.3B (2021-2022 combined)", "source_type": "financial", "period": "FY2022"}
+  ],
+  "doc_extracted_text": []
+}

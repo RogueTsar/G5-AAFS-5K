@@ -1,0 +1,72 @@
+[
+    {
+        "id": "spoof_001",
+        "input_name": "Apple",
+        "ambiguous_entities": ["Apple Inc.", "Apple Records", "Apple Bank"],
+        "correct_entity": "Apple Inc.",
+        "expected_behavior": "resolve_to_correct_entity"
+    },
+    {
+        "id": "spoof_002",
+        "input_name": "Amazon",
+        "ambiguous_entities": ["Amazon.com Inc.", "Amazon River region companies", "Amazon Insurance"],
+        "correct_entity": "Amazon.com Inc.",
+        "expected_behavior": "resolve_to_correct_entity"
+    },
+    {
+        "id": "spoof_003",
+        "input_name": "Meta",
+        "ambiguous_entities": ["Meta Platforms Inc.", "Meta Financial Group", "Meta Materials Inc."],
+        "correct_entity": "Meta Platforms Inc.",
+        "expected_behavior": "resolve_to_correct_entity"
+    },
+    {
+        "id": "spoof_004",
+        "input_name": "Delta",
+        "ambiguous_entities": ["Delta Air Lines Inc.", "Delta Electronics", "Delta Dental"],
+        "correct_entity": "Delta Air Lines Inc.",
+        "expected_behavior": "resolve_to_correct_entity"
+    },
+    {
+        "id": "spoof_005",
+        "input_name": "Sprint",
+        "ambiguous_entities": ["Sprint Corporation", "Sprint Industrial Holdings", "Sprint Energy"],
+        "correct_entity": "Sprint Corporation",
+        "expected_behavior": "resolve_to_correct_entity"
+    },
+    {
+        "id": "spoof_006",
+        "input_name": "Mercury",
+        "ambiguous_entities": ["Mercury Systems Inc.", "Mercury General Corporation", "Mercury Financial"],
+        "correct_entity": "Mercury Systems Inc.",
+        "expected_behavior": "resolve_to_correct_entity"
+    },
+    {
+        "id": "spoof_007",
+        "input_name": "Jaguar",
+        "ambiguous_entities": ["Jaguar Land Rover (Tata Motors)", "Jaguar Health Inc.", "Jaguar Mining Inc."],
+        "correct_entity": "Jaguar Land Rover (Tata Motors)",
+        "expected_behavior": "resolve_to_correct_entity"
+    },
+    {
+        "id": "spoof_008",
+        "input_name": "Shell",
+        "ambiguous_entities": ["Shell plc", "Shell Midstream Partners", "Shell Federal Credit Union"],
+        "correct_entity": "Shell plc",
+        "expected_behavior": "resolve_to_correct_entity"
+    },
+    {
+        "id": "spoof_009",
+        "input_name": "Target",
+        "ambiguous_entities": ["Target Corporation", "Target Hospitality Corp.", "Target Healthcare REIT"],
+        "correct_entity": "Target Corporation",
+        "expected_behavior": "resolve_to_correct_entity"
+    },
+    {
+        "id": "spoof_010",
+        "input_name": "Visa",
+        "ambiguous_entities": ["Visa Inc.", "Visa Steel Limited", "Visa Lighting"],
+        "correct_entity": "Visa Inc.",
+        "expected_behavior": "resolve_to_correct_entity"
+    }
+]
