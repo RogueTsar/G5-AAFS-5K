@@ -287,23 +287,37 @@ def _phase_collect(name: str, files, _weights):
         for f in files:
             docs.append({"filename": f.name, "content": f.read()})
 
-    if _PIPELINE_AVAILABLE and name:
+    is_demo = st.session_state.get("demo_mode", False)
+    start_time = time.time()
+
+    if _PIPELINE_AVAILABLE and name and not is_demo:
         try:
             with st.status("Running multi-agent pipeline...", expanded=True) as status:
                 st.write("Compiling guarded workflow graph...")
                 app = create_guarded_workflow()
                 st.write(f"Invoking pipeline for **{name}**...")
+                st.write(f"Model: {os.getenv('OPENAI_MODEL', 'gpt-4o-mini')} | "
+                         f"Agents: {sum(1 for k in ['agent_news','agent_social','agent_review','agent_financial','agent_press','agent_xbrl'] if st.session_state.get(k, True))}")
                 state = app.invoke({"company_name": name, "uploaded_docs": docs})
+                elapsed = time.time() - start_time
                 st.session_state["state"] = state
-                status.update(label="Collection complete!", state="complete")
+                st.session_state["last_elapsed"] = elapsed
+                est_cost = elapsed * 0.0001  # rough estimate
+                st.session_state["last_cost_est"] = est_cost
+                status.update(label=f"Complete! ({elapsed:.1f}s, ~${est_cost:.4f})", state="complete")
+                st.toast(f"Pipeline complete for {name} in {elapsed:.1f}s")
                 return
         except Exception as e:
             st.warning(f"Pipeline failed: {e}  — falling back to demo mode.")
 
-    with st.status("Loading demo data...", expanded=False) as status:
+    with st.status("Loading demo data..." if is_demo else "Falling back to demo...", expanded=False) as status:
         time.sleep(0.3)
         st.session_state["state"] = _demo_state(name or "Acme Corp Pte Ltd")
-        status.update(label="Demo data loaded", state="complete")
+        elapsed = time.time() - start_time
+        st.session_state["last_elapsed"] = elapsed
+        st.session_state["last_cost_est"] = 0.0
+        status.update(label=f"Demo loaded ({elapsed:.1f}s, $0 cost)", state="complete")
+        st.toast(f"Demo data loaded for {name or 'Acme Corp'}")
 
 
 # ===========================================================================
@@ -946,34 +960,68 @@ def _phase_report(state: Dict[str, Any]):
     st.markdown("---")
     st.markdown("## 5 — Final Report & Audit")
 
+    # ── Executive Summary (agent output) ──
     report = state.get("final_report", "No report generated.")
-    st.markdown(report)
+    with st.expander("Executive Summary (Agent Output)", expanded=True):
+        st.markdown(report)
 
-    # Risks vs Strengths
-    st.markdown("### Risk vs Strength Signals")
+    # ── Comprehensive Rationale (by category, ordered by severity) ──
+    st.markdown("### Detailed Rationale")
+    st.caption("Organized by category, ordered by severity. Toggle each section.")
+
     risks = state.get("extracted_risks", [])
     strengths = state.get("extracted_strengths", [])
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("#### Risks")
-        for r in risks:
-            st.markdown(f"- **{r.get('type', '?')}**: {r.get('description', '')}")
-        if not risks:
-            st.info("No risk signals.")
-    with c2:
-        st.markdown("#### Strengths")
-        for s in strengths:
-            st.markdown(f"- **{s.get('type', '?')}**: {s.get('description', '')}")
-        if not strengths:
-            st.info("No strength signals.")
+    explanations = state.get("explanations", [])
 
-    # Guardrail summary
+    # Group risks by type
+    risk_types = {}
+    for r in risks:
+        t = r.get("type", "Other")
+        risk_types.setdefault(t, []).append(r)
+
+    # Sort categories by count (most signals = highest severity)
+    sorted_cats = sorted(risk_types.items(), key=lambda x: -len(x[1]))
+
+    for cat, items in sorted_cats:
+        severity = "HIGH" if len(items) >= 3 else "MEDIUM" if len(items) >= 2 else "LOW"
+        sev_color = _UBS_RED if severity == "HIGH" else "#D4760A" if severity == "MEDIUM" else "#00875A"
+        with st.expander(f"{cat} ({len(items)} signals) — {severity} severity"):
+            st.markdown(f'<span style="color:{sev_color};font-weight:700">{severity}</span>',
+                        unsafe_allow_html=True)
+            for i, r in enumerate(items, 1):
+                st.markdown(f"**{i}.** {r.get('description', '')}")
+            # Cross-link to related explanations
+            related = [e for e in explanations if cat.lower() in e.get("metric", "").lower()
+                       or any(word in e.get("reason", "").lower() for word in cat.lower().split())]
+            if related:
+                st.markdown("**Related scoring rationale:**")
+                for e in related:
+                    st.markdown(f"- *{e.get('metric', '')}*: {e.get('reason', '')}")
+
+    # Strengths section
+    if strengths:
+        with st.expander(f"Strength Signals ({len(strengths)})"):
+            for s in strengths:
+                st.markdown(f"- **{s.get('type', '?')}**: {s.get('description', '')}")
+
+    # Full explanations (agent reasoning)
+    if explanations:
+        with st.expander(f"Full Agent Reasoning ({len(explanations)} factors)"):
+            for exp in explanations:
+                st.markdown(
+                    f'<div class="metric-card" style="border-left-color:#6B4C9A">'
+                    f'<div class="mc-label">{exp.get("metric", "—")}</div>'
+                    f'<div style="font-size:.9rem;color:#333">{exp.get("reason", "—")}</div>'
+                    f'</div>', unsafe_allow_html=True)
+
+    # ── Guardrail & Compliance Summary ──
     st.markdown("### Guardrails & Compliance")
-    gc1, gc2, gc3, gc4 = st.columns(4)
-    with gc1: _badge("Input Validated")
-    with gc2: _badge("Bias Check Passed")
-    with gc3: _badge("MAS FEAT Compliant")
-    with gc4: _badge("EU AI Act Compliant")
+    gc = st.columns(5)
+    with gc[0]: _badge("Input Validated")
+    with gc[1]: _badge("Bias Checked")
+    with gc[2]: _badge("Hallucination Check")
+    with gc[3]: _badge("MAS FEAT")
+    with gc[4]: _badge("EU AI Act")
 
     warnings = state.get("guardrail_warnings", [])
     if warnings:
@@ -2196,6 +2244,10 @@ def render_hitl():
         f'    <span class="ribbon-item"><b>Stage</b> {stage}</span>'
         f'    <span class="ribbon-sep"></span>'
         f'    <span class="ribbon-item"><b>History</b> {hist_n}</span>'
+        f'    <span class="ribbon-sep"></span>'
+        f'    <span class="ribbon-item"><b>Time</b> {st.session_state.get("last_elapsed", 0):.1f}s</span>'
+        f'    <span class="ribbon-sep"></span>'
+        f'    <span class="ribbon-item"><b>Cost</b> ${st.session_state.get("last_cost_est", 0):.4f}</span>'
         f'  </div>'
         f'</div>', unsafe_allow_html=True)
 
@@ -2267,6 +2319,25 @@ def render_hitl():
             ])
 
             with tabs[0]:  # Dashboard
+                # Scenario briefing
+                mode_key = st.session_state.get("workflow_mode", "deep_dive")
+                company = state.get("company_name", "Company")
+                scenarios = {
+                    "exploratory": f"**Scenario**: Sarah Lim (RM, UBS Singapore) is preparing for an initial client call with **{company}**. She needs a quick risk snapshot to identify red flags before the meeting. Light-touch data collection, fast model.",
+                    "deep_dive": f"**Scenario**: The annual credit review for **{company}** is due. The credit committee requires a comprehensive multi-source risk assessment with full documentation for the compliance package. All agents active, multiple reviewer rounds.",
+                    "loan_simulation": f"**Scenario**: The lending team is evaluating a new facility request from **{company}**. The committee needs to understand how the proposed loan would impact the borrower's key financial ratios and overall risk profile.",
+                }
+                st.markdown(
+                    f'<div class="dash-card" style="border-left:4px solid {_UBS_RED};background:#0E1726;color:white">'
+                    f'<h4 style="color:white;margin:0 0 4px 0">{_WORKFLOW_MODES.get(mode_key, {}).get("label", "Assessment")}</h4>'
+                    f'<p style="color:#CDD0D6;font-size:.85rem;margin:0">{scenarios.get(mode_key, "")}</p>'
+                    f'<p style="color:#888;font-size:.75rem;margin:4px 0 0 0">'
+                    f'Model: {st.session_state.get("selected_model", "gpt-4o-mini")} | '
+                    f'Reviewer rounds: {st.session_state.get("reviewer_rounds", 3)} | '
+                    f'Time: {st.session_state.get("last_elapsed", 0):.1f}s | '
+                    f'Est. cost: ${st.session_state.get("last_cost_est", 0):.4f}</p>'
+                    f'</div>', unsafe_allow_html=True)
+
                 _dashboard_view(state)
 
             with tabs[1]:  # Credit Assessment
