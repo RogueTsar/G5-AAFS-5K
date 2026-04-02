@@ -8,6 +8,7 @@ python-dotenv
 langgraph
 langchain
 langchain-openai
+langsmith
 tavily-python
 yfinance
 requests
