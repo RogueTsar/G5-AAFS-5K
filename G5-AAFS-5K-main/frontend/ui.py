@@ -1,0 +1,332 @@
+"""
+Frontend UI components for G5-AAFS Risk Assessment Application
+"""
+
+import streamlit as st
+from typing import Optional
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from src.core.orchestrator import create_workflow
+
+
+def setup_page_config():
+    """Configure Streamlit page settings."""
+    st.set_page_config(
+        page_title="G5-AAFS Risk Analyzer",
+        page_icon="🔍",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+
+
+def setup_custom_css():
+    """Apply custom CSS styling."""
+    st.markdown("""
+        <style>
+            .main {
+                max-width: 1200px;
+            }
+            .stTabs [data-baseweb="tab-list"] button {
+                font-size: 16px;
+            }
+            .flow-diagram {
+                background-color: #f0f2f6;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 20px 0;
+            }
+            .step-container {
+                background-color: #e8f4f8;
+                padding: 15px;
+                border-left: 4px solid #0066cc;
+                margin: 10px 0;
+                border-radius: 5px;
+            }
+            .success-message {
+                background-color: #d4edda;
+                padding: 15px;
+                border-radius: 5px;
+                border: 1px solid #c3e6cb;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+def initialize_session_state():
+    """Initialize Streamlit session state variables."""
+    if "company_name" not in st.session_state:
+        st.session_state.company_name = ""
+    if "analysis_started" not in st.session_state:
+        st.session_state.analysis_started = False
+    if "current_stage" not in st.session_state:
+        st.session_state.current_stage = None
+
+
+def render_sidebar():
+    """Render sidebar with configuration options."""
+    with st.sidebar:
+        st.header("Configuration")
+        
+        with st.expander("API Keys & Settings", expanded=False):
+            st.info("Configure your API keys and settings here")
+            st.text_input("News API Key", type="password", placeholder="Enter your News API key")
+            st.text_input("Financial API Key", type="password", placeholder="Enter your Financial API key")
+
+
+def render_company_input() -> tuple[str, bool]:
+    """
+    Render company input section.
+    
+    Returns:
+        tuple: (company_name, submit_button_clicked)
+    """
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("## 📋 Company Analysis")
+        
+        with st.container():
+            st.markdown('<div class="flow-diagram">', unsafe_allow_html=True)
+            st.subheader("Step 1: Enter Company Information")
+            
+            col_input1, col_input2 = st.columns([3, 1])
+            
+            with col_input1:
+                company_input = st.text_input(
+                    "Company Name",
+                    value=st.session_state.company_name,
+                    placeholder="e.g., Apple Inc., Tesla, Microsoft...",
+                    help="Enter the company name to analyze"
+                )
+            
+            with col_input2:
+                st.write("")  # Spacing to align with input field
+                submit_button = st.button(
+                    "🚀 Start Analysis",
+                    use_container_width=True,
+                    type="primary"
+                )
+            
+            uploaded_files = st.file_uploader(
+                "Enhance Analysis with Documents (Optional)",
+                type=["pdf", "xlsx", "xls", "txt", "xbrl", "xml", "xsd", "html"],
+                accept_multiple_files=True,
+                help="Upload financial reports, news transcripts, or spreadsheets to improve risk assessment accuracy."
+            )
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            if submit_button and company_input.strip():
+                st.session_state.company_name = company_input.strip()
+                st.session_state.analysis_started = True
+                st.success(f"✅ Analysis started for: **{st.session_state.company_name}**")
+                
+                # Prepare uploaded docs for the graph
+                docs_for_graph = []
+                if uploaded_files:
+                    for uploaded_file in uploaded_files:
+                        docs_for_graph.append({
+                            "filename": uploaded_file.name,
+                            "content": uploaded_file.read()
+                        })
+                
+                # Execute LangGraph
+                with st.spinner("Running Multi-Agent Analysis Pipeline..."):
+                    try:
+                        app = create_workflow()
+                        initial_state = {
+                            "company_name": st.session_state.company_name,
+                            "uploaded_docs": docs_for_graph
+                        }
+                        final_state = app.invoke(initial_state)
+                        st.session_state.final_report = final_state.get("final_report", "No report generated.")
+                        st.session_state.final_state = final_state
+                        st.session_state.analysis_complete = True
+                    except Exception as e:
+                        st.error(f"Error during analysis: {str(e)}")
+                        st.session_state.analysis_complete = False
+    
+    return company_input.strip() if company_input else "", submit_button
+
+
+def render_pipeline_overview():
+    """Render pipeline overview tab."""
+    st.markdown("### Complete Analysis Flow")
+    
+    stages = [
+        ("1. Input Processing", "Parsing company information"),
+        ("2. Source Discovery", "Identifying relevant data sources"),
+        ("3. Data Collection (Parallel)", "Gathering data from multiple sources"),
+        ("4. Data Aggregation", "Combining raw data"),
+        ("5. Embeddings & Vector Storage", "Processing data for RAG"),
+        ("6. Risk Extraction", "Identifying risk factors"),
+        ("7. Risk Scoring", "Calculating risk metrics"),
+        ("8. Review & Validation", "Human review of results"),
+        ("9. Report Generation", "Creating final analysis")
+    ]
+    
+    for stage, description in stages:
+        st.markdown(
+            f'<div class="step-container"><b>{stage}</b><br><small>{description}</small></div>',
+            unsafe_allow_html=True
+        )
+
+
+def render_data_collection():
+    """Render data collection agents tab."""
+    st.markdown("### Data Collection Agents")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### Data Sources")
+        st.info("📰 **News Agent**\nCollects company news and press releases")
+        st.info("📱 **Social Media Agent**\nMonitors social media mentions and sentiment")
+    
+    with col2:
+        st.markdown("#### ⠀")  # Spacing
+        st.info("⭐ **Review Agent**\nGathers customer/employee reviews")
+        st.info("📑 **Financial Agent**\nAnalyzes SEC filings and financial reports")
+
+
+def render_analysis_scoring():
+    """Render analysis and scoring tab."""
+    st.markdown("### Analysis & Scoring")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric("Risk Extraction", "Ready", delta="In Progress")
+    
+    with col2:
+        st.metric("Risk Scoring", "Pending", delta="-")
+    
+    st.markdown("---")
+    st.info("🤖 **RAG Retrieval** - Context-aware information retrieval using embeddings")
+
+
+def render_results():
+    """Render results and report tab."""
+    st.markdown("### Results & Report")
+    
+    if st.session_state.get("analysis_complete", False):
+        st.success("Analysis Complete!")
+        # Use text area to output markdown exactly or raw text
+        st.text_area("Generated Risk Report", st.session_state.get("final_report", ""), height=400)
+        
+        st.markdown("### 🔍 Raw API Data")
+        with st.expander("View Financial Data (Yahoo Finance)", expanded=False):
+            st.json(st.session_state.final_state.get("financial_data", []))
+            
+        with st.expander("View News Data (NewsAPI)", expanded=False):
+            st.json(st.session_state.final_state.get("news_data", []))
+
+        with st.expander("View Social Sentiment Data (Tavily)", expanded=False):
+            st.json(st.session_state.final_state.get("social_data", []))
+
+        with st.expander("View Review Data (Tavily)", expanded=False):
+            st.json(st.session_state.final_state.get("review_data", []))
+    else:
+        st.info("Final report will be displayed here once analysis completes")
+        
+        st.markdown("""
+            **Report will include:**
+            - Executive Summary
+            - Key Risk Factors
+            - Risk Scores & Ratings
+            - Data Source Attribution
+            - Recommendations
+        """)
+
+
+def render_analysis_pipeline():
+    """Render the full analysis pipeline with tabs."""
+    st.markdown("---")
+    st.markdown("## 🔄 Analysis Pipeline")
+    
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📊 Pipeline Overview",
+        "🔍 Data Collection",
+        "🎯 Analysis & Scoring",
+        "📈 Results"
+    ])
+    
+    with tab1:
+        render_pipeline_overview()
+    
+    with tab2:
+        render_data_collection()
+    
+    with tab3:
+        render_analysis_scoring()
+    
+    with tab4:
+        render_results()
+    
+    # Progress section
+    st.markdown("---")
+    st.markdown("### 📊 Progress Tracking")
+    st.progress(0)
+    
+    stages_list = [
+        "Input Processing",
+        "Source Discovery",
+        "News Collection",
+        "Social Media Scraping",
+        "Reviews Collection",
+        "Financial Data Gathering",
+        "Data Aggregation",
+        "Embedding Generation",
+        "RAG Retrieval",
+        "Risk Extraction",
+        "Risk Scoring",
+        "Review & Validation",
+        "Report Generation"
+    ]
+    
+    st.markdown(f"**Company:** {st.session_state.company_name}")
+
+
+def render_quick_start():
+    """Render welcome section when no analysis has started."""
+    st.markdown('<div class="flow-diagram">', unsafe_allow_html=True)
+    st.markdown("### 🎯 Quick Start")
+    st.markdown("""
+        1. Enter a company name
+        2. Click "Start Analysis"
+        3. Monitor the analysis pipeline
+        4. View comprehensive risk report
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+def render_footer():
+    """Render application footer."""
+    st.markdown("---")
+    st.markdown("""
+    <small>
+    G5-AAFS: Credit Risk Assessment | 
+    Powered by MCP Agents & Streamlit
+    </small>
+    """, unsafe_allow_html=True)
+
+
+def render():
+    """Main render function - orchestrates all UI components."""
+    setup_page_config()
+    setup_custom_css()
+    initialize_session_state()
+    
+    st.title("🔍 G5-AAFS: Credit Risk Assessment")
+    
+    render_sidebar()
+    render_quick_start()
+    render_company_input()
+    
+    if st.session_state.analysis_started:
+        render_analysis_pipeline()
+        
+    
+    render_footer()

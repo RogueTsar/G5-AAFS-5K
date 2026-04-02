@@ -1,0 +1,25 @@
+{
+  "company_name": "Grab Holdings Limited",
+  "news_data": [
+    {"title": "Grab Dominates Southeast Asian Ride-Hailing With 72% Market Share", "snippet": "Grab maintains commanding lead in ride-hailing across Singapore, Indonesia, Thailand, and Vietnam.", "url": "https://example.com/news/grab-market-share", "source_type": "news", "published_date": "2024-08-15"},
+    {"title": "Grab Financial Group Secures Digital Banking License", "snippet": "GrabFin launches digital banking services in Singapore, expanding its fintech ecosystem.", "url": "https://example.com/news/grab-digibank", "source_type": "news", "published_date": "2024-06-20"},
+    {"title": "Grab Posts First-Ever Quarterly Profit", "snippet": "Grab achieved GAAP profitability for the first time, driven by cost discipline and improving unit economics.", "url": "https://example.com/news/grab-profit", "source_type": "news", "published_date": "2024-11-11"},
+    {"title": "Grab Expands GrabMart Grocery Delivery Across Region", "snippet": "Quick commerce segment grows 45% YoY as consumers in SE Asia shift to on-demand grocery delivery.", "url": "https://example.com/news/grab-grocery", "source_type": "news", "published_date": "2024-09-03"},
+    {"title": "Grab SPAC Valuation Still Below $40B Peak", "snippet": "Shares remain well below 2021 SPAC debut price, though recovery trend emerges as fundamentals improve.", "url": "https://example.com/news/grab-valuation", "source_type": "news", "published_date": "2024-10-01"}
+  ],
+  "social_data": [
+    {"title": "Grab Is the Super App of SE Asia", "snippet": "Use Grab for rides, food, payments, insurance. In Singapore you literally can't avoid it.", "url": "https://example.com/social/grab-superapp", "source_type": "social", "platform": "reddit"},
+    {"title": "Grab Driver Earnings Discussion", "snippet": "Earnings per hour have dropped vs 2022 but still decent. Too many new drivers flooding the platform.", "url": "https://example.com/social/grab-drivers", "source_type": "social", "platform": "twitter"},
+    {"title": "Grab vs GoTo Competition Thread", "snippet": "Grab is winning on execution but GoTo has deeper local roots in Indonesia. Both losing money though.", "url": "https://example.com/social/grab-goto", "source_type": "social", "platform": "reddit"}
+  ],
+  "review_data": [
+    {"title": "Grab Employee Review — Product Manager", "snippet": "Fast-paced, startup-like culture even at scale. Great regional exposure. Compensation competitive for SE Asia.", "url": "https://example.com/reviews/grab-pm", "source_type": "review", "rating": 3.8},
+    {"title": "Grab Employee Review — Data Scientist", "snippet": "Interesting problems at massive scale. Work-life balance is hit or miss depending on team.", "url": "https://example.com/reviews/grab-ds", "source_type": "review", "rating": 3.6}
+  ],
+  "financial_data": [
+    {"metric": "Annual Revenue", "value": "$2.36B", "source_type": "financial", "period": "FY2023"},
+    {"metric": "Revenue Growth YoY", "value": "65%", "source_type": "financial", "period": "FY2023"},
+    {"metric": "Net Loss", "value": "-$0.28B (narrowing)", "source_type": "financial", "period": "FY2023"}
+  ],
+  "doc_extracted_text": []
+}

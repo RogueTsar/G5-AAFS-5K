@@ -1,0 +1,25 @@
+{
+  "company_name": "Silicon Valley Bank",
+  "news_data": [
+    {"title": "Silicon Valley Bank Collapses After Depositor Bank Run", "snippet": "SVB became the largest US bank failure since 2008 after depositors withdrew $42B in a single day.", "url": "https://example.com/news/svb-collapse", "source_type": "news", "published_date": "2023-03-10"},
+    {"title": "FDIC Takes Control of Silicon Valley Bank", "snippet": "Federal regulators seized SVB assets after the bank failed to raise emergency capital to cover bond losses.", "url": "https://example.com/news/svb-fdic-takeover", "source_type": "news", "published_date": "2023-03-10"},
+    {"title": "SVB's Concentrated Startup Exposure Proved Fatal", "snippet": "Over 90% of deposits were uninsured, heavily concentrated among VC-backed tech startups.", "url": "https://example.com/news/svb-startup-exposure", "source_type": "news", "published_date": "2023-03-11"},
+    {"title": "SVB's $17B Unrealized Bond Losses Triggered Panic", "snippet": "Rising interest rates caused massive mark-to-market losses on SVB's held-to-maturity bond portfolio.", "url": "https://example.com/news/svb-bond-losses", "source_type": "news", "published_date": "2023-03-09"},
+    {"title": "SVB Contagion Fears Spread to Regional Banks", "snippet": "Signature Bank and First Republic saw sharp deposit outflows as fears of broader banking crisis grew.", "url": "https://example.com/news/svb-contagion", "source_type": "news", "published_date": "2023-03-12"}
+  ],
+  "social_data": [
+    {"title": "GET YOUR MONEY OUT OF SVB NOW", "snippet": "Multiple VCs telling portfolio companies to pull deposits immediately. This is a full bank run.", "url": "https://example.com/social/svb-panic", "source_type": "social", "platform": "twitter"},
+    {"title": "SVB Withdrawal Warning", "snippet": "Our startup had $8M in SVB. We got out $2M before the freeze. This is devastating for the ecosystem.", "url": "https://example.com/social/svb-withdrawal", "source_type": "social", "platform": "reddit"},
+    {"title": "SVB Depositor Anxiety Thread", "snippet": "Can't access our operating account. 200 employees depend on us making payroll Friday. Terrified.", "url": "https://example.com/social/svb-anxiety", "source_type": "social", "platform": "twitter"}
+  ],
+  "review_data": [
+    {"title": "SVB Employee Review — Relationship Manager", "snippet": "Leadership failed us. We had no warning. Great colleagues but catastrophic risk management at the top.", "url": "https://example.com/reviews/svb-rm", "source_type": "review", "rating": 2.1},
+    {"title": "SVB Employee Review — Risk Analyst", "snippet": "CRO position was vacant for 8 months. Concerns about interest rate risk were dismissed by management.", "url": "https://example.com/reviews/svb-risk", "source_type": "review", "rating": 1.8}
+  ],
+  "financial_data": [
+    {"metric": "Unrealized Bond Losses", "value": "-$17.7B", "source_type": "financial", "period": "Q4 2022"},
+    {"metric": "Deposit Outflow (Single Day)", "value": "-$42B", "source_type": "financial", "period": "Mar 9 2023"},
+    {"metric": "Uninsured Deposit Ratio", "value": "93.8%", "source_type": "financial", "period": "Q4 2022"}
+  ],
+  "doc_extracted_text": []
+}

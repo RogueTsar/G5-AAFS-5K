@@ -1,0 +1,92 @@
+[
+    {
+        "company_name": "Credit Suisse",
+        "event": "Archegos/Greensill collapse",
+        "event_date": "2021-03-26",
+        "pre_event_risk_expectation": [30, 50],
+        "post_event_risk_expectation": [65, 90],
+        "signals_that_should_appear": ["counterparty risk", "risk management failure", "regulatory investigation"],
+        "resolution": "Acquired by UBS June 2023"
+    },
+    {
+        "company_name": "Silicon Valley Bank",
+        "event": "Bank run and FDIC seizure",
+        "event_date": "2023-03-10",
+        "pre_event_risk_expectation": [20, 40],
+        "post_event_risk_expectation": [85, 100],
+        "signals_that_should_appear": ["deposit flight", "unrealized bond losses", "interest rate risk", "liquidity crisis", "bank run"],
+        "resolution": "Seized by FDIC, deposits transferred to Silicon Valley Bridge Bank"
+    },
+    {
+        "company_name": "Evergrande",
+        "event": "Offshore bond default",
+        "event_date": "2021-12-09",
+        "pre_event_risk_expectation": [45, 65],
+        "post_event_risk_expectation": [85, 100],
+        "signals_that_should_appear": ["debt default", "liquidity crisis", "regulatory crackdown", "excessive leverage", "property market downturn"],
+        "resolution": "Entered liquidation proceedings January 2024"
+    },
+    {
+        "company_name": "FTX",
+        "event": "Exchange collapse and fraud revelation",
+        "event_date": "2022-11-11",
+        "pre_event_risk_expectation": [25, 50],
+        "post_event_risk_expectation": [90, 100],
+        "signals_that_should_appear": ["fraud", "misappropriation of customer funds", "no audited financials", "related-party transactions", "liquidity crisis"],
+        "resolution": "Filed Chapter 11 bankruptcy, founder convicted of fraud"
+    },
+    {
+        "company_name": "Wirecard",
+        "event": "Accounting fraud disclosure",
+        "event_date": "2020-06-18",
+        "pre_event_risk_expectation": [20, 40],
+        "post_event_risk_expectation": [90, 100],
+        "signals_that_should_appear": ["accounting fraud", "fictitious revenue", "auditor failure", "missing cash balances", "executive arrests"],
+        "resolution": "Filed for insolvency June 2020, CEO arrested"
+    },
+    {
+        "company_name": "Boeing",
+        "event": "737 MAX crashes and global grounding",
+        "event_date": "2019-03-10",
+        "pre_event_risk_expectation": [15, 30],
+        "post_event_risk_expectation": [45, 70],
+        "signals_that_should_appear": ["product safety failure", "regulatory grounding", "production halt", "litigation exposure", "reputational damage"],
+        "resolution": "737 MAX returned to service November 2020 after software fixes and recertification"
+    },
+    {
+        "company_name": "WeWork",
+        "event": "Failed IPO and valuation collapse",
+        "event_date": "2019-09-17",
+        "pre_event_risk_expectation": [35, 55],
+        "post_event_risk_expectation": [65, 90],
+        "signals_that_should_appear": ["governance failure", "overvaluation", "founder controversy", "unsustainable business model", "cash burn"],
+        "resolution": "Went public via SPAC 2021 at fraction of prior valuation, filed bankruptcy November 2023"
+    },
+    {
+        "company_name": "Hertz",
+        "event": "Bankruptcy filing due to pandemic",
+        "event_date": "2020-05-22",
+        "pre_event_risk_expectation": [40, 60],
+        "post_event_risk_expectation": [80, 100],
+        "signals_that_should_appear": ["revenue collapse", "fleet depreciation", "debt maturity wall", "pandemic impact", "travel demand destruction"],
+        "resolution": "Emerged from bankruptcy June 2021 with new ownership"
+    },
+    {
+        "company_name": "Lehman Brothers",
+        "event": "Bankruptcy filing amid financial crisis",
+        "event_date": "2008-09-15",
+        "pre_event_risk_expectation": [35, 55],
+        "post_event_risk_expectation": [90, 100],
+        "signals_that_should_appear": ["excessive leverage", "toxic mortgage exposure", "counterparty risk", "liquidity crisis", "failed bailout negotiations"],
+        "resolution": "Largest bankruptcy filing in US history, assets liquidated over subsequent years"
+    },
+    {
+        "company_name": "Thomas Cook",
+        "event": "Insolvency and cessation of operations",
+        "event_date": "2019-09-23",
+        "pre_event_risk_expectation": [45, 65],
+        "post_event_risk_expectation": [85, 100],
+        "signals_that_should_appear": ["unsustainable debt", "failed rescue financing", "declining revenue", "structural industry decline", "seasonal cash flow strain"],
+        "resolution": "Ceased all operations, 150,000 customers stranded abroad requiring government repatriation"
+    }
+]

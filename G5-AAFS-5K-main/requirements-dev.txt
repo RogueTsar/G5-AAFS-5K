@@ -1,0 +1,15 @@
+# Development and testing dependencies for G5-AAFS R8+R9
+# Install: pip install -r requirements-dev.txt
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Time mocking for backtesting
+freezegun>=1.2.0
+
+# Already required by main project (listed for completeness)
+# pydantic>=2.0
+# langchain-openai
+# langgraph
+# tavily-python

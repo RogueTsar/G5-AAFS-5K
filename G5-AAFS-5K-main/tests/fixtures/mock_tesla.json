@@ -1,0 +1,25 @@
+{
+  "company_name": "Tesla Inc.",
+  "news_data": [
+    {"title": "Tesla Delivers Record 1.8M Vehicles in 2023", "snippet": "Tesla achieved record annual deliveries but fell short of its 2M target amid growing EV competition.", "url": "https://example.com/news/tesla-deliveries", "source_type": "news", "published_date": "2024-01-02"},
+    {"title": "Tesla Cuts Prices Again as Margin Pressure Mounts", "snippet": "Gross automotive margins fell to 17.6% as Tesla slashed prices across all models to defend market share.", "url": "https://example.com/news/tesla-margins", "source_type": "news", "published_date": "2024-01-25"},
+    {"title": "BYD Overtakes Tesla as World's Top EV Seller", "snippet": "Chinese rival BYD sold more battery-electric vehicles than Tesla in Q4, intensifying the global EV race.", "url": "https://example.com/news/tesla-byd-competition", "source_type": "news", "published_date": "2024-01-03"},
+    {"title": "Musk's Political Activity Raises Brand Risk Concerns", "snippet": "Analysts warn that CEO's polarizing public statements could alienate portions of Tesla's customer base.", "url": "https://example.com/news/tesla-ceo-risk", "source_type": "news", "published_date": "2024-02-10"},
+    {"title": "Tesla FSD V12 Shows Promise But Regulatory Hurdles Remain", "snippet": "End-to-end neural network approach impresses testers, but full autonomy timeline remains uncertain.", "url": "https://example.com/news/tesla-fsd", "source_type": "news", "published_date": "2024-03-01"}
+  ],
+  "social_data": [
+    {"title": "TSLA Is Either $500 or $50", "snippet": "No in-between with this stock. If FSD works it's the most valuable company on earth. If not, it's a car company trading at 60x.", "url": "https://example.com/social/tsla-polarized", "source_type": "social", "platform": "reddit"},
+    {"title": "Cancelled My Tesla Order", "snippet": "Was a loyal customer with 2 Teslas. CEO behavior made me switch to Rivian. Many friends doing the same.", "url": "https://example.com/social/tsla-cancel", "source_type": "social", "platform": "twitter"},
+    {"title": "Tesla Cybertruck Delivery Day", "snippet": "Just took delivery. Build quality is way better than early reviews suggested. This thing is a beast.", "url": "https://example.com/social/tsla-cybertruck", "source_type": "social", "platform": "reddit"}
+  ],
+  "review_data": [
+    {"title": "Tesla Employee Review — Production Associate", "snippet": "Intense pace, long hours, but you feel like you're building the future. Compensation is stock-heavy.", "url": "https://example.com/reviews/tesla-production", "source_type": "review", "rating": 3.3},
+    {"title": "Tesla Employee Review — Software Engineer", "snippet": "Move fast culture. Great if you thrive under pressure, burnout risk is real. Flat hierarchy is a plus.", "url": "https://example.com/reviews/tesla-swe", "source_type": "review", "rating": 3.5}
+  ],
+  "financial_data": [
+    {"metric": "Annual Revenue", "value": "$96.8B", "source_type": "financial", "period": "FY2023"},
+    {"metric": "Gross Margin (Automotive)", "value": "17.6%", "source_type": "financial", "period": "Q4 2023"},
+    {"metric": "Revenue Growth YoY", "value": "18.8%", "source_type": "financial", "period": "FY2023"}
+  ],
+  "doc_extracted_text": []
+}

@@ -1,0 +1,25 @@
+{
+  "company_name": "Microsoft Corporation",
+  "news_data": [
+    {"title": "Azure Revenue Grows 29% as Cloud Demand Surges", "snippet": "Microsoft's Intelligent Cloud segment posted $24.3B in revenue, driven by AI workload migration.", "url": "https://example.com/news/msft-azure-growth", "source_type": "news", "published_date": "2024-10-30"},
+    {"title": "Microsoft Copilot Reaches 1M Enterprise Subscribers", "snippet": "AI-powered productivity assistant adoption accelerates across Office 365 enterprise customers.", "url": "https://example.com/news/msft-copilot", "source_type": "news", "published_date": "2024-11-12"},
+    {"title": "Microsoft Reports $62.9B Q1 Revenue, Beats Estimates", "snippet": "All three business segments exceeded Wall Street expectations, with operating income up 24% YoY.", "url": "https://example.com/news/msft-q1-earnings", "source_type": "news", "published_date": "2024-10-30"},
+    {"title": "Microsoft Deepens OpenAI Partnership With $10B Investment", "snippet": "Extended partnership positions Microsoft as the primary commercial partner for GPT and DALL-E models.", "url": "https://example.com/news/msft-openai", "source_type": "news", "published_date": "2024-01-15"},
+    {"title": "Microsoft Gaming Revenue Jumps Post Activision Acquisition", "snippet": "Xbox content and services revenue grew 61% following the $69B Activision Blizzard integration.", "url": "https://example.com/news/msft-gaming", "source_type": "news", "published_date": "2024-10-30"}
+  ],
+  "social_data": [
+    {"title": "MSFT Is the Safest Big Tech Bet", "snippet": "Azure is the enterprise default, Copilot is printing money, and they have the strongest AI moat via OpenAI.", "url": "https://example.com/social/msft-bull", "source_type": "social", "platform": "reddit"},
+    {"title": "Teams and Copilot Integration Review", "snippet": "Copilot meeting summaries are saving our team 5+ hours a week. Actually delivers on the AI productivity promise.", "url": "https://example.com/social/msft-copilot-review", "source_type": "social", "platform": "twitter"},
+    {"title": "Azure vs AWS Migration Thread", "snippet": "Moved our infra to Azure last quarter. Hybrid cloud story and enterprise licensing bundles made the decision easy.", "url": "https://example.com/social/msft-azure-vs-aws", "source_type": "social", "platform": "reddit"}
+  ],
+  "review_data": [
+    {"title": "Microsoft Employee Review — Cloud Engineer", "snippet": "Excellent WLB, strong comp, and genuine growth culture under Nadella. Some teams are still siloed.", "url": "https://example.com/reviews/msft-cloud", "source_type": "review", "rating": 4.1},
+    {"title": "Microsoft Employee Review — PM", "snippet": "Collaborative environment with real impact at scale. Internal mobility is a huge perk.", "url": "https://example.com/reviews/msft-pm", "source_type": "review", "rating": 4.3}
+  ],
+  "financial_data": [
+    {"metric": "Annual Revenue", "value": "$227.6B", "source_type": "financial", "period": "FY2024"},
+    {"metric": "Operating Margin", "value": "44.6%", "source_type": "financial", "period": "FY2024"},
+    {"metric": "Market Capitalization", "value": "$2.89T", "source_type": "financial", "period": "Dec 2024"}
+  ],
+  "doc_extracted_text": []
+}
