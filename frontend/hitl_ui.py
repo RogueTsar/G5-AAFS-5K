@@ -19,11 +19,15 @@ import pandas as pd
 import json, sys, os, time, math, urllib.parse
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from dotenv import load_dotenv
 
 # ---------------------------------------------------------------------------
 # Path + conditional imports
 # ---------------------------------------------------------------------------
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(_ROOT)
+load_dotenv(os.path.join(_ROOT, "AAFS.env"))
+load_dotenv()  # fallback to .env
 
 _PIPELINE_AVAILABLE = False
 _XBRL_AVAILABLE = False
@@ -1880,13 +1884,197 @@ def _render_sidebar(state: Dict[str, Any]):
 # MAIN
 # ===========================================================================
 
+# ===========================================================================
+# EVAL & GUARDRAIL RUN BUTTONS (in-app, no command line)
+# ===========================================================================
+
+def _tab_testing(state: Dict[str, Any]):
+    """Run evals and guardrails from the UI with buttons."""
+    st.markdown("## Testing & Evaluation")
+    st.caption("Run guardrail checks and evaluation suite directly. Uses your API keys.")
+
+    t1, t2 = st.tabs(["Guardrail Tests", "Evaluation Suite"])
+
+    with t1:
+        st.markdown("### Guardrail Tests (0 API cost)")
+        st.markdown("Tests all 6 guardrail modules: input validation, output enforcement, "
+                     "hallucination detection, bias/fairness, cascade prevention, content safety.")
+        if st.button("Run Guardrail Tests", type="primary", key="run_guardrails",
+                      use_container_width=True):
+            with st.status("Running guardrail tests...", expanded=True) as status:
+                import subprocess, sys
+                result = subprocess.run(
+                    [sys.executable, "-m", "pytest", "tests/test_guardrails/", "-v", "--tb=short"],
+                    capture_output=True, text=True, cwd=_ROOT, timeout=60)
+                st.code(result.stdout[-3000:] if len(result.stdout) > 3000 else result.stdout)
+                if result.returncode == 0:
+                    status.update(label="All guardrail tests PASSED", state="complete")
+                else:
+                    st.code(result.stderr[-2000:] if result.stderr else "")
+                    status.update(label="Some tests FAILED", state="error")
+
+        # Live guardrail check on current state
+        if state.get("company_name") and _GUARDRAIL_AVAILABLE:
+            st.markdown("### Live Guardrail Check (current assessment)")
+            if st.button("Run Guardrails on Current Data", key="run_live_guard"):
+                with st.status("Checking...") as status:
+                    runner = GuardrailRunner()
+                    # Input check
+                    sanitized, valid, warnings = runner.validate_input(state["company_name"])
+                    st.write(f"Input validation: {'PASS' if valid else 'FAIL'}")
+                    for w in warnings:
+                        st.warning(w)
+                    # Report check
+                    report = state.get("final_report", "")
+                    if report:
+                        cleaned, summary = runner.validate_final_report(report, state)
+                        st.write(f"Report validation: {summary.get('checks_passed', 0)}/{summary.get('total_checks', 0)} checks passed")
+                    status.update(label="Guardrail check complete", state="complete")
+
+    with t2:
+        st.markdown("### Evaluation Suite")
+        st.markdown("Runs behavioral tests, safety evals, synthetic company backtesting.")
+
+        ec1, ec2 = st.columns(2)
+        with ec1:
+            suite = st.selectbox("Test Suite", ["All Tests", "Safety Evals", "Behavioral",
+                                                 "Synthetic Companies", "Distress Backtest"],
+                                  key="eval_suite")
+        with ec2:
+            st.caption("Estimated cost: ~$0 (mock mode) or ~$0.05 (live)")
+
+        suite_map = {
+            "All Tests": "tests/test_evals/",
+            "Safety Evals": "tests/test_evals/test_safety_evals.py",
+            "Behavioral": "tests/test_evals/test_behavioral.py",
+            "Synthetic Companies": "tests/test_evals/test_synthetic_suite.py",
+            "Distress Backtest": "tests/test_evals/test_distress_backtest.py",
+        }
+
+        if st.button("Run Evaluation Suite", type="primary", key="run_evals",
+                      use_container_width=True):
+            with st.status(f"Running {suite}...", expanded=True) as status:
+                import subprocess, sys
+                path = suite_map.get(suite, "tests/test_evals/")
+                result = subprocess.run(
+                    [sys.executable, "-m", "pytest", path, "-v", "--tb=short"],
+                    capture_output=True, text=True, cwd=_ROOT, timeout=120)
+                st.code(result.stdout[-3000:] if len(result.stdout) > 3000 else result.stdout)
+                if result.returncode == 0:
+                    status.update(label=f"{suite}: ALL PASSED", state="complete")
+                else:
+                    st.code(result.stderr[-2000:] if result.stderr else "")
+                    status.update(label=f"{suite}: SOME FAILED", state="error")
+
+
+# ===========================================================================
+# USER GUIDE PAGE
+# ===========================================================================
+
+def _tab_user_guide():
+    """In-app user guide for analysts."""
+    st.markdown("## User Guide")
+
+    with st.expander("Workflow Modes", expanded=True):
+        st.markdown("""
+**Exploratory (New Client Call)**
+- Quick 5-min snapshot for an initial meeting
+- Skips social media and press release agents
+- Uses fast model (gpt-4o-mini), 1 reviewer round
+- Cost: ~$0.005 per assessment
+
+**Deep Dive (Annual Review)**
+- Full pipeline with all 14+ agents active
+- All data sources: XBRL, news, social, reviews, press releases, industry
+- Uses stronger model (gpt-4o), 3 reviewer critique rounds
+- Cost: ~$0.03 per assessment
+
+**Loan Simulation (New Facility)**
+- Enter a hypothetical loan amount + interest rate
+- See how D/E ratio, current ratio, interest coverage shift
+- Instant recalculation without re-running the full pipeline
+- Cost: ~$0.01 per assessment
+""")
+
+    with st.expander("Settings & Configuration"):
+        st.markdown("""
+**Sidebar Controls:**
+- **Workflow Mode**: Choose Exploratory / Deep Dive / Loan Simulation
+- **Model**: Select LLM model (gpt-4o-mini for speed, gpt-4o for depth)
+- **Reviewer Rounds**: How many times the reviewer agent critiques the report (1-5)
+- **Agent Toggles**: Enable/disable specific data collection agents
+- **Font Size**: Scale all text (12-22px) without breaking layout
+
+**Advanced Settings** (click "More Settings" in sidebar):
+- Model temperature
+- Max tokens per agent call
+- Guardrail strictness level
+""")
+
+    with st.expander("Tabs & Features"):
+        st.markdown("""
+| Tab | What It Does | When To Use |
+|-----|-------------|-------------|
+| **Dashboard** | Toggleable metric panels grouped by agent | Quick overview of all collected data |
+| **Credit Assessment** | Domain-by-domain review + weight sliders + scoring | Main workflow — review, weight, score |
+| **Pipeline Trace** | Step-by-step agent execution with diagnostics | Audit trail, debugging, traceability |
+| **Loan Simulation** | What-if analysis for proposed facility | Credit committee presentations |
+| **AI Governance** | IMDA AI Verify, MAS FEAT, EU AI Act compliance | Regulatory review, compliance sign-off |
+| **History & Compare** | Saved assessments, side-by-side diff | Comparing configs, tracking changes |
+| **Export & Email** | Selective section export, email composer | Final deliverable, stakeholder comms |
+| **Testing** | Run guardrails + eval suite from UI | Quality assurance, red-team testing |
+| **User Guide** | This page | Onboarding, reference |
+""")
+
+    with st.expander("Scoring Frameworks"):
+        st.markdown("""
+| Framework | Focus | Use When |
+|-----------|-------|----------|
+| **Basel IRB** | PD/LGD, financials-heavy (FSH 40%, CCA 20%) | Regulatory capital calculations |
+| **Altman Z-Score** | 5 financial ratio zones (FSH 60%) | Quick distress screening |
+| **S&P Global** | Business + Financial Risk Profile | Holistic corporate rating |
+| **Moody's KMV** | Distance-to-Default, market signals | Market-implied credit risk |
+| **MAS FEAT** | Singapore regulatory balanced | Local compliance alignment |
+""")
+
+    with st.expander("HITL Decision Points"):
+        st.markdown("""
+The system pauses for your input at these critical junctures:
+
+1. **After Data Collection** — Review what was collected, approve or re-run with different agents
+2. **Before Scoring** — Confirm your weight selections before generating the risk score
+3. **Before Export** — Review the final report before downloading or emailing
+
+At each gate you can: **Approve & Continue**, **Reject & Stop**, or **Redo This Step**
+""")
+
+    with st.expander("Roles & Responsibilities"):
+        st.markdown("""
+| Role | Scope | What They See |
+|------|-------|--------------|
+| **R1 Product Owner** | PRD, scope, milestones | Dashboard, Report, Export |
+| **R2 AI Governance** | Bias checks, audit trail | AI Governance tab, Compliance |
+| **R4 Orchestration** | Agent routing, state schema | Pipeline Trace, Dashboard |
+| **R5 Retrieval** | Data collection agents | Dashboard (Collection panel) |
+| **R7 Analysis** | Risk extraction, prompts | Credit Assessment, Scoring |
+| **R8 Guardrails** | Safety modules | Testing tab, Governance |
+| **R9 Evaluation** | Test suite, metrics | Testing tab, History |
+| **R10 Demo & Docs** | UI, documentation | User Guide, Export |
+""")
+
+
+# ===========================================================================
+# MAIN
+# ===========================================================================
+
 def render_hitl():
     st.set_page_config(page_title="G5-AAFS | UBS Credit Risk", page_icon="🏦", layout="wide")
 
     # Session defaults
     defaults = {"state": {}, "scored": False, "composite_score": None,
                 "workflow_mode": "deep_dive", "font_size": 16,
-                "selected_model": "gpt-4o-mini", "reviewer_rounds": 3}
+                "selected_model": "gpt-4o-mini", "reviewer_rounds": 3,
+                "demo_mode": False}
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
@@ -1899,28 +2087,51 @@ def render_hitl():
     # ── INJECT CSS with user's font size ──
     st.markdown(_build_css(st.session_state.get("font_size", 16)), unsafe_allow_html=True)
 
-    # ── HEADER ──
-    hc1, hc2 = st.columns([8, 2])
-    with hc1:
-        st.title("G5-AAFS: Credit Risk Assessment")
-        mode_label = _WORKFLOW_MODES.get(st.session_state.get("workflow_mode", "deep_dive"), {}).get("label", "")
-        st.caption(f"UBS Credit Officer Workstation · {mode_label} · "
-                   f"Model: {st.session_state.get('selected_model', 'gpt-4o-mini')}")
-    with hc2:
-        st.markdown(
-            f'<div style="text-align:right;padding-top:16px">'
-            f'<span style="font-size:2em;font-weight:800;color:{_UBS_RED}">UBS</span>'
-            f'</div>', unsafe_allow_html=True)
+    # ── TOP RIBBON (everpresent) ──
+    rc = st.columns([3, 1, 1, 1, 1, 1, 1])
+    with rc[0]:
+        st.markdown(f'<span style="font-size:1.4em;font-weight:800;color:{_UBS_RED}">G5-AAFS</span>'
+                    f' <span style="color:{_UBS_GREY}">Credit Risk Workstation</span>',
+                    unsafe_allow_html=True)
+    with rc[1]:
+        demo = st.toggle("Demo Mode", value=st.session_state.get("demo_mode", False),
+                          key="demo_toggle",
+                          help="Demo uses mock data (no API cost). Live uses real APIs.")
+        st.session_state["demo_mode"] = demo
+    with rc[2]:
+        # Current stage indicator
+        if state.get("company_name"):
+            if st.session_state.get("scored"):
+                st.markdown("**Stage**: Scored")
+            else:
+                st.markdown("**Stage**: Reviewing")
+        else:
+            st.markdown("**Stage**: Input")
+    with rc[3]:
+        st.markdown(f"**Model**: {st.session_state.get('selected_model', 'gpt-4o-mini')}")
+    with rc[4]:
+        history_count = len(st.session_state.get("run_history", []))
+        st.markdown(f"**History**: {history_count} runs")
+    with rc[5]:
+        fs = st.session_state.get("font_size", 16)
+        st.markdown(f"**Font**: {fs}px")
+    with rc[6]:
+        if st.button("Reset", key="ribbon_reset", use_container_width=True):
+            for k in list(st.session_state.keys()):
+                if k not in ("font_size", "run_history", "demo_mode"):
+                    del st.session_state[k]
+            st.rerun()
 
-    # ── HITL GATE: Data Collection Approval ──
+    st.markdown("---")
+
     # Phase 1: Input (always visible)
     name, files, go = _phase_input()
 
     # Phase 2: Collect
     if go and name:
         st.session_state["scored"] = False
-        # Show agent config confirmation
-        mode = _WORKFLOW_MODES.get(st.session_state.get("workflow_mode", "deep_dive"), {})
+        st.session_state.pop("gate_collection_review", None)
+        st.session_state.pop("gate_weight_confirm", None)
         enabled = [k for k, v in {
             "News": st.session_state.get("agent_news", True),
             "Social": st.session_state.get("agent_social", True),
@@ -1929,93 +2140,120 @@ def render_hitl():
             "Press": st.session_state.get("agent_press", True),
             "XBRL": st.session_state.get("agent_xbrl", True),
         }.items() if v]
-        st.info(f"Running with agents: {', '.join(enabled)} | "
+        st.info(f"Agents: {', '.join(enabled)} | "
                 f"Model: {st.session_state.get('selected_model', 'gpt-4o-mini')} | "
-                f"Reviewer rounds: {st.session_state.get('reviewer_rounds', 3)}")
+                f"Rounds: {st.session_state.get('reviewer_rounds', 3)}")
         _phase_collect(name, files, {})
 
     # Refresh state after collection
     state = st.session_state.get("state", {})
 
-    # ── MAIN CONTENT (only if we have data) ──
+    # ── MAIN CONTENT ──
     if state.get("company_name"):
-        st.markdown("---")
-
-        # HITL gate after data collection
+        # HITL gate after collection
         gate_result = st.session_state.get("gate_collection_review")
         if not gate_result:
             gate_result = _hitl_gate(
                 "Data Collection Complete",
-                f"Review the collected data for {state.get('company_name', '')}. "
-                f"Proceed to scoring, or re-run with different agent configuration?",
+                f"Review collected data for {state.get('company_name', '')}. "
+                f"Proceed, re-run, or stop?",
                 "collection_review",
-                ["Approve & Continue", "Re-run with Changes", "Stop Assessment"]
-            )
+                ["Approve & Continue", "Re-run with Changes", "Stop Assessment"])
 
         if gate_result == "Stop Assessment":
-            st.warning("Assessment stopped by analyst. Reset from sidebar to start over.")
+            st.warning("Assessment stopped. Reset from ribbon or sidebar to start over.")
         elif gate_result == "Re-run with Changes":
-            st.info("Adjust agent toggles in the sidebar, then click Re-run Collection.")
+            st.info("Adjust agent toggles in sidebar, then click Re-run Collection.")
         else:
-            # ── TOP-LEVEL TABS ──
-            tab_dash, tab_assess, tab_pipeline, tab_loan, tab_governance, tab_report = st.tabs([
+            # ── TABS ──
+            tabs = st.tabs([
                 "Dashboard",
                 "Credit Assessment",
                 "Pipeline Trace",
                 "Loan Simulation",
                 "AI Governance",
-                "Report & Email",
+                "History & Compare",
+                "Export & Email",
+                "Testing",
+                "User Guide",
             ])
 
-            with tab_dash:
+            with tabs[0]:  # Dashboard
                 _dashboard_view(state)
 
-            with tab_assess:
+            with tabs[1]:  # Credit Assessment
                 _phase_review(state)
                 weights = _phase_weights(state)
-
-                # HITL gate before scoring
                 score_gate = _hitl_gate(
-                    "Confirm Weights Before Scoring",
-                    "You have set scoring weights above. Generate the risk score now?",
+                    "Confirm Weights",
+                    "Generate the risk score with these weights?",
                     "weight_confirm",
-                    ["Generate Score", "Adjust Weights"]
-                )
+                    ["Generate Score", "Adjust Weights"])
                 if score_gate == "Generate Score":
                     _phase_score(state, weights)
                     _phase_report(state)
+                    # Save to history automatically
+                    try:
+                        from frontend.ui_history import save_run
+                        if not st.session_state.get("_last_saved_run"):
+                            run_id = save_run(state)
+                            st.session_state["_last_saved_run"] = run_id
+                            st.toast(f"Assessment saved to history (ID: {run_id})")
+                    except Exception:
+                        pass
 
-            with tab_pipeline:
+            with tabs[2]:  # Pipeline Trace
                 _pipeline_view(state)
 
-            with tab_loan:
+            with tabs[3]:  # Loan Simulation
                 if st.session_state.get("workflow_mode") == "loan_simulation":
                     _loan_simulation(state)
                 else:
-                    st.info("Switch to **Loan Simulation** mode in the sidebar to enable this tab.")
-                    if st.button("Switch to Loan Simulation Mode", key="switch_loan"):
+                    st.info("Switch to **Loan Simulation** mode in sidebar.")
+                    if st.button("Switch to Loan Simulation", key="switch_loan"):
                         st.session_state["workflow_mode"] = "loan_simulation"
                         st.rerun()
 
-            with tab_governance:
+            with tabs[4]:  # AI Governance
                 _phase_governance(state)
 
-            with tab_report:
-                # HITL gate before report export
-                if st.session_state.get("scored"):
-                    _phase_email_report(state)
-                else:
-                    st.info("Complete the Credit Assessment tab first to unlock report export.")
+            with tabs[5]:  # History & Compare
+                try:
+                    from frontend.ui_history import render_history_panel, render_comparison_tool
+                    render_history_panel()
+                    st.markdown("---")
+                    render_comparison_tool()
+                except Exception as e:
+                    st.error(f"History module error: {e}")
+
+            with tabs[6]:  # Export & Email
+                try:
+                    from frontend.ui_export import render_export_panel, render_email_section
+                    render_export_panel(state)
+                    st.markdown("---")
+                    render_email_section(state)
+                except Exception as e:
+                    st.error(f"Export module error: {e}")
+                    _phase_email_report(state)  # fallback to inline version
+
+            with tabs[7]:  # Testing
+                _tab_testing(state)
+
+            with tabs[8]:  # User Guide
+                _tab_user_guide()
+
+    else:
+        # No data yet — show guide
+        st.markdown("---")
+        st.info("Enter a company name above and click **Collect & Analyse** to begin.")
+        _tab_user_guide()
 
     # ── FOOTER ──
     st.markdown("---")
     st.markdown(
-        f'<div style="text-align:center;padding:16px 0;color:{_UBS_GREY}">'
+        f'<div style="text-align:center;padding:12px 0;color:{_UBS_GREY};font-size:.85rem">'
         f'<span style="font-weight:700;color:{_UBS_RED}">G5-AAFS</span> '
-        f'Credit Risk Assessment | <span style="font-weight:600">UBS</span> x SMU IS4000<br/>'
-        f'<small>LangGraph + ACRA XBRL + Guardrails | '
-        f'Basel IRB · Altman Z-Score · S&P · Moody\'s KMV · MAS FEAT<br/>'
-        f'IMDA AI Verify · Project Moonshot · MAS FEAT · EU AI Act</small>'
+        f'Credit Risk Assessment | UBS x SMU IS4000'
         f'</div>', unsafe_allow_html=True)
 
 

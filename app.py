@@ -10,7 +10,9 @@ Usage:
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+# Load from AAFS.env (shared team keys) then fallback to .env
+load_dotenv("AAFS.env")
+load_dotenv()  # fallback
 
 from frontend import render
 

@@ -1,6 +1,6 @@
-# G5-AAFS: AI-Augmented Financial Screening for Credit Risk
+# G5-AAFS: AI-Augmented Credit Risk Assessment
 
-> A multi-agent AI workstation that augments traditional credit scoring with structured financial data (ACRA XBRL), news sentiment, social intelligence, and regulatory compliance — built for UBS credit analysts and compliance officers.
+Multi-agent pipeline for credit risk assessment. Enter a company, system collects data from 14+ agents, you review and score.
 
 ---
 
