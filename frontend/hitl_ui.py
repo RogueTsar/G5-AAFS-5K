@@ -26,8 +26,16 @@ from dotenv import load_dotenv
 # ---------------------------------------------------------------------------
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(_ROOT)
+# Load keys: AAFS.env (local dev) → .env (fallback) → Streamlit secrets (cloud deploy)
 load_dotenv(os.path.join(_ROOT, "AAFS.env"))
-load_dotenv()  # fallback to .env
+load_dotenv()
+try:
+    # For Streamlit Cloud deployment: copy secrets to env vars
+    for k in ("OPENAI_API_KEY", "NEWS_API_KEY", "TAVILY_API_KEY", "OPENAI_MODEL"):
+        if not os.getenv(k) and hasattr(st, "secrets") and k in st.secrets:
+            os.environ[k] = st.secrets[k]
+except Exception:
+    pass
 
 _PIPELINE_AVAILABLE = False
 _XBRL_AVAILABLE = False
