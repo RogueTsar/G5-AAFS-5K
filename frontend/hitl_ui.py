@@ -81,11 +81,10 @@ _COLORS = {
 def _metric(label: str, value: Any, delta: str = "", color: str = "blue"):
     c = _COLORS.get(color, _COLORS["blue"])
     st.markdown(
-        f'<div style="border-left:4px solid {c};padding:10px 14px;background:#f8f9fa;'
-        f'border-radius:4px;margin-bottom:6px">'
-        f'<span style="font-size:.82em;color:#555">{label}</span><br/>'
-        f'<span style="font-size:1.5em;font-weight:700">{value}</span>'
-        f'{f" <span style=font-size:.78em;color:{c}>{delta}</span>" if delta else ""}'
+        f'<div class="metric-card" style="border-left-color:{c}">'
+        f'<div class="mc-label">{label}</div>'
+        f'<div class="mc-value">{value}</div>'
+        f'{f"<div class=mc-delta style=color:{c}>{delta}</div>" if delta else ""}'
         f'</div>', unsafe_allow_html=True)
 
 
@@ -1287,54 +1286,129 @@ def _pipe_step_report(state: Dict):
 # UBS ENTERPRISE CSS  (font-size driven by --fs custom property)
 # ===========================================================================
 
+_UBS_LOGO_SVG = (
+    '<svg viewBox="0 0 80 28" style="height:1.6em;vertical-align:middle">'
+    '<rect width="80" height="28" rx="3" fill="#EC0000"/>'
+    '<text x="40" y="20" text-anchor="middle" fill="white" '
+    'font-family="Arial Black,sans-serif" font-size="18" font-weight="900">UBS</text>'
+    '</svg>'
+)
+
+
 def _build_css(fs: int = 16) -> str:
-    """Build CSS with user-chosen base font size.  All rem/em units derive from
-    the root --fs variable so nothing overlaps when the user scales text."""
     return f"""<style>
-    :root {{ --fs: {fs}px; }}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    :root {{ --fs: {fs}px; --ubs-red:#EC0000; --ubs-navy:#0E1726; --ubs-bg:#F4F5F7; }}
     html {{ font-size: var(--fs) !important; }}
-    /* UBS Enterprise Theme */
-    [data-testid="stAppViewContainer"] {{ background:#F5F5F7; font-size:1rem; }}
-    [data-testid="stHeader"] {{ background:#0E1726; }}
-    [data-testid="stSidebar"] {{ background:#0E1726; color:#FFF; overflow-y:auto; }}
-    [data-testid="stSidebar"] * {{ color:#E0E0E8 !important; font-size:.92rem; }}
-    [data-testid="stSidebar"] .stMarkdown h3 {{ color:#FFF !important; font-weight:600; font-size:1rem; }}
+    * {{ font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif !important; }}
+
+    /* ── App background ── */
+    [data-testid="stAppViewContainer"] {{ background:var(--ubs-bg); }}
+    [data-testid="stHeader"] {{ background:var(--ubs-navy); height:0; }}
+    .main {{ max-width:1440px; padding-top:0 !important; }}
+    .block-container {{ padding-top:.5rem !important; padding-bottom:1rem !important; }}
+
+    /* ── Sidebar ── */
+    [data-testid="stSidebar"] {{ background:var(--ubs-navy); }}
+    [data-testid="stSidebar"] * {{ color:#CDD0D6 !important; }}
+    [data-testid="stSidebar"] .stMarkdown h3 {{ color:#FFF !important; font-weight:700;
+        font-size:.88rem; letter-spacing:.03em; text-transform:uppercase; margin:0 0 4px 0; }}
     [data-testid="stSidebar"] .stAlert p {{ color:#1A1A2E !important; }}
-    .main {{ max-width:1400px; }}
-    h1 {{ color:#0E1726 !important; font-family:'Helvetica Neue',sans-serif; font-weight:700; font-size:1.8rem; }}
-    h2 {{ color:#0E1726 !important; border-bottom:2px solid #EC0000; padding-bottom:6px; font-size:1.35rem; }}
-    h3 {{ color:#1A1A2E !important; font-size:1.1rem; }}
-    p, li, span, td, th, label {{ font-size:1rem; }}
-    .stTabs [data-baseweb="tab-list"] button {{ font-size:.95rem; font-weight:600; }}
-    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
-        border-bottom-color:#EC0000 !important; color:#EC0000 !important;
+    [data-testid="stSidebar"] hr {{ border-color:#2A2A3E !important; margin:6px 0 !important; }}
+    .sidebar-section {{ padding:4px 0 6px 0; }}
+
+    /* ── Typography (tight spacing) ── */
+    h1 {{ color:var(--ubs-navy) !important; font-weight:800; font-size:1.6rem;
+          margin:0 0 2px 0 !important; line-height:1.2; }}
+    h2 {{ color:var(--ubs-navy) !important; font-weight:700; font-size:1.15rem;
+          border-bottom:2px solid var(--ubs-red); padding-bottom:4px;
+          margin:12px 0 6px 0 !important; }}
+    h3 {{ color:#1A1A2E !important; font-weight:600; font-size:1rem;
+          margin:8px 0 4px 0 !important; }}
+    p, li, td, th, label, .stMarkdown {{ font-size:.92rem; line-height:1.45; }}
+
+    /* ── Tabs ── */
+    .stTabs [data-baseweb="tab-list"] {{ gap:0; }}
+    .stTabs [data-baseweb="tab-list"] button {{
+        font-size:.82rem; font-weight:600; padding:8px 14px;
+        border-bottom:3px solid transparent;
     }}
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
+        border-bottom-color:var(--ubs-red) !important; color:var(--ubs-red) !important;
+    }}
+
+    /* ── Buttons ── */
     .stButton>button[kind="primary"] {{
-        background:#EC0000 !important; border:none; font-weight:600;
+        background:var(--ubs-red) !important; border:none; font-weight:600;
+        border-radius:6px; padding:6px 18px;
     }}
     .stButton>button[kind="primary"]:hover {{ background:#C70000 !important; }}
-    .stProgress > div > div {{ background:#EC0000 !important; }}
-    /* Sidebar helper classes */
-    .next-step-box {{
-        background:linear-gradient(135deg,#EC0000 0%,#C70000 100%);
-        color:white; padding:12px 16px; border-radius:8px;
-        margin:8px 0; font-weight:600; font-size:.92rem;
+    .stButton>button {{ border-radius:6px; font-weight:500; padding:5px 14px; }}
+    .stProgress > div > div {{ background:var(--ubs-red) !important; }}
+
+    /* ── TOP RIBBON (everpresent) ── */
+    .top-ribbon {{
+        background:var(--ubs-navy); color:white; padding:8px 20px;
+        display:flex; align-items:center; justify-content:space-between;
+        border-radius:8px; margin-bottom:10px; gap:12px; flex-wrap:wrap;
     }}
-    .sidebar-section {{ padding:8px 0; border-bottom:1px solid #2A2A3E; margin-bottom:8px; }}
-    /* HITL decision gate notification */
+    .top-ribbon .ribbon-item {{
+        display:inline-flex; align-items:center; gap:5px;
+        font-size:.78rem; color:#B0B4BC; white-space:nowrap;
+    }}
+    .top-ribbon .ribbon-item b {{ color:#FFF; }}
+    .top-ribbon .ribbon-logo {{ font-size:1.2em; font-weight:900; color:white; }}
+    .top-ribbon .ribbon-sep {{ width:1px; height:18px; background:#3A3A4E; margin:0 4px; }}
+
+    /* ── Metric card (tighter) ── */
+    .metric-card {{
+        border-left:3px solid #0A5EB6; padding:8px 12px; background:white;
+        border-radius:6px; margin-bottom:6px; box-shadow:0 1px 3px rgba(0,0,0,.05);
+    }}
+    .metric-card .mc-label {{ font-size:.72rem; color:#6B7280; font-weight:500;
+        text-transform:uppercase; letter-spacing:.04em; }}
+    .metric-card .mc-value {{ font-size:1.25rem; font-weight:700; color:#0E1726; }}
+    .metric-card .mc-delta {{ font-size:.72rem; }}
+
+    /* ── HITL gate ── */
     .hitl-gate {{
-        background:linear-gradient(135deg,#FF6B00 0%,#EC0000 100%);
-        color:white; padding:14px 18px; border-radius:10px;
-        margin:12px 0; font-weight:700; font-size:1rem;
-        border-left:5px solid #FFD700; animation:pulse 2s infinite;
+        background:linear-gradient(135deg,#FF6B00,#EC0000); color:white;
+        padding:12px 16px; border-radius:8px; margin:10px 0;
+        font-weight:700; border-left:5px solid #FFD700;
+        animation:pulse 2s infinite;
     }}
-    @keyframes pulse {{ 0%,100%{{opacity:1}} 50%{{opacity:.85}} }}
-    /* Dashboard card */
+    @keyframes pulse {{ 0%,100%{{opacity:1}} 50%{{opacity:.88}} }}
+
+    /* ── Next step box (sidebar) ── */
+    .next-step-box {{
+        background:linear-gradient(135deg,#EC0000,#C70000);
+        color:white; padding:10px 14px; border-radius:6px;
+        margin:6px 0; font-weight:600; font-size:.82rem;
+    }}
+
+    /* ── Dashboard card ── */
     .dash-card {{
-        background:white; border-radius:10px; padding:16px 20px;
-        box-shadow:0 2px 8px rgba(0,0,0,.08); margin-bottom:12px;
+        background:white; border-radius:8px; padding:14px 18px;
+        box-shadow:0 1px 6px rgba(0,0,0,.06); margin-bottom:10px;
     }}
-    .dash-card h4 {{ margin:0 0 8px 0; font-size:1rem; color:#0E1726; }}
+    .dash-card h4 {{ margin:0 0 6px 0; font-size:.92rem; color:#0E1726; font-weight:700; }}
+
+    /* ── Badge ── */
+    .badge-pass {{ display:inline-block; padding:3px 10px; background:#DEF7EC;
+        border:1px solid #A7F3D0; border-radius:12px; font-weight:600;
+        font-size:.75rem; color:#065F46; }}
+    .badge-fail {{ display:inline-block; padding:3px 10px; background:#FEE2E2;
+        border:1px solid #FECACA; border-radius:12px; font-weight:600;
+        font-size:.75rem; color:#991B1B; }}
+
+    /* ── Expander tighter ── */
+    .streamlit-expanderHeader {{ font-size:.88rem !important; font-weight:600 !important; }}
+    details {{ margin-bottom:4px !important; }}
+
+    /* ── Hide Streamlit branding ── */
+    #MainMenu {{ visibility:hidden; }}
+    footer {{ visibility:hidden; }}
+    [data-testid="stDecoration"] {{ display:none; }}
 </style>"""
 
 
@@ -2095,44 +2169,55 @@ def render_hitl():
     # ── INJECT CSS with user's font size ──
     st.markdown(_build_css(st.session_state.get("font_size", 16)), unsafe_allow_html=True)
 
-    # ── TOP RIBBON (everpresent) ──
-    rc = st.columns([3, 1, 1, 1, 1, 1, 1])
-    with rc[0]:
-        st.markdown(f'<span style="font-size:1.4em;font-weight:800;color:{_UBS_RED}">G5-AAFS</span>'
-                    f' <span style="color:{_UBS_GREY}">Credit Risk Workstation</span>',
-                    unsafe_allow_html=True)
-    with rc[1]:
-        demo = st.toggle("Demo Mode", value=st.session_state.get("demo_mode", False),
-                          key="demo_toggle",
-                          help="Demo uses mock data (no API cost). Live uses real APIs.")
+    # ── TOP RIBBON (HTML, everpresent) ──
+    mode_label = _WORKFLOW_MODES.get(st.session_state.get("workflow_mode", "deep_dive"), {}).get("label", "Deep Dive")
+    model_name = st.session_state.get("selected_model", "gpt-4o-mini")
+    stage = "Scored" if st.session_state.get("scored") else ("Reviewing" if state.get("company_name") else "Ready")
+    hist_n = len(st.session_state.get("run_history", []))
+    demo_label = "DEMO" if st.session_state.get("demo_mode") else "LIVE"
+    demo_color = "#D4760A" if st.session_state.get("demo_mode") else "#00875A"
+
+    st.markdown(
+        f'<div class="top-ribbon">'
+        f'  <div style="display:flex;align-items:center;gap:10px">'
+        f'    {_UBS_LOGO_SVG}'
+        f'    <span class="ribbon-logo">G5-AAFS</span>'
+        f'    <span class="ribbon-sep"></span>'
+        f'    <span class="ribbon-item">Credit Risk Workstation</span>'
+        f'  </div>'
+        f'  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+        f'    <span class="ribbon-item" style="background:{demo_color};color:white;'
+        f'          padding:2px 8px;border-radius:4px;font-weight:700">{demo_label}</span>'
+        f'    <span class="ribbon-sep"></span>'
+        f'    <span class="ribbon-item"><b>Mode</b> {mode_label}</span>'
+        f'    <span class="ribbon-sep"></span>'
+        f'    <span class="ribbon-item"><b>Model</b> {model_name}</span>'
+        f'    <span class="ribbon-sep"></span>'
+        f'    <span class="ribbon-item"><b>Stage</b> {stage}</span>'
+        f'    <span class="ribbon-sep"></span>'
+        f'    <span class="ribbon-item"><b>History</b> {hist_n}</span>'
+        f'  </div>'
+        f'</div>', unsafe_allow_html=True)
+
+    # Quick action row below ribbon
+    qc = st.columns([1, 1, 1, 6])
+    with qc[0]:
+        demo = st.toggle("Demo", value=st.session_state.get("demo_mode", False),
+                          key="demo_toggle")
         st.session_state["demo_mode"] = demo
-    with rc[2]:
-        # Current stage indicator
-        if state.get("company_name"):
-            if st.session_state.get("scored"):
-                st.markdown("**Stage**: Scored")
-            else:
-                st.markdown("**Stage**: Reviewing")
-        else:
-            st.markdown("**Stage**: Input")
-    with rc[3]:
-        st.markdown(f"**Model**: {st.session_state.get('selected_model', 'gpt-4o-mini')}")
-    with rc[4]:
-        history_count = len(st.session_state.get("run_history", []))
-        st.markdown(f"**History**: {history_count} runs")
-    with rc[5]:
-        fs = st.session_state.get("font_size", 16)
-        st.markdown(f"**Font**: {fs}px")
-    with rc[6]:
-        if st.button("Reset", key="ribbon_reset", use_container_width=True):
+    with qc[1]:
+        if st.button("Reset", key="ribbon_reset"):
             for k in list(st.session_state.keys()):
                 if k not in ("font_size", "run_history", "demo_mode"):
                     del st.session_state[k]
             st.rerun()
+    with qc[2]:
+        if st.button("Font +/-", key="font_btn"):
+            cur = st.session_state.get("font_size", 16)
+            st.session_state["font_size"] = 12 if cur >= 20 else cur + 2
+            st.rerun()
 
-    st.markdown("---")
-
-    # Phase 1: Input (always visible)
+    # Phase 1: Input (always visible, prominent)
     name, files, go = _phase_input()
 
     # Phase 2: Collect
@@ -2251,18 +2336,34 @@ def render_hitl():
                 _tab_user_guide()
 
     else:
-        # No data yet — show guide
+        # No data yet — show quick-start cards
         st.markdown("---")
-        st.info("Enter a company name above and click **Collect & Analyse** to begin.")
-        _tab_user_guide()
+        sc1, sc2, sc3 = st.columns(3)
+        with sc1:
+            st.markdown(
+                f'<div class="dash-card" style="border-top:3px solid {_UBS_RED};min-height:140px">'
+                f'<h4>1. Enter Company</h4>'
+                f'<p style="font-size:.85rem;color:#555">Type a company name above and click '
+                f'<b>Collect & Analyse</b>. Optionally upload ACRA XBRL filings.</p>'
+                f'</div>', unsafe_allow_html=True)
+        with sc2:
+            st.markdown(
+                f'<div class="dash-card" style="border-top:3px solid #0A5EB6;min-height:140px">'
+                f'<h4>2. Review & Score</h4>'
+                f'<p style="font-size:.85rem;color:#555">Review data by domain (financials, news, '
+                f'social). Set scoring weights. Generate risk score.</p>'
+                f'</div>', unsafe_allow_html=True)
+        with sc3:
+            st.markdown(
+                f'<div class="dash-card" style="border-top:3px solid #00875A;min-height:140px">'
+                f'<h4>3. Export & Comply</h4>'
+                f'<p style="font-size:.85rem;color:#555">Export report (JSON/MD/CSV). '
+                f'Run compliance checks. Email to stakeholders.</p>'
+                f'</div>', unsafe_allow_html=True)
 
-    # ── FOOTER ──
-    st.markdown("---")
-    st.markdown(
-        f'<div style="text-align:center;padding:12px 0;color:{_UBS_GREY};font-size:.85rem">'
-        f'<span style="font-weight:700;color:{_UBS_RED}">G5-AAFS</span> '
-        f'Credit Risk Assessment | UBS x SMU IS4000'
-        f'</div>', unsafe_allow_html=True)
+        # Show User Guide in expander, not full page
+        with st.expander("User Guide & Help", expanded=False):
+            _tab_user_guide()
 
 
 if __name__ == "__main__":
