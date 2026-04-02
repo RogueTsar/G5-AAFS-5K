@@ -2267,5 +2267,3 @@ def render_hitl():
 
 if __name__ == "__main__":
     render_hitl()
-else:
-    render_hitl()
