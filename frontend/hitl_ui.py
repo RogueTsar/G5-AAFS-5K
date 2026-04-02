@@ -1356,7 +1356,9 @@ def _build_css(fs: int = 16) -> str:
 
     /* ── Sidebar (collapsed by default feel) ── */
     [data-testid="stSidebar"] {{ background:#0D1017; border-right:1px solid var(--border); }}
-    [data-testid="stSidebar"] * {{ color:#9BA1B0 !important; }}
+    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] label, [data-testid="stSidebar"] li,
+    [data-testid="stSidebar"] .stMarkdown {{ color:#9BA1B0 !important; }}
     [data-testid="stSidebar"] .stMarkdown h3 {{ color:#FFF !important; font-weight:700;
         font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; margin:0; }}
     [data-testid="stSidebar"] .stAlert p {{ color:#1A1A2E !important; }}
@@ -1463,10 +1465,8 @@ def _build_css(fs: int = 16) -> str:
         font-size:.7rem; color:#F87171; }}
 
     /* ── Expander ── */
-    .streamlit-expanderHeader {{ font-size:.84rem !important; font-weight:600 !important;
-        color:var(--text) !important; }}
-    details {{ margin-bottom:3px !important; }}
-    details[open] summary {{ color:var(--red) !important; }}
+    [data-testid="stExpanderToggleIcon"] {{ color:var(--muted) !important; }}
+    [data-testid="stExpander"] {{ margin-bottom:3px !important; }}
 
     /* ── Tables/dataframes ── */
     .stDataFrame {{ border-radius:6px; overflow:hidden; }}
