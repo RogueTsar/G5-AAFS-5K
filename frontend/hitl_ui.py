@@ -1547,7 +1547,7 @@ def _phase_governance(state: Dict[str, Any]):
 
     for test_name, result in ms_tests.items():
         with st.expander(f"{test_name} — {result['status']}"):
-            if "tested" in result and isinstance(result["tested"], int):
+            if "blocked" in result and isinstance(result.get("tested"), int):
                 st.markdown(f"- **Payloads tested**: {result['tested']}")
                 st.markdown(f"- **Blocked**: {result['blocked']}")
                 st.markdown(f"- **Pass rate**: {result['blocked']/result['tested']*100:.0f}%")
