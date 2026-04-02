@@ -287,37 +287,33 @@ def _phase_collect(name: str, files, _weights):
         for f in files:
             docs.append({"filename": f.name, "content": f.read()})
 
-    is_demo = st.session_state.get("demo_mode", False)
     start_time = time.time()
 
-    if _PIPELINE_AVAILABLE and name and not is_demo:
+    if _PIPELINE_AVAILABLE and name:
         try:
             with st.status("Running multi-agent pipeline...", expanded=True) as status:
-                st.write("Compiling guarded workflow graph...")
+                st.write(f"Compiling workflow graph...")
                 app = create_guarded_workflow()
-                st.write(f"Invoking pipeline for **{name}**...")
-                st.write(f"Model: {os.getenv('OPENAI_MODEL', 'gpt-4o-mini')} | "
-                         f"Agents: {sum(1 for k in ['agent_news','agent_social','agent_review','agent_financial','agent_press','agent_xbrl'] if st.session_state.get(k, True))}")
+                n_agents = sum(1 for k in ['agent_news','agent_social','agent_review',
+                               'agent_financial','agent_press','agent_xbrl']
+                               if st.session_state.get(k, True))
+                st.write(f"Model: **{os.getenv('OPENAI_MODEL', 'gpt-4o-mini')}** | "
+                         f"Agents: **{n_agents}** | Invoking for **{name}**...")
                 state = app.invoke({"company_name": name, "uploaded_docs": docs})
                 elapsed = time.time() - start_time
                 st.session_state["state"] = state
                 st.session_state["last_elapsed"] = elapsed
-                est_cost = elapsed * 0.0001  # rough estimate
+                est_tokens = 3500 * n_agents
+                est_cost = est_tokens * 0.00000015 * 0.6 + est_tokens * 0.0000006 * 0.4
                 st.session_state["last_cost_est"] = est_cost
-                status.update(label=f"Complete! ({elapsed:.1f}s, ~${est_cost:.4f})", state="complete")
-                st.toast(f"Pipeline complete for {name} in {elapsed:.1f}s")
+                status.update(label=f"Done — {elapsed:.1f}s — ~${est_cost:.4f}", state="complete")
+                st.toast(f"Assessment complete: {name} in {elapsed:.1f}s")
                 return
         except Exception as e:
-            st.warning(f"Pipeline failed: {e}  — falling back to demo mode.")
+            st.error(f"Pipeline error: {e}")
 
-    with st.status("Loading demo data..." if is_demo else "Falling back to demo...", expanded=False) as status:
-        time.sleep(0.3)
-        st.session_state["state"] = _demo_state(name or "Acme Corp Pte Ltd")
-        elapsed = time.time() - start_time
-        st.session_state["last_elapsed"] = elapsed
-        st.session_state["last_cost_est"] = 0.0
-        status.update(label=f"Demo loaded ({elapsed:.1f}s, $0 cost)", state="complete")
-        st.toast(f"Demo data loaded for {name or 'Acme Corp'}")
+    if not _PIPELINE_AVAILABLE:
+        st.error("Pipeline not available — check dependencies (langgraph, langchain-openai, etc.)")
 
 
 # ===========================================================================
@@ -1978,14 +1974,7 @@ def _render_sidebar(state: Dict[str, Any]):
                               ("financial", "Financial"), ("press", "Press"), ("xbrl", "XBRL")]:
             st.checkbox(alabel, value=agent_cfg.get(akey, True), key=f"agent_{akey}")
 
-    # ── 4. Display Settings (expander) ──
-    with st.sidebar.expander("Display Settings", expanded=False):
-        st.slider("Font Size", 12, 22, 16, 1, key="font_size")
-        st.toggle("Demo Mode", value=st.session_state.get("demo_mode", False),
-                   key="sb_demo_toggle",
-                   help="Demo uses mock data ($0). Live uses real APIs.")
-        if st.session_state.get("sb_demo_toggle") != st.session_state.get("demo_mode"):
-            st.session_state["demo_mode"] = st.session_state.get("sb_demo_toggle", False)
+    # ── 4. Display Settings (font size in topbar A-/A+ buttons) ──
 
     # ── 5. Pipeline Status (expander) ──
     with st.sidebar.expander("Pipeline Status", expanded=False):
@@ -2218,7 +2207,7 @@ def render_hitl():
     defaults = {"state": {}, "scored": False, "composite_score": None,
                 "workflow_mode": "deep_dive", "font_size": 16,
                 "selected_model": "gpt-4o-mini", "reviewer_rounds": 3,
-                "demo_mode": False}
+                }
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
@@ -2236,8 +2225,8 @@ def render_hitl():
     model_name = st.session_state.get("selected_model", "gpt-4o-mini")
     stage = "Scored" if st.session_state.get("scored") else ("Reviewing" if state.get("company_name") else "Ready")
     hist_n = len(st.session_state.get("run_history", []))
-    demo_label = "DEMO" if st.session_state.get("demo_mode") else "LIVE"
-    demo_color = "#D4760A" if st.session_state.get("demo_mode") else "#00875A"
+    demo_label = "LIVE"
+    demo_color = "#00875A"
 
     st.markdown(
         f'<div class="top-ribbon">'
@@ -2266,25 +2255,28 @@ def render_hitl():
         f'</div>', unsafe_allow_html=True)
 
     # Interactive controls row
-    qc = st.columns([1, 1, 1, 1, 6])
+    qc = st.columns([1, 1, 1, 7])
     with qc[0]:
-        demo = st.toggle("Demo", value=st.session_state.get("demo_mode", False),
-                          key="demo_toggle")
-        st.session_state["demo_mode"] = demo
-    with qc[1]:
-        if st.button("Reset", key="ribbon_reset"):
+        if st.button("Reset", key="ribbon_reset", use_container_width=True):
             for k in list(st.session_state.keys()):
-                if k not in ("font_size", "run_history", "demo_mode"):
+                if k not in ("font_size", "run_history"):
                     del st.session_state[k]
             st.rerun()
+    with qc[1]:
+        fs = st.session_state.get("font_size", 16)
+        fc1, fc2 = st.columns(2)
+        with fc1:
+            if st.button("A-", key="fs_down"):
+                st.session_state["font_size"] = max(12, fs - 1)
+                st.rerun()
+        with fc2:
+            if st.button("A+", key="fs_up"):
+                st.session_state["font_size"] = min(22, fs + 1)
+                st.rerun()
     with qc[2]:
-        st.markdown(f'<span style="color:var(--muted);font-size:.72rem">Font {st.session_state.get("font_size",16)}px</span>',
-                    unsafe_allow_html=True)
-    with qc[3]:
         hist_n = len(st.session_state.get("run_history", []))
-        if hist_n > 0:
-            st.markdown(f'<span style="color:#34D399;font-size:.72rem">{hist_n} saved runs</span>',
-                        unsafe_allow_html=True)
+        st.markdown(f'<span style="color:#34D399;font-size:.72rem">{hist_n} runs saved</span>',
+                    unsafe_allow_html=True)
 
     # Phase 1: Input (always visible, prominent)
     name, files, go = _phase_input()
