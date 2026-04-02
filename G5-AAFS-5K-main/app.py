@@ -1,20 +1,16 @@
 """
 G5-AAFS: Credit Risk Assessment Application
-Main entry point for the Streamlit application
+Unified entry point — launches the HITL credit assessment workstation.
+Run: streamlit run app.py
 """
 
-from frontend import render
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env file
-load_dotenv()
-from dotenv import load_dotenv
-import os
-
-# Load environment variables from .env file
 load_dotenv()
 
+# Import the unified UI (sidebar-driven, dual-view)
+from frontend.hitl_ui import render_hitl
 
 if __name__ == "__main__":
-    render()
+    render_hitl()
