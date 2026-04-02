@@ -1,6 +1,6 @@
 import pytest
 
-from input_agent import input_agent
+from src.agents.updated_input_agent import input_agent
 
 
 def test_input_agent_valid_company():
