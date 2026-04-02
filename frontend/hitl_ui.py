@@ -35,10 +35,14 @@ try:
 except Exception:
     pass
 try:
-    from src.utils.xbrl_parser import parse_xbrl_instance, format_xbrl_summary, compute_credit_ratios, detect_risk_flags
+    from src.mcp_tools.xbrl_parser import parse_xbrl
     _XBRL_AVAILABLE = True
 except Exception:
-    pass
+    try:
+        from src.utils.xbrl_parser import parse_xbrl_instance as parse_xbrl
+        _XBRL_AVAILABLE = True
+    except Exception:
+        pass
 try:
     from src.guardrails.guardrail_runner import GuardrailRunner
     _GUARDRAIL_AVAILABLE = True
