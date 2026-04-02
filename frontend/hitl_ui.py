@@ -1363,13 +1363,7 @@ def _build_css(fs: int = 16) -> str:
         font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; margin:0; }}
     [data-testid="stSidebar"] .stAlert p {{ color:#1A1A2E !important; }}
     [data-testid="stSidebar"] hr {{ border-color:var(--border) !important; margin:4px 0 !important; }}
-    [data-testid="stSidebar"] [data-testid="stExpander"] {{
-        border:1px solid var(--border); border-radius:6px;
-        margin-bottom:4px; background:var(--card);
-    }}
-    [data-testid="stSidebar"] [data-testid="stExpander"] p {{
-        font-size:.8rem !important; font-weight:600 !important;
-    }}
+    /* sidebar compact */
 
     /* ── Typography ── */
     h1 {{ color:#FFF !important; font-weight:800; font-size:1.5rem; margin:0 !important; }}
@@ -1920,97 +1914,71 @@ def _dashboard_view(state: Dict[str, Any]):
 # ===========================================================================
 
 def _render_sidebar(state: Dict[str, Any]):
-    """Sidebar: all config in collapsible sections, closed by default."""
+    """Sidebar: flat compact sections, no expanders (avoids Streamlit icon bug)."""
+    sb = st.sidebar
 
-    # ── UBS Logo (always visible) ──
-    st.sidebar.markdown(
-        f'<div style="text-align:center;padding:10px 0 8px 0">'
+    # ── Logo ──
+    sb.markdown(
+        f'<div style="text-align:center;padding:8px 0 6px 0">'
         f'{_UBS_LOGO_SVG}'
-        f'<div style="font-size:.7rem;color:#666;margin-top:4px">Credit Risk Workstation</div>'
+        f'<div style="font-size:.65rem;color:#555;margin-top:3px">Credit Risk Workstation</div>'
         f'</div>', unsafe_allow_html=True)
 
-    # ── Next Step (always visible, above all sections) ──
+    # ── Next Step ──
     has_company = bool(state.get("company_name"))
     has_score = st.session_state.get("scored", False)
     if not has_company:
-        st.sidebar.markdown('<div class="next-step-box">Enter company &rarr; Collect &amp; Analyse</div>',
-                            unsafe_allow_html=True)
+        sb.markdown('<div class="next-step-box">Enter company, click Collect</div>', unsafe_allow_html=True)
     elif not has_score:
-        st.sidebar.markdown('<div class="next-step-box">Review data &rarr; Set weights &rarr; Score</div>',
-                            unsafe_allow_html=True)
+        sb.markdown('<div class="next-step-box">Review data, set weights, score</div>', unsafe_allow_html=True)
     else:
-        st.sidebar.markdown('<div class="next-step-box">Export report &rarr; Email stakeholders</div>',
-                            unsafe_allow_html=True)
-    steps_done = sum([bool(has_company),
-                      bool(state.get("news_data") or state.get("doc_extracted_text")),
-                      bool(has_score), bool(state.get("final_report"))])
-    st.sidebar.progress(steps_done / 4)
+        sb.markdown('<div class="next-step-box">Export report, email team</div>', unsafe_allow_html=True)
+    steps = sum([bool(has_company), bool(state.get("news_data") or state.get("doc_extracted_text")),
+                 bool(has_score), bool(state.get("final_report"))])
+    sb.progress(steps / 4)
+    sb.caption(f"{steps}/4")
 
-    st.sidebar.markdown("---")
+    # ── Workflow Mode ──
+    sb.markdown("---")
+    mode_keys = list(_WORKFLOW_MODES.keys())
+    mode_labels = [_WORKFLOW_MODES[k]["label"] for k in mode_keys]
+    current_idx = mode_keys.index(st.session_state.get("workflow_mode", "deep_dive"))
+    selected = sb.radio("Workflow", mode_labels, index=current_idx,
+                         key="mode_radio", label_visibility="visible")
+    sel_key = mode_keys[mode_labels.index(selected)]
+    st.session_state["workflow_mode"] = sel_key
+    mode = _WORKFLOW_MODES[sel_key]
+    sb.caption(f"{mode['cost_est']} est.")
 
-    # ── 1. Workflow Mode (expander, closed by default) ──
-    with st.sidebar.expander("Workflow Mode", expanded=False):
-        mode_keys = list(_WORKFLOW_MODES.keys())
-        mode_labels = [_WORKFLOW_MODES[k]["label"] for k in mode_keys]
-        current_idx = mode_keys.index(st.session_state.get("workflow_mode", "deep_dive"))
-        selected = st.radio("Mode", mode_labels, index=current_idx,
-                             key="mode_radio", label_visibility="collapsed")
-        sel_key = mode_keys[mode_labels.index(selected)]
-        st.session_state["workflow_mode"] = sel_key
-        st.caption(_WORKFLOW_MODES[sel_key]["desc"])
-        st.caption(f"Est. cost: {_WORKFLOW_MODES[sel_key]['cost_est']}")
+    # ── Model ──
+    sb.markdown("---")
+    default_model_idx = _AVAILABLE_MODELS.index(mode.get("default_model", "gpt-4o-mini")) \
+        if mode.get("default_model") in _AVAILABLE_MODELS else 0
+    sb.selectbox("Model", _AVAILABLE_MODELS, index=default_model_idx, key="selected_model")
+    sb.slider("Rounds", 1, 5, mode.get("reviewer_rounds", 3), key="reviewer_rounds")
 
-    # ── 2. Model & Review (expander) ──
-    mode = _WORKFLOW_MODES.get(st.session_state.get("workflow_mode", "deep_dive"), {})
-    with st.sidebar.expander("Model & Review", expanded=False):
-        default_model_idx = _AVAILABLE_MODELS.index(mode.get("default_model", "gpt-4o-mini")) \
-            if mode.get("default_model") in _AVAILABLE_MODELS else 0
-        st.selectbox("LLM Model", _AVAILABLE_MODELS,
-                      index=default_model_idx, key="selected_model")
-        st.slider("Reviewer Rounds", 1, 5, mode.get("reviewer_rounds", 3),
-                   key="reviewer_rounds")
+    # ── Agents ──
+    sb.markdown("---")
+    sb.caption("AGENTS")
+    agent_cfg = mode.get("agents_enabled", {})
+    ac1, ac2 = sb.columns(2)
+    with ac1:
+        st.checkbox("News", value=agent_cfg.get("news", True), key="agent_news")
+        st.checkbox("Social", value=agent_cfg.get("social", True), key="agent_social")
+        st.checkbox("Reviews", value=agent_cfg.get("review", True), key="agent_review")
+    with ac2:
+        st.checkbox("Finance", value=agent_cfg.get("financial", True), key="agent_financial")
+        st.checkbox("Press", value=agent_cfg.get("press", True), key="agent_press")
+        st.checkbox("XBRL", value=agent_cfg.get("xbrl", True), key="agent_xbrl")
 
-    # ── 3. Agent Toggles (expander) ──
-    with st.sidebar.expander("Agent Deployment", expanded=False):
-        agent_cfg = mode.get("agents_enabled", {})
-        for akey, alabel in [("news", "News"), ("social", "Social"), ("review", "Reviews"),
-                              ("financial", "Financial"), ("press", "Press"), ("xbrl", "XBRL")]:
-            st.checkbox(alabel, value=agent_cfg.get(akey, True), key=f"agent_{akey}")
-
-    # ── 4. Display Settings (font size in topbar A-/A+ buttons) ──
-
-    # ── 5. Pipeline Status (expander) ──
-    with st.sidebar.expander("Pipeline Status", expanded=False):
-        if _PIPELINE_AVAILABLE:
-            st.success("Agents: LIVE")
-        else:
-            st.warning("Agents: DEMO ONLY")
-        if _XBRL_AVAILABLE:
-            st.success("XBRL Parser: Ready")
-        if _GUARDRAIL_AVAILABLE:
-            st.success("Guardrails: Active")
-
-    # ── 6. User Guide (expander) ──
-    with st.sidebar.expander("User Guide", expanded=False):
-        st.markdown("""
-**Workflow Modes**: Exploratory (quick), Deep Dive (full), Loan Sim (what-if)
-
-**Tabs**: Dashboard, Assessment, Pipeline, Loan Sim, Governance, History, Export, Testing, Guide
-
-**HITL Gates**: Approve/Reject/Redo at 3 critical points
-
-**Scoring**: Basel IRB, Altman Z, S&P, Moody's KMV, MAS FEAT
-""")
-
-    st.sidebar.markdown("---")
-
-    # ── Quick Actions (always visible at bottom) ──
-    if st.sidebar.button("Reset Assessment", use_container_width=True, key="sb_reset"):
+    # ── Actions ──
+    sb.markdown("---")
+    if sb.button("Reset", use_container_width=True, key="sb_reset"):
         for k in list(st.session_state.keys()):
             if k.startswith(("state", "scored", "composite", "gate_", "loan_")):
                 del st.session_state[k]
         st.rerun()
-    if has_company and st.sidebar.button("Re-run Collection", use_container_width=True, key="sb_rerun"):
+    if has_company and sb.button("Re-run", use_container_width=True, key="sb_rerun"):
         st.session_state["scored"] = False
         _phase_collect(state.get("company_name", ""), None, {})
         st.rerun()
@@ -2445,8 +2413,7 @@ def render_hitl():
                 f'</div>', unsafe_allow_html=True)
 
         # Show User Guide in expander, not full page
-        with st.expander("User Guide & Help", expanded=False):
-            _tab_user_guide()
+        st.caption("Select a workflow mode in the sidebar, then enter a company name above.")
 
 
 if __name__ == "__main__":
