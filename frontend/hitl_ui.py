@@ -2200,7 +2200,7 @@ def render_hitl():
         f'</div>', unsafe_allow_html=True)
 
     # Quick action row below ribbon
-    qc = st.columns([1, 1, 1, 6])
+    qc = st.columns([1, 1, 8])
     with qc[0]:
         demo = st.toggle("Demo", value=st.session_state.get("demo_mode", False),
                           key="demo_toggle")
@@ -2210,11 +2210,6 @@ def render_hitl():
             for k in list(st.session_state.keys()):
                 if k not in ("font_size", "run_history", "demo_mode"):
                     del st.session_state[k]
-            st.rerun()
-    with qc[2]:
-        if st.button("Font +/-", key="font_btn"):
-            cur = st.session_state.get("font_size", 16)
-            st.session_state["font_size"] = 12 if cur >= 20 else cur + 2
             st.rerun()
 
     # Phase 1: Input (always visible, prominent)
