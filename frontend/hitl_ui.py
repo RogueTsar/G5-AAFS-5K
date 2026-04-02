@@ -946,6 +946,7 @@ def _phase_score(state: Dict[str, Any], weights: Dict[str, float]):
         st.dataframe(bd_df, use_container_width=True, hide_index=True)
 
         # Chart
+        breakdown = dict(zip(domains, scores))
         st.bar_chart(pd.DataFrame({"Sub-Score": breakdown}).T)
 
         st.session_state["composite_score"] = composite
