@@ -40,9 +40,40 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
                     text += f"--- Sheet: {sheet_name} ---\n"
                     text += df.to_csv(index=False) + "\n"
             
-            elif file_ext in ["txt", "xbrl", "xml"]:
-                doc_type = file_ext.upper()
+            elif file_ext in ["txt"]:
+                doc_type = "TXT"
                 text = content.decode("utf-8", errors="ignore")
+
+            elif file_ext in ["xbrl", "xml"]:
+                doc_type = "XBRL"
+                raw_text = content.decode("utf-8", errors="ignore")
+                try:
+                    from src.utils.xbrl_parser import parse_xbrl_instance, format_xbrl_summary
+                    parsed = parse_xbrl_instance(raw_text)
+                    if parsed.get("metadata", {}).get("total_facts", 0) > 0:
+                        text = format_xbrl_summary(parsed)
+                        extracted_results.append({
+                            "filename": filename,
+                            "text": text,
+                            "type": "XBRL_STRUCTURED",
+                            "xbrl_parsed": parsed,
+                        })
+                        log_agent_action("document_processing_agent", f"XBRL structured extraction: {parsed['metadata']['total_facts']} facts from {filename}")
+                        continue
+                    else:
+                        text = raw_text
+                except Exception:
+                    text = raw_text
+
+            elif file_ext == "xsd":
+                doc_type = "XSD_SCHEMA"
+                raw_text = content.decode("utf-8", errors="ignore")
+                try:
+                    from src.utils.xbrl_parser import parse_xbrl_taxonomy_xsd
+                    schema = parse_xbrl_taxonomy_xsd(raw_text)
+                    text = f"XBRL Taxonomy Schema: {len(schema)} elements defined"
+                except Exception:
+                    text = raw_text
             
             else:
                 doc_type = "Unknown"

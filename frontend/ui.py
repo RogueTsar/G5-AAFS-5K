@@ -111,7 +111,7 @@ def render_company_input() -> tuple[str, bool]:
             
             uploaded_files = st.file_uploader(
                 "Enhance Analysis with Documents (Optional)",
-                type=["pdf", "xlsx", "xls", "txt", "xbrl", "xml"],
+                type=["pdf", "xlsx", "xls", "txt", "xbrl", "xml", "xsd", "html"],
                 accept_multiple_files=True,
                 help="Upload financial reports, news transcripts, or spreadsheets to improve risk assessment accuracy."
             )
