@@ -327,8 +327,10 @@ def entity_resolution_agent(state: AgentState) -> dict:
     to_verify_data = []
     
     for item in cleaned_data:
-        # yfinance is a trusted source retrieved by ticker
-        if item.get("source") == "yfinance":
+        snippet = str(item.get("snippet", ""))
+        source = str(item.get("source", ""))
+        # Trust direct API lookups by ticker and explicitly user-uploaded document extractions (XBRL & PDFs)
+        if source == "yfinance" or "XBRL" in snippet or item.get("source_type") == "document" or "source_file" in item:
             trusted_data.append(item)
         else:
             to_verify_data.append(item)

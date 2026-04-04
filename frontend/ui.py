@@ -15,7 +15,7 @@ def setup_page_config():
     """Configure Streamlit page settings."""
     st.set_page_config(
         page_title="G5-AAFS Risk Analyzer",
-        page_icon="🔍",
+        page_icon="G5",
         layout="wide",
         initial_sidebar_state="expanded"
     )
@@ -28,6 +28,14 @@ def setup_custom_css():
     if theme == "Purple Galaxy":
         st.markdown("""
             <style>
+                /* Global Font Configuration */
+                html, body, p, label, li, td, th, [data-testid="stMarkdownContainer"], [data-testid="stMetricValue"] {
+                    font-family: Arial, sans-serif !important;
+                }
+                h1, h2, h3, h4, h5, h6, h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
+                    font-family: "Times New Roman", Times, serif !important;
+                }
+                
                 .stApp {
                     background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
                     background-attachment: fixed;
@@ -76,12 +84,213 @@ def setup_custom_css():
                     box-shadow: 0 0 15px rgba(157, 80, 187, 0.6);
                     transform: translateY(-2px);
                 }
+                /* Print styles */
+                @media print {
+                    * {
+                        background: transparent !important;
+                        color: black !important;
+                        text-shadow: none !important;
+                        box-shadow: none !important;
+                    }
+                    body, .stApp, .main, .block-container, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
+                        background: white !important;
+                        background-color: white !important;
+                    }
+                    /* Hide everything non-report */
+                    [data-testid="stSidebar"], 
+                    [data-testid="stHeader"],
+                    .stTabs [data-baseweb="tab-list"],
+                    [data-testid="stHorizontalBlock"],
+                    .stButton,
+                    .stAlert,
+                    [data-testid="stMetric"],
+                    [data-testid="stExpander"],
+                    footer,
+                    .stApp > header,
+                    h2, h3, hr {
+                        display: none !important;
+                    }
+                    /* Ensure only the report content is visible */
+                    .printable-report {
+                        display: block !important;
+                        visibility: visible !important;
+                        width: 100% !important;
+                    }
+                    .printable-report h2, .printable-report h3, .printable-report hr {
+                        display: block !important;
+                    }
+                    .main {
+                        max-width: 100% !important;
+                        padding: 0 !important;
+                    }
+                }
+            </style>
+        """, unsafe_allow_html=True)
+    elif theme == "UBS Corporate":
+        st.markdown("""
+            <style>
+                /* Global Font Configuration */
+                html, body, p, label, li, td, th, [data-testid="stMarkdownContainer"], [data-testid="stMetricValue"] {
+                    font-family: Arial, sans-serif !important;
+                    color: #000000 !important;
+                }
+                h1, h2, h3, h4, h5, h6, h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
+                    font-family: "Times New Roman", Times, serif !important;
+                    color: #1a1a1a !important;
+                }
+                
+                .stApp {
+                    background: linear-gradient(to bottom right, #ffffff, #f2f2f2) !important;
+                    background-attachment: fixed !important;
+                }
+                .main {
+                    max-width: 1200px;
+                }
+                /* Sidebar fix */
+                [data-testid="stSidebar"] {
+                    background-color: #1a1a1a !important;
+                }
+                [data-testid="stSidebar"] [data-testid="stMarkdownContainer"], [data-testid="stSidebar"] label, [data-testid="stSidebar"] p {
+                    color: #ffffff !important;
+                }
+                /* Selectbox styling */
+                [data-testid="stSidebar"] [data-baseweb="select"] > div {
+                    background-color: #2a2a2a !important;
+                    border-color: #444 !important;
+                }
+                [data-testid="stSidebar"] [data-baseweb="select"] span {
+                    color: #ffffff !important;
+                }
+                div[data-baseweb="popover"] ul {
+                    background-color: #2a2a2a !important;
+                }
+                div[data-baseweb="popover"] ul li {
+                    color: #ffffff !important;
+                }
+                div[data-baseweb="popover"] ul li:hover {
+                    background-color: #e60000 !important;
+                }
+                /* Top Header Accent */
+                [data-testid="stHeader"] {
+                    background-color: #1a1a1a !important;
+                    border-bottom: 4px solid #e60000 !important;
+                }
+                [data-testid="stHeader"] * {
+                    color: #ffffff !important;
+                }
+                /* Clean Corporate containers */
+                .flow-diagram, .step-container, [data-testid="stExpander"], .stMetric {
+                    background-color: #fcfcfc !important;
+                    border: 1px solid #e8e8e8 !important;
+                    border-left: 4px solid #e60000 !important;
+                    border-radius: 0px !important;
+                    padding: 20px !important;
+                    color: #000000 !important;
+                }
+                [data-testid="stSidebar"] [data-testid="stExpander"] {
+                    background-color: #2a2a2a !important;
+                    border: 1px solid #444 !important;
+                    border-left: 4px solid #e60000 !important;
+                }
+                [data-testid="stSidebar"] [data-testid="stExpander"] * {
+                    color: #ffffff !important;
+                }
+                /* Metric values */
+                [data-testid="stMetricValue"] {
+                    color: #e60000 !important;
+                }
+                /* Tabs */
+                .stTabs [data-baseweb="tab-list"] button {
+                    font-size: 16px;
+                    color: #555555 !important;
+                }
+                .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+                    color: #e60000 !important;
+                    font-weight: bold;
+                }
+                .stTabs [data-baseweb="tab-highlight"] {
+                    background-color: #e60000 !important;
+                }
+                /* Buttons */
+                button[kind="primary"], button[kind="secondary"] {
+                    background-color: #e60000 !important;
+                    border: none !important;
+                    color: white !important;
+                    border-radius: 0px !important;
+                    text-transform: uppercase;
+                    font-weight: bold;
+                    letter-spacing: 0.5px;
+                    transition: all 0.2s ease;
+                }
+                button[kind="primary"] *, button[kind="secondary"] * {
+                    color: white !important;
+                }
+                button[kind="primary"]:hover, button[kind="secondary"]:hover {
+                    background-color: #b30000 !important;
+                    box-shadow: none !important;
+                }
+                /* Uploaded File Texts */
+                [data-testid="stUploadedFile"] * {
+                    color: #1a1a1a !important;
+                }
+                /* Tooltips */
+                [data-baseweb="tooltip"] * {
+                    color: #ffffff !important;
+                }
+                /* Print styles */
+                @media print {
+                    * {
+                        background: transparent !important;
+                        color: black !important;
+                        text-shadow: none !important;
+                        box-shadow: none !important;
+                    }
+                    body, .stApp, .main, .block-container, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
+                        background: white !important;
+                        background-color: white !important;
+                    }
+                    /* Hide everything non-report */
+                    [data-testid="stSidebar"], 
+                    [data-testid="stHeader"],
+                    .stTabs [data-baseweb="tab-list"],
+                    [data-testid="stHorizontalBlock"],
+                    .stButton,
+                    .stAlert,
+                    [data-testid="stMetric"],
+                    [data-testid="stExpander"],
+                    footer,
+                    .stApp > header,
+                    h2, h3, hr {
+                        display: none !important;
+                    }
+                    /* Ensure only the report content is visible */
+                    .printable-report {
+                        display: block !important;
+                        visibility: visible !important;
+                        width: 100% !important;
+                    }
+                    .printable-report h2, .printable-report h3, .printable-report hr {
+                        display: block !important;
+                    }
+                    .main {
+                        max-width: 100% !important;
+                        padding: 0 !important;
+                    }
+                }
             </style>
         """, unsafe_allow_html=True)
     else:
         # Standard Light/Corporate theme
         st.markdown("""
             <style>
+                /* Global Font Configuration */
+                html, body, p, label, li, td, th, [data-testid="stMarkdownContainer"], [data-testid="stMetricValue"] {
+                    font-family: Arial, sans-serif !important;
+                }
+                h1, h2, h3, h4, h5, h6, h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
+                    font-family: "Times New Roman", Times, serif !important;
+                }
+                
                 .main {
                     max-width: 1200px;
                 }
@@ -106,6 +315,44 @@ def setup_custom_css():
                     padding: 15px;
                     border-radius: 5px;
                     border: 1px solid #c3e6cb;
+                }
+                /* Print styles */
+                @media print {
+                    * {
+                        background: transparent !important;
+                        color: black !important;
+                        text-shadow: none !important;
+                        box-shadow: none !important;
+                    }
+                    body, .stApp, .main, .block-container, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {
+                        background: white !important;
+                        background-color: white !important;
+                    }
+                    [data-testid="stSidebar"], 
+                    [data-testid="stHeader"],
+                    .stTabs [data-baseweb="tab-list"],
+                    [data-testid="stHorizontalBlock"],
+                    .stButton,
+                    .stAlert,
+                    [data-testid="stMetric"],
+                    [data-testid="stExpander"],
+                    footer,
+                    .stApp > header,
+                    h2, h3, hr {
+                        display: none !important;
+                    }
+                    .printable-report {
+                        display: block !important;
+                        visibility: visible !important;
+                        width: 100% !important;
+                    }
+                    .printable-report h2, .printable-report h3, .printable-report hr {
+                        display: block !important;
+                    }
+                    .main {
+                        max-width: 100% !important;
+                        padding: 0 !important;
+                    }
                 }
             </style>
         """, unsafe_allow_html=True)
@@ -142,12 +389,13 @@ def render_sidebar():
             st.text_input("Financial API Key", type="password", placeholder="Enter your Financial API key")
             
         st.markdown("---")
-        st.subheader("🎨 Appearance")
-        st.session_state.theme = st.selectbox(
+        st.subheader("Appearance")
+        options = ["Light", "Purple Galaxy", "UBS Corporate"]
+        st.selectbox(
             "Select UI Theme",
-            options=["Light", "Purple Galaxy"],
-            index=0 if st.session_state.get("theme") == "Light" else 1,
-            help="Switch between standard and premium galaxy themes."
+            options=["Light", "Purple Galaxy", "UBS Corporate"],
+            key="theme",
+            help="Switch between standard, premium gallery, and corporate themes."
         )
 
 
@@ -161,35 +409,30 @@ def render_company_input() -> tuple[str, bool]:
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        st.markdown("## 📋 Company Analysis")
+        st.markdown("## Company Analysis")
         
         with st.container():
             st.markdown('<div class="flow-diagram">', unsafe_allow_html=True)
             st.subheader("Step 1: Enter Company Information")
             
-            col_input1, col_input2 = st.columns([3, 1])
-            
-            with col_input1:
-                company_input = st.text_input(
-                    "Company Name",
-                    value=st.session_state.company_name,
-                    placeholder="e.g., Apple Inc., Tesla, Microsoft...",
-                    help="Enter the company name to analyze"
-                )
-            
-            with col_input2:
-                st.write("")  # Spacing to align with input field
-                submit_button = st.button(
-                    "🚀 Start Analysis",
-                    use_container_width=True,
-                    type="primary"
-                )
+            company_input = st.text_input(
+                "Company Name",
+                value=st.session_state.company_name,
+                placeholder="e.g., Apple Inc., Tesla, Microsoft...",
+                help="Enter the company name to analyze"
+            )
             
             uploaded_files = st.file_uploader(
                 "Enhance Analysis with Documents (Optional)",
                 type=["pdf", "xlsx", "xls", "txt", "xbrl", "xml"],
                 accept_multiple_files=True,
                 help="Upload financial reports, news transcripts, or spreadsheets to improve risk assessment accuracy."
+            )
+            
+            submit_button = st.button(
+                "Start Analysis",
+                use_container_width=True,
+                type="primary"
             )
             
             st.markdown('</div>', unsafe_allow_html=True)
@@ -204,7 +447,7 @@ def render_company_input() -> tuple[str, bool]:
                 st.session_state.edited_strengths = []
                 st.session_state.final_report = ""
                 
-                st.success(f"✅ Analysis started for: **{st.session_state.company_name}**")
+                st.success(f"Analysis started for: **{st.session_state.company_name}**")
                 
                 # Prepare uploaded docs for the graph
                 docs_for_graph = []
@@ -212,7 +455,7 @@ def render_company_input() -> tuple[str, bool]:
                     for uploaded_file in uploaded_files:
                         docs_for_graph.append({
                             "filename": uploaded_file.name,
-                            "content": uploaded_file.read()
+                            "content": uploaded_file.getvalue()
                         })
                 
                 # Execute LangGraph Pipeline with streaming progress
@@ -278,7 +521,7 @@ def render_company_input() -> tuple[str, bool]:
                     st.session_state.edited_strengths = strengths
                     
                     st.session_state.ready_for_review = True
-                    st.success("✅ AI Analysis Phase Complete. Please review the findings below.")
+                    st.success("Analysis Phase Complete. Please review the findings below.")
                 except Exception as e:
                     st.error(f"Error during analysis: {str(e)}")
                     st.session_state.ready_for_review = False
@@ -286,65 +529,53 @@ def render_company_input() -> tuple[str, bool]:
     return company_input.strip() if company_input else "", submit_button
 
 
-def render_pipeline_overview():
-    """Render pipeline overview tab."""
-    st.markdown("### Complete Analysis Flow")
-    
-    stages = [
-        ("1. Input Processing", "Parsing company information"),
-        ("2. Source Discovery", "Identifying relevant data sources"),
-        ("3. Data Collection (Parallel)", "Gathering data from multiple sources"),
-        ("4. Data Aggregation", "Combining raw data"),
-        ("5. Embeddings & Vector Storage", "Processing data for RAG"),
-        ("6. Risk Extraction", "Identifying risk factors"),
-        ("7. Risk Scoring", "Calculating risk metrics"),
-        ("8. Review & Validation", "Human review of results"),
-        ("9. Report Generation", "Creating final analysis")
-    ]
-    
-    for stage, description in stages:
-        st.markdown(
-            f'<div class="step-container"><b>{stage}</b><br><small>{description}</small></div>',
-            unsafe_allow_html=True
-        )
 
 
 def render_data_collection():
-    """Render data collection agents tab."""
-    st.markdown("### Data Collection Agents")
+    """Render the detailed analysis data points tab."""
+    st.markdown("### Raw API Data")
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### Data Sources")
-        st.info("📰 **News Agent**\nCollects company news and press releases")
-        st.info("📱 **Social Media Agent**\nMonitors social media mentions and sentiment")
-    
-    with col2:
-        st.markdown("#### ⠀")  # Spacing
-        st.info("⭐ **Review Agent**\nGathers customer/employee reviews")
-        st.info("📑 **Financial Agent**\nAnalyzes SEC filings and financial reports")
+    if st.session_state.get("analysis_complete", False) or st.session_state.get("ready_for_review", False):
+        final_state = st.session_state.get("final_state", {})
+        
+        with st.expander("View Financial Data (Yahoo Finance)", expanded=False):
+            st.json(final_state.get("financial_data", []))
+            
+        with st.expander("View News Data (General Web Search)", expanded=False):
+            st.json(final_state.get("news_data", []))
+
+        with st.expander("View Targeted Financial News (NewsAPI/Tavily)", expanded=False):
+            st.json(final_state.get("financial_news_data", []))
+
+        with st.expander("View Social Sentiment Data (Tavily)", expanded=False):
+            st.json(final_state.get("social_data", []))
+
+        with st.expander("View Review Data (Tavily)", expanded=False):
+            st.json(final_state.get("review_data", []))
+
+        # Visual XBRL Financial Statements Display
+        xbrl_data = final_state.get("xbrl_parsed_data", [])
+        if xbrl_data:
+            st.markdown("### XBRL Financial Statements")
+            from frontend.xbrl_display import render_xbrl_financials
+            render_xbrl_financials(xbrl_data)
+
+        with st.expander("View Uploaded Document Data (Processed)", expanded=False):
+            st.json(final_state.get("doc_extracted_text", []))
+
+        with st.expander("View Uploaded Document Data (Structured)", expanded=False):
+            st.json(final_state.get("doc_structured_data", []))
+            
+        st.markdown(f"**Company:** {st.session_state.company_name}")
+    else:
+        st.info("Raw data will be available once the analysis phase completes.")
 
 
-def render_analysis_scoring():
-    """Render analysis and scoring tab."""
-    st.markdown("### Analysis & Scoring")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric("Risk Extraction", "Ready", delta="In Progress")
-    
-    with col2:
-        st.metric("Risk Scoring", "Pending", delta="-")
-    
-    st.markdown("---")
-    st.info("🤖 **RAG Retrieval** - Context-aware information retrieval using embeddings")
 
 
 def render_data_points():
     """Render the detailed analysis data points tab."""
-    st.markdown("### 🧠 Analysis Data Points")
+    st.markdown("### Analysis Data Points")
     st.write("These are the specific data points extracted, cleaned, and analyzed to generate the risk score.")
     
     if st.session_state.get("analysis_complete", False) or st.session_state.get("ready_for_review", False):
@@ -388,8 +619,22 @@ def render_results():
     st.markdown("### Results & Report")
     
     if st.session_state.get("analysis_complete", False):
-        st.success("Analysis Complete!")
-        
+        # Print Button
+        col_p1, col_p2 = st.columns([4, 1])
+        with col_p1:
+            st.success("Analysis Complete!")
+        with col_p2:
+            if st.button("Save as PDF", use_container_width=True, help="Open browser print dialog to save as PDF"):
+                import time
+                # Trigger window.parent.print() via a tiny HTML component
+                # Adding a timestamp ensures Streamlit treats this as a new component on every click
+                st.components.v1.html(f"""
+                    <script>
+                        window.parent.print();
+                        // {time.time()}
+                    </script>
+                """, height=0, width=0)
+
         final_state = st.session_state.get("final_state", {})
         risk_info = final_state.get("risk_score", {"score": 0, "rating": "Unknown"})
         
@@ -404,10 +649,9 @@ def render_results():
         with m_col3:
             st.metric("Data Points", len(final_state.get("cleaned_data", [])))
             
-        # Display Weighted Breakdown
         breakdown = risk_info.get("breakdown", {})
         if breakdown:
-            with st.expander("📊 View Weighted Score Breakdown", expanded=False):
+            with st.expander("View Weighted Score Breakdown", expanded=False):
                 st.markdown("This score is calculated using a **60/20/12/8** weighted distribution (re-normalized if data is missing).")
                 cols = st.columns(len(breakdown))
                 for i, (cat, cat_score) in enumerate(breakdown.items()):
@@ -420,43 +664,15 @@ def render_results():
         st.markdown("---")
         
         # Render the actual report
-        st.markdown(st.session_state.get("final_report", ""))
+        st.markdown(f'<div class="printable-report">\n\n{st.session_state.get("final_report", "")}\n\n</div>', unsafe_allow_html=True)
         
-        st.markdown("### 🔍 Raw API Data")
-        with st.expander("View Financial Data (Yahoo Finance)", expanded=False):
-            st.json(st.session_state.final_state.get("financial_data", []))
-            
-        with st.expander("View News Data (General Web Search)", expanded=False):
-            st.json(st.session_state.final_state.get("news_data", []))
-
-        with st.expander("View Targeted Financial News (NewsAPI/Tavily)", expanded=False):
-            st.json(st.session_state.final_state.get("financial_news_data", []))
-
-        with st.expander("View Social Sentiment Data (Tavily)", expanded=False):
-            st.json(st.session_state.final_state.get("social_data", []))
-
-        with st.expander("View Review Data (Tavily)", expanded=False):
-            st.json(st.session_state.final_state.get("review_data", []))
-
-        # Visual XBRL Financial Statements Display
-        xbrl_data = st.session_state.final_state.get("xbrl_parsed_data", [])
-        if xbrl_data:
-            st.markdown("### XBRL Financial Statements")
-            from frontend.xbrl_display import render_xbrl_financials
-            render_xbrl_financials(xbrl_data)
-
-        with st.expander("View Uploaded Document Data (Processed)", expanded=False):
-            st.json(st.session_state.final_state.get("doc_extracted_text", []))
-
-        with st.expander("View Uploaded Document Data (Structured)", expanded=False):
-            st.json(st.session_state.final_state.get("doc_structured_data", []))
             
     elif st.session_state.get("ready_for_review", False):
-        st.info("👋 AI has completed its initial scan. Review and refine the findings below.")
+        st.info("AI has completed its initial scan. Review and refine the findings below.")
         
         from src.agents.reviewer_agent import reviewer_agent
         
-        st.markdown("### ✍️ Analyst Review Stage")
+        st.markdown("### Analyst Review Stage")
         st.write("Modify AI-detected risks and strengths, or add your own expert notes. Check **'Exclude?'** to remove a finding.")
 
         # Editable Dataframes for HITL
@@ -467,7 +683,7 @@ def render_results():
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("🚩 Red Flags")
+            st.subheader("Risks")
             edited_risks = st.data_editor(
                 st.session_state.edited_risks,
                 num_rows="dynamic",
@@ -482,7 +698,7 @@ def render_results():
             )
             
         with col2:
-            st.subheader("✅ Green Flags")
+            st.subheader("Strengths")
             edited_strengths = st.data_editor(
                 st.session_state.edited_strengths,
                 num_rows="dynamic",
@@ -496,7 +712,7 @@ def render_results():
                 key="strength_editor"
             )
 
-        if st.button("📝 Finalize & Generate Report", type="primary", use_container_width=True):
+        if st.button("Finalize & Generate Report", type="primary", use_container_width=True):
             with st.spinner("Composing final executive report with your expert edits..."):
                 try:
                     # Filter out excluded rows and empty templates
@@ -549,14 +765,12 @@ def render_results():
 def render_analysis_pipeline():
     """Render the full analysis pipeline with tabs."""
     st.markdown("---")
-    st.markdown("## 🔄 Analysis Pipeline")
+    st.markdown("## Analysis Pipeline")
     
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📈 Results",
-        "🔍 Data Collection",
-        "🎯 Analysis & Scoring",
-        "🧠 Analysis Data Points",
-        "📊 Pipeline Overview"
+    tab1, tab2, tab3 = st.tabs([
+        "Results",
+        "Data Collection",
+        "Analysis Data Points"
     ])
     
     with tab1:
@@ -566,49 +780,22 @@ def render_analysis_pipeline():
         render_data_collection()
     
     with tab3:
-        render_analysis_scoring()
-        
-    with tab4:
         render_data_points()
-    
-    with tab5:
-        render_pipeline_overview()
-    
-    # Progress section
-    st.markdown("---")
-    st.markdown("### 📊 Progress Tracking")
-    st.progress(0)
-    
-    stages_list = [
-        "Input Processing",
-        "Source Discovery",
-        "News Collection",
-        "Social Media Scraping",
-        "Reviews Collection",
-        "Financial Data Gathering",
-        "Data Aggregation",
-        "Embedding Generation",
-        "RAG Retrieval",
-        "Risk Extraction",
-        "Risk Scoring",
-        "Review & Validation",
-        "Report Generation"
-    ]
-    
-    st.markdown(f"**Company:** {st.session_state.company_name}")
 
 
 def render_quick_start():
     """Render welcome section when no analysis has started."""
-    st.markdown('<div class="flow-diagram">', unsafe_allow_html=True)
-    st.markdown("### 🎯 Quick Start")
-    st.markdown("""
-        1. Enter a company name
-        2. Click "Start Analysis"
-        3. Monitor the analysis pipeline
-        4. View comprehensive risk report
-    """)
-    st.markdown('</div>', unsafe_allow_html=True)
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown('<div class="flow-diagram">', unsafe_allow_html=True)
+        st.markdown("### Quick Start")
+        st.markdown("""
+            1. Enter a company name
+            2. Click "Start Analysis"
+            3. Monitor the analysis pipeline
+            4. View comprehensive risk report
+        """)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_footer():
@@ -628,7 +815,7 @@ def render():
     setup_custom_css()
     initialize_session_state()
     
-    st.title("🔍 G5-AAFS: Credit Risk Assessment")
+    st.title("G5-AAFS: Credit Risk Assessment")
     
     render_sidebar()
     render_quick_start()

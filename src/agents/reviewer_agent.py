@@ -28,8 +28,8 @@ def reviewer_agent(state: AgentState) -> dict:
     - Detailed Explanations: {json.dumps(explanations, indent=2)}
     
     REPORT STRUCTURE REQUIREMENTS:
-    1. **Title**: Main heading with company name.
-    2. **Executive Summary**: A high-level overview of the risk profile. Includes the 'Overall Risk Score'.
+    1. **Title**: Main heading with company name using the Markdown `#` symbol (e.g. `# [Company Name] Risk Report`).
+    2. **Executive Summary**: A high-level overview of the risk profile. Use `## Executive Summary`. Includes the 'Overall Risk Score'.
     3. **Key Metrics Table**: Create a Markdown table with 'Metric', 'Rating', and 'Score'.
        **CRITICAL: STICK TO THE NUMERICAL SCORES (0-100) FROM THE BREAKDOWN.** 
        Do NOT use raw metrics (like 2.164 or 25%) here. Only use the 0-100 values.
@@ -47,10 +47,10 @@ def reviewer_agent(state: AgentState) -> dict:
        - > 70: High
        
     4. **Risk Profile Details**:
-        - Use `### 🚩 Red Flags (Risks)` for potential issues. 
+        - Use `### Risks` for potential issues. 
           **CRITICAL: Order these by 'impact', placing 'High' significance risks at the top.**
           Include the impact label (e.g., "[High] Traditional Risk: ...") in the bullet point.
-        - Use `### ✅ Green Flags (Strengths)` for positive/mitigating factors. 
+        - Use `### Strengths` for positive/mitigating factors. 
           **CRITICAL: Order these by 'impact', placing 'High' significance strengths at the top.**
           Include the impact label in the bullet point.
     5. **Analyst Conclusion**: A final synthesized view on the outlook.
