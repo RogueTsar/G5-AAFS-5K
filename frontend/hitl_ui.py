@@ -957,8 +957,8 @@ def _phase_report(state: Dict[str, Any]):
 
     # ── Executive Summary (agent output) ──
     report = state.get("final_report", "No report generated.")
-    with st.expander("Executive Summary (Agent Output)", expanded=True):
-        st.markdown(report)
+    st.markdown("#### Executive Summary (Agent Output)")
+    st.markdown(report)
 
     # ── Comprehensive Rationale (by category, ordered by severity) ──
     st.markdown("### Detailed Rationale")
@@ -980,7 +980,8 @@ def _phase_report(state: Dict[str, Any]):
     for cat, items in sorted_cats:
         severity = "HIGH" if len(items) >= 3 else "MEDIUM" if len(items) >= 2 else "LOW"
         sev_color = _UBS_RED if severity == "HIGH" else "#D4760A" if severity == "MEDIUM" else "#00875A"
-        with st.expander(f"{cat} ({len(items)} signals) — {severity} severity"):
+        st.markdown(f"**{cat}** ({len(items)} signals) — {severity} severity")
+        if True:  # replaces expander block
             st.markdown(f'<span style="color:{sev_color};font-weight:700">{severity}</span>',
                         unsafe_allow_html=True)
             for i, r in enumerate(items, 1):
@@ -995,13 +996,15 @@ def _phase_report(state: Dict[str, Any]):
 
     # Strengths section
     if strengths:
-        with st.expander(f"Strength Signals ({len(strengths)})"):
+        st.markdown(f"**Strength Signals** ({len(strengths)})")
+        if strengths:
             for s in strengths:
                 st.markdown(f"- **{s.get('type', '?')}**: {s.get('description', '')}")
 
     # Full explanations (agent reasoning)
     if explanations:
-        with st.expander(f"Full Agent Reasoning ({len(explanations)} factors)"):
+        st.markdown(f"**Full Agent Reasoning** ({len(explanations)} factors)")
+        if explanations:
             for exp in explanations:
                 st.markdown(
                     f'<div class="metric-card" style="border-left-color:#6B4C9A">'
@@ -1020,9 +1023,9 @@ def _phase_report(state: Dict[str, Any]):
 
     warnings = state.get("guardrail_warnings", [])
     if warnings:
-        with st.expander(f"Guardrail Warnings ({len(warnings)})"):
-            for w in warnings:
-                st.markdown(f"- {w}")
+        st.warning(f"{len(warnings)} guardrail warnings")
+        for w in warnings:
+            st.markdown(f"- {w}")
 
     # Downloads
     st.markdown("### Download")
@@ -1088,7 +1091,9 @@ def _pipeline_view(state: Dict[str, Any]):
             f'margin:4px 0"><b>:{icon}: {num}: {title}</b></div>',
             unsafe_allow_html=True)
 
-        with st.expander(f"{num} Details", expanded=(i == 0 and has_data)):
+        show = st.checkbox(f"Show {num}", value=(i == 0 and has_data),
+                            key=f"pipe_show_{i}")
+        if show:
             render_fn(state)
 
 
@@ -1321,7 +1326,7 @@ def _pipe_step_report(state: Dict):
     # Audit trail
     audit = state.get("audit_trail", {})
     if audit:
-        with st.expander("Audit Trail (JSON)"):
+        if st.checkbox("Show Audit Trail", key="show_audit"):
             st.json(audit)
 
 
@@ -1477,10 +1482,17 @@ def _build_css(fs: int = 16) -> str:
     /* ── Toggle (Apple-ish) ── */
     [data-testid="stToggle"] label span {{ font-size:.78rem; }}
 
-    /* ── Hide Streamlit branding ── */
+    /* ── Hide Streamlit branding + sidebar collapse icon text ── */
     #MainMenu {{ visibility:hidden; }}
     footer {{ visibility:hidden; }}
     [data-testid="stDecoration"] {{ display:none; }}
+    [data-testid="stSidebarCollapseButton"] {{ font-size:0 !important; }}
+    [data-testid="stSidebarCollapseButton"] svg {{ width:20px; height:20px; }}
+    [data-testid="collapsedControl"] {{ font-size:0 !important; }}
+    [data-testid="collapsedControl"] svg {{ width:20px; height:20px; }}
+
+    /* ── Compact buttons (uniform size) ── */
+    .stButton>button {{ min-height:36px; padding:4px 12px; font-size:.8rem; }}
 </style>"""
 
 
@@ -1574,7 +1586,8 @@ def _phase_governance(state: Dict[str, Any]):
     }
 
     for test_name, result in ms_tests.items():
-        with st.expander(f"{test_name} — {result['status']}"):
+        st.markdown(f"**{test_name}** — {result['status']}")
+        if True:
             if "blocked" in result and isinstance(result.get("tested"), int):
                 st.markdown(f"- **Payloads tested**: {result['tested']}")
                 st.markdown(f"- **Blocked**: {result['blocked']}")
@@ -2274,7 +2287,8 @@ def _tab_user_guide():
     """In-app user guide for analysts."""
     st.markdown("## User Guide")
 
-    with st.expander("Workflow Modes", expanded=True):
+    st.markdown("### Workflow Modes")
+    if True:
         st.markdown("""
 **Exploratory (New Client Call)**
 - Quick 5-min snapshot for an initial meeting
@@ -2295,7 +2309,8 @@ def _tab_user_guide():
 - Cost: ~$0.01 per assessment
 """)
 
-    with st.expander("Settings & Configuration"):
+    st.markdown("### Settings & Configuration")
+    if True:
         st.markdown("""
 **Sidebar Controls:**
 - **Workflow Mode**: Choose Exploratory / Deep Dive / Loan Simulation
@@ -2310,7 +2325,8 @@ def _tab_user_guide():
 - Guardrail strictness level
 """)
 
-    with st.expander("Tabs & Features"):
+    st.markdown("### Tabs & Features")
+    if True:
         st.markdown("""
 | Tab | What It Does | When To Use |
 |-----|-------------|-------------|
@@ -2325,7 +2341,8 @@ def _tab_user_guide():
 | **User Guide** | This page | Onboarding, reference |
 """)
 
-    with st.expander("Scoring Frameworks"):
+    st.markdown("### Scoring Frameworks")
+    if True:
         st.markdown("""
 | Framework | Focus | Use When |
 |-----------|-------|----------|
@@ -2336,7 +2353,8 @@ def _tab_user_guide():
 | **MAS FEAT** | Singapore regulatory balanced | Local compliance alignment |
 """)
 
-    with st.expander("HITL Decision Points"):
+    st.markdown("### HITL Decision Points")
+    if True:
         st.markdown("""
 The system pauses for your input at these critical junctures:
 
@@ -2347,7 +2365,8 @@ The system pauses for your input at these critical junctures:
 At each gate you can: **Approve & Continue**, **Reject & Stop**, or **Redo This Step**
 """)
 
-    with st.expander("Roles & Responsibilities"):
+    st.markdown("### Roles & Responsibilities")
+    if True:
         st.markdown("""
 | Role | Scope | What They See |
 |------|-------|--------------|
