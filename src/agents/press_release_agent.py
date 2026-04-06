@@ -199,7 +199,7 @@ def press_release_agent(state: AgentState) -> Dict[str, Any]:
     queries = _build_queries(company)
     log_agent_action(AGENT_NAME, f"Searching press releases with {len(queries)} queries")
 
-    results = _tavily_search(queries, max_results=10)
+    results = _tavily_search(queries, max_results=20)
 
     # Fallback: use existing news_data from state if Tavily unavailable
     if not results:
@@ -227,8 +227,23 @@ def press_release_agent(state: AgentState) -> Dict[str, Any]:
     # Step 3: Synthesize trajectory (1 LLM call)
     trajectory = _synthesize_trajectory(company, results, event_counts)
 
+    # Build events list that UI expects (from key_events + categorized results)
+    events = []
+    for evt in trajectory.get("key_events", []):
+        events.append({"headline": evt, "category": "Key Event", "signal": "neutral"})
+    for r in results:
+        title = r.get("title", "")
+        snippet = r.get("snippet", "")
+        text = f"{title} {snippet}".lower()
+        for cat, pattern in _CATEGORY_PATTERNS.items():
+            if pattern.search(text):
+                signal = "negative" if cat in ("risk_events", "workforce") else "positive"
+                events.append({"headline": title[:100], "category": cat, "signal": signal})
+                break
+
     analysis = {
         **trajectory,
+        "events": events,
         "event_counts": event_counts,
         "raw_results": results,
     }

@@ -234,9 +234,28 @@ class GuardrailRunner:
                 "warnings": company_warnings,
             })
 
-            # Fabricated metrics
-            if financial_data:
-                fabrications = flag_fabricated_metrics(report, financial_data)
+            # Fabricated metrics — check against ALL state data, not just financial
+            all_data_for_verification = list(financial_data)
+            # Add numbers from risks, strengths, explanations, news, social
+            for risk in state.get("extracted_risks", []):
+                all_data_for_verification.append(risk)
+            for strength in state.get("extracted_strengths", []):
+                all_data_for_verification.append(strength)
+            for exp in state.get("explanations", []):
+                all_data_for_verification.append(exp)
+            for news_item in state.get("news_data", []):
+                all_data_for_verification.append(news_item)
+            for social_item in state.get("social_data", []):
+                all_data_for_verification.append(social_item)
+            for review_item in state.get("review_data", []):
+                all_data_for_verification.append(review_item)
+            # Add the risk score itself
+            rs = state.get("risk_score", {})
+            if rs:
+                all_data_for_verification.append(rs)
+
+            if all_data_for_verification:
+                fabrications = flag_fabricated_metrics(report, all_data_for_verification)
                 results["hallucination"]["fabricated_metrics"] = fabrications
                 results["warnings"].extend(fabrications)
                 self._log("hallucination_detector", "fabricated_metrics", {
