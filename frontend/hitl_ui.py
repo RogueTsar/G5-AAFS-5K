@@ -50,11 +50,7 @@ try:
     from src.mcp_tools.xbrl_parser import parse_xbrl
     _XBRL_AVAILABLE = True
 except Exception:
-    try:
-        from src.utils.xbrl_parser import parse_xbrl_instance as parse_xbrl
-        _XBRL_AVAILABLE = True
-    except Exception:
-        pass
+    pass
 try:
     from src.guardrails.guardrail_runner import GuardrailRunner
     _GUARDRAIL_AVAILABLE = True
@@ -266,10 +262,12 @@ def _phase_input() -> tuple:
             if ext in ("xbrl", "xml") and _XBRL_AVAILABLE:
                 raw = f.read(); f.seek(0)
                 try:
-                    parsed = parse_xbrl_instance(raw)
-                    if parsed["metadata"]["total_facts"] > 0:
-                        with st.expander(f"XBRL Preview — {f.name}  ({parsed['metadata']['total_facts']} facts)", expanded=True):
-                            _render_xbrl_structured(parsed)
+                    raw_str = raw.decode("utf-8", errors="ignore") if isinstance(raw, bytes) else raw
+                    parsed = parse_xbrl(raw_str)
+                    if parsed and isinstance(parsed, dict):
+                        ei = parsed.get("entity_info", {})
+                        name_str = ei.get("company_name", f.name)
+                        st.success(f"XBRL parsed: {name_str} — {len(parsed)} sections")
                 except Exception as e:
                     st.caption(f"Could not preview {f.name}: {e}")
 

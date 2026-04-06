@@ -75,13 +75,7 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
 
             elif file_ext == "xsd":
                 doc_type = "XSD_SCHEMA"
-                raw_text = content.decode("utf-8", errors="ignore")
-                try:
-                    from src.utils.xbrl_parser import parse_xbrl_taxonomy_xsd
-                    schema = parse_xbrl_taxonomy_xsd(raw_text)
-                    text = f"XBRL Taxonomy Schema: {len(schema)} elements defined"
-                except Exception:
-                    text = raw_text
+                text = content.decode("utf-8", errors="ignore")[:2000]
             
             else:
                 doc_type = "Unknown"
