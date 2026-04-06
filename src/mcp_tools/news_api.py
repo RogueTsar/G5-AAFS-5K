@@ -20,7 +20,7 @@ def search_company_news(company_name: str, api_key: str = None) -> List[Dict[str
             "q": f'{company_name} AND (business OR financial OR earnings OR market)',
             "language": "en",
             "sortBy": "relevancy",
-            "pageSize": 5,
+            "pageSize": 10,
             "apiKey": key
         }
         

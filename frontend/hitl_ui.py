@@ -1249,6 +1249,31 @@ def _pipe_step_collection(state: Dict):
         sc = _sentiment_counts(all_text)
         st.bar_chart(pd.DataFrame({"Count": sc}, index=["positive", "negative", "neutral"]))
 
+    # Retrieved Sources view
+    st.markdown("**Retrieved Sources**")
+    all_sources = []
+    for item in news:
+        all_sources.append({"Agent": "News", "Title": str(item.get("title", ""))[:80],
+                           "Source": str(item.get("source", "")), "URL": str(item.get("url", ""))})
+    for item in social:
+        all_sources.append({"Agent": "Social", "Title": str(item.get("title", item.get("snippet", "")))[:80],
+                           "Source": str(item.get("platform", "")), "URL": str(item.get("url", ""))})
+    for item in reviews:
+        all_sources.append({"Agent": "Reviews", "Title": str(item.get("title", item.get("snippet", "")))[:80],
+                           "Source": str(item.get("platform", "")), "URL": str(item.get("url", ""))})
+    for item in financial:
+        all_sources.append({"Agent": "Financial", "Title": str(item.get("source", "yfinance")),
+                           "Source": str(item.get("ticker", "")), "URL": ""})
+    press_events = press.get("events", []) if isinstance(press, dict) else []
+    for item in press_events:
+        all_sources.append({"Agent": "Press", "Title": str(item.get("headline", item.get("title", "")))[:80],
+                           "Source": str(item.get("category", "")), "URL": str(item.get("url", ""))})
+    if all_sources:
+        st.dataframe(pd.DataFrame(all_sources), use_container_width=True, hide_index=True)
+        st.caption(f"Total: {len(all_sources)} sources retrieved across all agents")
+    else:
+        st.caption("No sources retrieved yet.")
+
 
 # ── Step 4: Cleaning & Entity Resolution ──
 

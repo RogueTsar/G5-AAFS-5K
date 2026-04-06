@@ -50,15 +50,17 @@ def _build_queries(company: str) -> List[str]:
     """Build targeted Tavily queries for press release discovery."""
     year = CURRENT_YEAR
     return [
-        f'"{company}" press release newsroom {year}',
-        f'"{company}" acquisition merger announcement {year}',
-        f'"{company}" restructuring layoffs hiring {year}',
-        f'"{company}" earnings quarterly results guidance {year}',
-        f'"{company}" partnership expansion new market {year}',
+        f'{company} press release news {year}',
+        f'{company} acquisition merger announcement',
+        f'{company} restructuring layoffs hiring',
+        f'{company} earnings quarterly results guidance',
+        f'{company} partnership expansion new market',
+        f'{company} financial results annual report',
+        f'{company} regulatory compliance risk',
     ]
 
 
-def _tavily_search(queries: List[str], max_results: int = 10) -> List[Dict[str, Any]]:
+def _tavily_search(queries: List[str], max_results: int = 20) -> List[Dict[str, Any]]:
     """Execute Tavily searches. Returns empty list on failure."""
     try:
         from tavily import TavilyClient
@@ -84,7 +86,7 @@ def _tavily_search(queries: List[str], max_results: int = 10) -> List[Dict[str, 
             response = client.search(
                 query=query,
                 search_depth="basic",
-                max_results=3,
+                max_results=5,
             )
             for r in response.get("results", []):
                 url = r.get("url", "")

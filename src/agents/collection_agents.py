@@ -16,16 +16,16 @@ def news_agent(state: AgentState) -> Dict[str, Any]:
     seen_urls = set()
     
     for q in queries:
-        if len(all_news) >= 5: break
+        if len(all_news) >= 10: break
         articles = search_company_news(q)
         for art in articles:
             if art.get("url") not in seen_urls:
                 all_news.append(art)
                 seen_urls.add(art.get("url"))
-            if len(all_news) >= 5: break
+            if len(all_news) >= 10: break
     
     log_agent_action("news_agent", f"Found {len(all_news)} unique articles")
-    return {"news_data": all_news[:5]}
+    return {"news_data": all_news[:10]}
 
 def social_agent(state: AgentState) -> Dict[str, Any]:
     """Monitors public sentiment using dynamic queries across social platforms."""
@@ -38,17 +38,17 @@ def social_agent(state: AgentState) -> Dict[str, Any]:
     seen_snippets = set()
     
     for q in queries:
-        if len(all_social) >= 5: break
+        if len(all_social) >= 10: break
         # We pass the query directly to the tool now
         snippets = get_sentiment_snippets(q, platform="social media")
         for s in snippets:
             if s.get("snippet") not in seen_snippets:
                 all_social.append(s)
                 seen_snippets.add(s.get("snippet"))
-            if len(all_social) >= 5: break
+            if len(all_social) >= 10: break
     
     log_agent_action("social_agent", f"Found {len(all_social)} unique social mentions")
-    return {"social_data": all_social[:5]}
+    return {"social_data": all_social[:10]}
 
 def review_agent(state: AgentState) -> Dict[str, Any]:
     """Collects employee/customer reviews using dynamic queries."""
@@ -61,16 +61,16 @@ def review_agent(state: AgentState) -> Dict[str, Any]:
     seen_snippets = set()
     
     for q in queries:
-        if len(all_reviews) >= 5: break
+        if len(all_reviews) >= 10: break
         snippets = get_sentiment_snippets(q, platform="reviews")
         for s in snippets:
             if s.get("snippet") not in seen_snippets:
                 all_reviews.append(s)
                 seen_snippets.add(s.get("snippet"))
-            if len(all_reviews) >= 5: break
+            if len(all_reviews) >= 10: break
     
     log_agent_action("review_agent", f"Found {len(all_reviews)} unique review snippets")
-    return {"review_data": all_reviews[:5]}
+    return {"review_data": all_reviews[:10]}
 
 def financial_agent(state: AgentState) -> Dict[str, Any]:
     """Analyzes financial statements and supplements with dynamic web searches."""
