@@ -14,13 +14,18 @@ def search_company_news(company_name: str, api_key: str = None) -> List[Dict[str
         return [{"title": f"Mock: Recent news indicates steady growth for {company_name}", "source": "MockNews"}]
         
     try:
-        url = "https://newsapi.org/v2/everything"
-        # Use simple query — strict phrase match returns 0 for many companies
+        # Use a more inclusive query: keywords are good, but don't over-restrict
+        query_suffix = ' (business OR financial OR earnings OR market)'
+        if any(kw in company_name.lower() for kw in ["news", "outlook", "financial", "stock", "report"]):
+            q = company_name
+        else:
+            q = f'{company_name}{query_suffix}'
+            
         params = {
-            "q": f'{company_name} AND (business OR financial OR earnings OR market)',
+            "q": q,
             "language": "en",
             "sortBy": "relevancy",
-            "pageSize": 10,
+            "pageSize": 30,
             "apiKey": key
         }
         
@@ -42,4 +47,4 @@ def search_company_news(company_name: str, api_key: str = None) -> List[Dict[str
         
     except Exception as e:
         print(f"Error fetching news for {company_name}: {e}")
-        return [{"title": f"Error fetching news for {company_name}", "source": "SystemError"}]
+        return []

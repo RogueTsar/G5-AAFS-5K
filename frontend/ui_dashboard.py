@@ -231,7 +231,7 @@ def _tab_financial_statements(state: Dict, xbrl_docs: List,
             fin = state.get("financial_data", [])
             if fin:
                 st.info("No XBRL filing uploaded. Showing financial data from web sources.")
-                st.dataframe(pd.DataFrame(fin), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(fin), width="stretch", hide_index=True)
             else:
                 st.info("No financial data available. Upload an ACRA XBRL filing for structured extraction.")
             _show_timing(timings, "tab_financial_statements")
@@ -296,14 +296,14 @@ def _render_xbrl_structured(p: Dict[str, Any],
                     for k, v in bs.items() if v is not None]
         if bs_rows:
             st.dataframe(pd.DataFrame(bs_rows, columns=["Item", "Value"]),
-                         use_container_width=True, hide_index=True)
+                         width="stretch", hide_index=True)
     with c2:
         st.markdown("#### Income Statement")
         inc_rows = [(k.replace("_", " ").title(), _fmt(v))
                      for k, v in inc.items() if v is not None]
         if inc_rows:
             st.dataframe(pd.DataFrame(inc_rows, columns=["Item", "Value"]),
-                         use_container_width=True, hide_index=True)
+                         width="stretch", hide_index=True)
 
     # Cash flow
     if any(v is not None for v in cf.values()):
@@ -419,7 +419,7 @@ def _tab_companies_act(state: Dict, xbrl_docs: List,
                 ("Dormant", ei.get("is_dormant", "--")),
             ]
             st.dataframe(pd.DataFrame(details, columns=["Field", "Value"]),
-                         use_container_width=True, hide_index=True)
+                         width="stretch", hide_index=True)
 
     _section_timing_caption("tab_companies_act")
     _show_timing(timings, "tab_companies_act")
@@ -454,7 +454,7 @@ def _tab_news_press(state: Dict, news: List, press: Dict,
                 display = [c for c in ["headline", "source", "sentiment", "date"]
                            if c in df.columns]
                 st.dataframe(df[display] if display else df,
-                             use_container_width=True, hide_index=True)
+                             width="stretch", hide_index=True)
             else:
                 st.info("No news articles collected.")
 
@@ -469,7 +469,7 @@ def _tab_news_press(state: Dict, news: List, press: Dict,
                 if cats:
                     st.bar_chart(pd.DataFrame({"Events": cats}))
                 st.dataframe(pd.DataFrame(events),
-                             use_container_width=True, hide_index=True)
+                             width="stretch", hide_index=True)
                 traj = press.get("trajectory", "--")
                 _metric(
                     "Corporate Trajectory",
@@ -509,7 +509,7 @@ def _tab_social_reviews(state: Dict, social: List, reviews: List,
                 display = [c for c in ["text", "sentiment", "platform"]
                            if c in df.columns]
                 st.dataframe(df[display] if display else df,
-                             use_container_width=True, hide_index=True)
+                             width="stretch", hide_index=True)
             else:
                 st.info("No social media data collected.")
 
@@ -547,7 +547,7 @@ def _tab_social_reviews(state: Dict, social: List, reviews: List,
                 display = [c for c in ["source", "type", "rating", "text"]
                            if c in df.columns]
                 st.dataframe(df[display] if display else df,
-                             use_container_width=True, hide_index=True)
+                             width="stretch", hide_index=True)
             else:
                 st.info("No reviews collected.")
 
@@ -1275,7 +1275,7 @@ def _render_execution_performance(state: Dict[str, Any],
             "% of Total": "100.0%",
         })
         st.dataframe(pd.DataFrame(detail_rows),
-                     use_container_width=True, hide_index=True)
+                     width="stretch", hide_index=True)
 
     if not timings:
         st.caption("Showing estimated timings (demo mode). "
@@ -1361,7 +1361,7 @@ def _loan_simulation(state: Dict[str, Any],
                 f"+{_fmt(loan)}",
             ],
         })
-        st.dataframe(comparison, use_container_width=True, hide_index=True)
+        st.dataframe(comparison, width="stretch", hide_index=True)
 
         # Risk assessment shift
         risk_shift = 0

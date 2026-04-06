@@ -112,6 +112,7 @@ class GuardedAgentState(TypedDict):
     press_release_analysis: Dict[str, Any]
     audit_trail: Dict[str, Any]
     guardrail_warnings: Annotated[List[str], operator.add]
+    guardrail_summary: Dict[str, Any]
 
 
 # ---------------------------------------------------------------------------
@@ -181,6 +182,8 @@ def _make_guarded_wrappers(runner: GuardrailRunner):
         all_warnings = validation_results.get("warnings", [])
         if all_warnings:
             out["guardrail_warnings"] = all_warnings
+        # Record the runner's summary for the audit agent
+        out["guardrail_summary"] = runner.get_summary()
         return out
 
     return guarded_input, guarded_risk_extraction, guarded_risk_scoring, guarded_explainability, guarded_reviewer

@@ -169,7 +169,7 @@ def render_financial_statement(title: str, rows: List[Dict], current_year: str, 
     st.markdown(f"**{title}**")
     st.dataframe(
         df,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 

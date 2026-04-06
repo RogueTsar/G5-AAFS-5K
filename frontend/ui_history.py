@@ -97,7 +97,7 @@ def render_history_panel():
             "Strengths": h.get("strengths_count", 0),
         })
     if rows:
-        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
 
     # Expandable detail per run
     for h in reversed(filtered):
@@ -130,7 +130,7 @@ def _render_run_detail(entry: Dict):
             "Social": f"{weights.get('social', 0)}",
             "Reviews": f"{weights.get('reviews', 0)}",
         }])
-        st.dataframe(wdf, use_container_width=True, hide_index=True)
+        st.dataframe(wdf, width="stretch", hide_index=True)
 
     # Config
     config = entry.get("config", {})
@@ -229,7 +229,7 @@ def render_comparison_tool():
                 "A": va, "B": vb,
                 "Delta": f"{'+' if d > 0 else ''}{d}",
             })
-        st.dataframe(pd.DataFrame(wrows), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(wrows), width="stretch", hide_index=True)
 
     # Risk signal comparison
     st.markdown("### Risk Signals")
@@ -252,7 +252,7 @@ def render_comparison_tool():
         if va != vb:
             diffs.append({"Setting": k, "A": str(va), "B": str(vb)})
     if diffs:
-        st.dataframe(pd.DataFrame(diffs), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(diffs), width="stretch", hide_index=True)
     else:
         st.success("Identical configuration")
 
@@ -263,4 +263,4 @@ def render_comparison_tool():
         if va != vb:
             meta_diff.append({"Field": field, "A": str(va), "B": str(vb)})
     if meta_diff:
-        st.dataframe(pd.DataFrame(meta_diff), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(meta_diff), width="stretch", hide_index=True)

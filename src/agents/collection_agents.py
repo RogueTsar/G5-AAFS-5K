@@ -15,16 +15,25 @@ def news_agent(state: AgentState) -> Dict[str, Any]:
     all_news = []
     seen_urls = set()
     
+    company_parts = [p.strip() for p in company_name.split() if len(p.strip()) > 2]
+    
     for q in queries:
         if len(all_news) >= 10: break
         articles = search_company_news(q)
+        log_agent_action("news_agent", f"Query '{q}' returned {len(articles)} articles from API")
+        
         for art in articles:
-            if art.get("url") not in seen_urls:
-                all_news.append(art)
-                seen_urls.add(art.get("url"))
+            title = (art.get("title") or "").lower()
+            desc = (art.get("description") or "").lower()
+            # Relaxed relevance check: any significant part of company name or query terms
+            relevance_terms = company_parts + q.split()
+            if any(term.lower() in title or term.lower() in desc for term in relevance_terms):
+                if art.get("url") not in seen_urls:
+                    all_news.append(art)
+                    seen_urls.add(art.get("url"))
             if len(all_news) >= 10: break
     
-    log_agent_action("news_agent", f"Found {len(all_news)} unique articles")
+    log_agent_action("news_agent", f"Final relevant articles: {len(all_news)}")
     return {"news_data": all_news[:10]}
 
 def social_agent(state: AgentState) -> Dict[str, Any]:

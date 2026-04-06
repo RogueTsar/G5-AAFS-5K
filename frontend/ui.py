@@ -431,7 +431,7 @@ def render_company_input() -> tuple[str, bool]:
             
             submit_button = st.button(
                 "Start Analysis",
-                use_container_width=True,
+                width="stretch",
                 type="primary"
             )
             
@@ -600,7 +600,7 @@ def render_data_points():
             # Show searchable table
             st.dataframe(
                 df,
-                use_container_width=True,
+                width="stretch",
                 column_config={
                     "Sentiment": st.column_config.TextColumn("Sentiment", width="small"),
                     "Confidence": st.column_config.TextColumn("Conf.", width="small"),
@@ -624,7 +624,7 @@ def render_results():
         with col_p1:
             st.success("Analysis Complete!")
         with col_p2:
-            if st.button("Save as PDF", use_container_width=True, help="Open browser print dialog to save as PDF"):
+            if st.button("Save as PDF", width="stretch", help="Open browser print dialog to save as PDF"):
                 import time
                 # Trigger window.parent.print() via a tiny HTML component
                 # Adding a timestamp ensures Streamlit treats this as a new component on every click
@@ -687,7 +687,7 @@ def render_results():
             edited_risks = st.data_editor(
                 st.session_state.edited_risks,
                 num_rows="dynamic",
-                use_container_width=True,
+                width="stretch",
                 column_config={
                     "Exclude?": st.column_config.CheckboxColumn("Exclude?", default=False, help="Check to remove this risk"),
                     "type": st.column_config.SelectboxColumn("Category", options=risk_type_options, required=True),
@@ -702,7 +702,7 @@ def render_results():
             edited_strengths = st.data_editor(
                 st.session_state.edited_strengths,
                 num_rows="dynamic",
-                use_container_width=True,
+                width="stretch",
                 column_config={
                     "Exclude?": st.column_config.CheckboxColumn("Exclude?", default=False, help="Check to remove this strength"),
                     "type": st.column_config.SelectboxColumn("Category", options=strength_type_options, required=True),
@@ -712,7 +712,7 @@ def render_results():
                 key="strength_editor"
             )
 
-        if st.button("Finalize & Generate Report", type="primary", use_container_width=True):
+        if st.button("Finalize & Generate Report", type="primary", width="stretch"):
             with st.spinner("Composing final executive report with your expert edits..."):
                 try:
                     # Filter out excluded rows and empty templates

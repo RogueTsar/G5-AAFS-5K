@@ -77,11 +77,46 @@ _COLORS = {
 def _metric(label: str, value: Any, delta: str = "", color: str = "blue"):
     c = _COLORS.get(color, _COLORS["blue"])
     st.markdown(
-        f'<div class="metric-card" style="border-left-color:{c}">'
-        f'<div class="mc-label">{label}</div>'
-        f'<div class="mc-value">{value}</div>'
-        f'{f"<div class=mc-delta style=color:{c}>{delta}</div>" if delta else ""}'
-        f'</div>', unsafe_allow_html=True)
+        f"""
+        <style>
+            /* Completely hide confusing Material/Lucide icon labels and tooltips */
+            [title="arrow_right"], [title="chevron-right"], [title="Check"], [title="Error"] {{
+                display: none !important;
+                visibility: hidden !important;
+                font-size: 0 !important;
+            }}
+            /* Target the specific labels that sometimes bleed out in Streamlit statuses */
+            .st-emotion-cache-1c9yjad, .st-emotion-cache-1p2m9d2, .st-emotion-cache-1v06xi6 svg {{
+                display: none !important;
+            }}
+            /* Specific fix for the '_arrow_right' text overlay seen in user screenshots */
+            span:contains("arrow_right"), span:contains("chevron-right") {{
+                display: none !important;
+            }}
+            
+            /* Ensure status labels don't truncate awkwardly */
+            .stStatus {{
+                max-width: 100%;
+            }}
+            /* Custom metric card styling */
+            .metric-card {{
+                border-left: 5px solid {c};
+                background: #1A1A2E;
+                padding: 10px;
+                border-radius: 8px;
+                margin-bottom: 10px;
+            }}
+            .mc-label {{ font-size: 0.8em; color: #8C8C9A; }}
+            .mc-value {{ font-size: 1.25em; font-weight: 700; color: #FFFFFF; }}
+            .mc-delta {{ font-size: 0.75em; margin-top: 2px; }}
+        </style>
+        <div class="metric-card">
+            <div class="mc-label">{label}</div>
+            <div class="mc-value">{value}</div>
+            {f"<div class='mc-delta' style='color:{c}'>{delta}</div>" if delta else ""}
+        </div>
+        """, unsafe_allow_html=True
+    )
 
 
 def _risk_gauge(score: float, mx: float = 100):
@@ -248,7 +283,7 @@ def _phase_input() -> tuple:
         name = st.text_input("Company Name", placeholder="e.g. DBS Group, Grab Holdings, Sea Ltd...")
     with c2:
         st.markdown("<br>", unsafe_allow_html=True)
-        go = st.button("Collect & Analyse", type="primary", use_container_width=True)
+        go = st.button("Collect & Analyse", type="primary", width="stretch")
 
     files = st.file_uploader(
         "Upload ACRA XBRL filings, financial reports, or other documents",
@@ -368,7 +403,7 @@ def _tab_financial_statements(state, xbrl_docs):
         fin = state.get("financial_data", [])
         if fin:
             st.info("No XBRL filing uploaded. Showing financial data from web sources.")
-            st.dataframe(pd.DataFrame(fin), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(fin), width="stretch", hide_index=True)
         else:
             st.info("No financial data available. Upload an ACRA XBRL filing for structured extraction.")
         return
@@ -420,13 +455,13 @@ def _render_xbrl_structured(p: Dict[str, Any]):
         bs_rows = [(k.replace("_", " ").title(), _fmt(v)) for k, v in bs.items() if v is not None]
         if bs_rows:
             st.dataframe(pd.DataFrame(bs_rows, columns=["Item", "Value"]),
-                         use_container_width=True, hide_index=True)
+                         width="stretch", hide_index=True)
     with c2:
         st.markdown("#### Income Statement")
         inc_rows = [(k.replace("_", " ").title(), _fmt(v)) for k, v in inc.items() if v is not None]
         if inc_rows:
             st.dataframe(pd.DataFrame(inc_rows, columns=["Item", "Value"]),
-                         use_container_width=True, hide_index=True)
+                         width="stretch", hide_index=True)
 
     # Cash flow
     if any(v is not None for v in cf.values()):
@@ -530,7 +565,7 @@ def _tab_companies_act(state, xbrl_docs):
             ("Dormant", ei.get("is_dormant", "—")),
         ]
         st.dataframe(pd.DataFrame(details, columns=["Field", "Value"]),
-                     use_container_width=True, hide_index=True)
+                     width="stretch", hide_index=True)
 
 
 # ---------------------------------------------------------------------------
@@ -559,7 +594,7 @@ def _tab_news_press(state, news, press):
             st.markdown("#### Headlines")
             df = pd.DataFrame(news)
             display = [c for c in ["headline", "source", "sentiment", "date"] if c in df.columns]
-            st.dataframe(df[display] if display else df, use_container_width=True, hide_index=True)
+            st.dataframe(df[display] if display else df, width="stretch", hide_index=True)
         else:
             st.info("No news articles collected.")
 
@@ -575,7 +610,7 @@ def _tab_news_press(state, news, press):
             if cats:
                 st.bar_chart(pd.DataFrame({"Events": cats}))
             # Table
-            st.dataframe(pd.DataFrame(events), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(events), width="stretch", hide_index=True)
             # Trajectory
             traj = press.get("trajectory", "—")
             _metric("Corporate Trajectory", traj.title() if isinstance(traj, str) else traj,
@@ -604,7 +639,7 @@ def _tab_social_reviews(state, social, reviews):
             st.bar_chart(pd.DataFrame({"Count": sc}, index=["positive", "negative", "neutral"]))
             df = pd.DataFrame(social)
             display = [c for c in ["text", "sentiment", "platform"] if c in df.columns]
-            st.dataframe(df[display] if display else df, use_container_width=True, hide_index=True)
+            st.dataframe(df[display] if display else df, width="stretch", hide_index=True)
         else:
             st.info("No social media data collected.")
 
@@ -639,7 +674,7 @@ def _tab_social_reviews(state, social, reviews):
 
             df = pd.DataFrame(reviews)
             display = [c for c in ["source", "type", "rating", "text"] if c in df.columns]
-            st.dataframe(df[display] if display else df, use_container_width=True, hide_index=True)
+            st.dataframe(df[display] if display else df, width="stretch", hide_index=True)
         else:
             st.info("No reviews collected.")
 
@@ -698,31 +733,31 @@ def _phase_weights(state: Dict[str, Any]) -> Dict[str, float]:
     st.caption("Each preset mirrors a real-world credit assessment methodology.")
     pc = st.columns(5)
     with pc[0]:
-        if st.button("Basel IRB", use_container_width=True, key="p_basel",
+        if st.button("Basel IRB", width="stretch", key="p_basel",
                       help="Basel II/III Internal Ratings-Based: PD/LGD-focused, "
                            "heaviest on financials + MAS credit classification"):
             st.session_state.update(w_fsh=40, w_cca=20, w_news=15, w_press=10, w_social=5, w_reviews=10)
             st.rerun()
     with pc[1]:
-        if st.button("Altman Z-Score", use_container_width=True, key="p_altman",
+        if st.button("Altman Z-Score", width="stretch", key="p_altman",
                       help="Altman Z-Score: Almost entirely financial ratio-driven "
                            "(WC/TA, RE/TA, EBIT/TA, MVE/TL, Sales/TA)"):
             st.session_state.update(w_fsh=60, w_cca=15, w_news=10, w_press=5, w_social=5, w_reviews=5)
             st.rerun()
     with pc[2]:
-        if st.button("S&P Global", use_container_width=True, key="p_sp",
+        if st.button("S&P Global", width="stretch", key="p_sp",
                       help="S&P-style: Business Risk Profile (industry + competitive) "
                            "+ Financial Risk Profile (cash flow + leverage)"):
             st.session_state.update(w_fsh=30, w_cca=10, w_news=15, w_press=15, w_social=10, w_reviews=20)
             st.rerun()
     with pc[3]:
-        if st.button("Moody's KMV", use_container_width=True, key="p_moodys",
+        if st.button("Moody's KMV", width="stretch", key="p_moodys",
                       help="Moody's KMV: Distance-to-Default model — financial + "
                            "market equity signals weighted heavily"):
             st.session_state.update(w_fsh=35, w_cca=10, w_news=25, w_press=15, w_social=10, w_reviews=5)
             st.rerun()
     with pc[4]:
-        if st.button("MAS FEAT", use_container_width=True, key="p_mas",
+        if st.button("MAS FEAT", width="stretch", key="p_mas",
                       help="MAS-aligned: Balanced multi-source assessment per "
                            "Singapore regulatory guidance (FEAT principles)"):
             st.session_state.update(w_fsh=25, w_cca=15, w_news=20, w_press=15, w_social=10, w_reviews=15)
@@ -778,7 +813,7 @@ def _phase_weights(state: Dict[str, Any]) -> Dict[str, float]:
         {"Domain": "Social Sentiment", "Type": "Unstructured", "Weight": f"{weights['social']*100:.1f}%"},
         {"Domain": "Reviews", "Type": "Unstructured", "Weight": f"{weights['reviews']*100:.1f}%"},
     ])
-    st.dataframe(norm_df, use_container_width=True, hide_index=True)
+    st.dataframe(norm_df, width="stretch", hide_index=True)
 
     struct_pct = (weights["fsh"] + weights["cca"]) * 100
     unstruct_pct = (weights["social"] + weights["reviews"]) * 100
@@ -796,7 +831,7 @@ def _phase_score(state: Dict[str, Any], weights: Dict[str, float]):
     st.markdown("---")
     st.markdown("## 4 — Risk Score")
 
-    score_btn = st.button("Generate Weighted Risk Score", type="primary", use_container_width=True, key="score_btn")
+    score_btn = st.button("Generate Weighted Risk Score", type="primary", width="stretch", key="score_btn")
 
     if score_btn or st.session_state.get("scored"):
         st.session_state["scored"] = True
@@ -939,7 +974,7 @@ def _phase_score(state: Dict[str, Any], weights: Dict[str, float]):
             "Contribution": [f"{scores[i] * weights[wkeys[i]]:.1f}" for i in range(6)],
             "Scoring Method": methods,
         })
-        st.dataframe(bd_df, use_container_width=True, hide_index=True)
+        st.dataframe(bd_df, width="stretch", hide_index=True)
 
         # Chart
         breakdown = dict(zip(domains, scores))
@@ -1047,10 +1082,10 @@ def _phase_report(state: Dict[str, Any]):
             "report": report,
         }
         st.download_button("Download JSON", json.dumps(full, indent=2, default=str),
-                          f"risk_{slug}.json", "application/json", use_container_width=True)
+                          f"risk_{slug}.json", "application/json", width="stretch")
     with dc2:
         st.download_button("Download Markdown", report,
-                          f"risk_{slug}.md", "text/markdown", use_container_width=True)
+                          f"risk_{slug}.md", "text/markdown", width="stretch")
 
 
 # ===========================================================================
@@ -1252,24 +1287,55 @@ def _pipe_step_collection(state: Dict):
     # Retrieved Sources view
     st.markdown("**Retrieved Sources**")
     all_sources = []
+    # Filter: only show items that don't have errors and have valid content
     for item in news:
-        all_sources.append({"Agent": "News", "Title": str(item.get("title", ""))[:80],
-                           "Source": str(item.get("source", "")), "URL": str(item.get("url", ""))})
+        title = str(item.get("title", ""))
+        source = str(item.get("source", ""))
+        # Skip if it's an error message or systemic error
+        if any(x in title.lower() for x in ["error fetching", "system error", "failed to fetch"]):
+            continue
+        if source.lower() == "systemerror":
+            continue
+            
+        if not item.get("error") and (item.get("title") or item.get("description")):
+            all_sources.append({"Agent": "News", "Title": title[:80],
+                               "Source": source, "URL": str(item.get("url", ""))})
+
     for item in social:
-        all_sources.append({"Agent": "Social", "Title": str(item.get("title", item.get("snippet", "")))[:80],
-                           "Source": str(item.get("platform", "")), "URL": str(item.get("url", ""))})
+        title = str(item.get("title", item.get("snippet", "")))
+        source = str(item.get("platform", ""))
+        if any(x in title.lower() for x in ["error fetching", "system error"]):
+            continue
+            
+        if not item.get("error") and (item.get("title") or item.get("snippet")):
+            all_sources.append({"Agent": "Social", "Title": title[:80],
+                               "Source": source, "URL": str(item.get("url", ""))})
+
     for item in reviews:
-        all_sources.append({"Agent": "Reviews", "Title": str(item.get("title", item.get("snippet", "")))[:80],
-                           "Source": str(item.get("platform", "")), "URL": str(item.get("url", ""))})
+        title = str(item.get("title", item.get("snippet", "")))
+        source = str(item.get("platform", ""))
+        if any(x in title.lower() for x in ["error fetching", "system error"]):
+            continue
+            
+        if not item.get("error") and (item.get("title") or item.get("snippet")):
+            all_sources.append({"Agent": "Reviews", "Title": title[:80],
+                               "Source": source, "URL": str(item.get("url", ""))})
+    
     for item in financial:
-        all_sources.append({"Agent": "Financial", "Title": str(item.get("source", "yfinance")),
-                           "Source": str(item.get("ticker", "")), "URL": ""})
+        if not item.get("error"):
+            # Skip if explicitly marked as error in source
+            if str(item.get("source", "")).lower() == "systemerror":
+                continue
+            all_sources.append({"Agent": "Financial", "Title": str(item.get("source", "yfinance")),
+                               "Source": str(item.get("ticker", "")), "URL": ""})
+
     press_events = press.get("events", []) if isinstance(press, dict) else []
     for item in press_events:
-        all_sources.append({"Agent": "Press", "Title": str(item.get("headline", item.get("title", "")))[:80],
-                           "Source": str(item.get("category", "")), "URL": str(item.get("url", ""))})
+        if not item.get("error"):
+            all_sources.append({"Agent": "Press", "Title": str(item.get("headline", item.get("title", "")))[:80],
+                               "Source": str(item.get("category", "")), "URL": str(item.get("url", ""))})
     if all_sources:
-        st.dataframe(pd.DataFrame(all_sources), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(all_sources), width="stretch", hide_index=True)
         st.caption(f"Total: {len(all_sources)} sources retrieved across all agents")
     else:
         st.caption("No sources retrieved yet.")
@@ -1427,25 +1493,24 @@ def _pipe_step_report(state: Dict):
     )
 
     _trace_block(
-        "Audit Trail Agent (0 tokens)",
+        "Audit Trail Agent (LLM: ~500 tokens)",
         "SUCCESS" if audit else "SKIPPED",
         {"pipeline_state": "full state dict"},
-        "Checks which agents executed (inference-based: non-empty output fields). "
-        "Validates MAS FEAT (5 required fields) and EU AI Act (4 required fields). "
-        "Tags with pipeline_version='1.0.0' and run_id.",
+        "Checks which agents executed. Validates MAS FEAT and EU AI Act compliance. "
+        "Summarizes findings using LLM (gpt-4o-mini) to generate a professional auditor opinion.",
         {"agents_executed": audit.get("agents_executed", []) if audit else "—",
          "mas_feat": audit.get("compliance", {}).get("mas_feat_passed", "—") if audit else "—",
-         "eu_ai_act": audit.get("compliance", {}).get("eu_ai_act_passed", "—") if audit else "—"},
+         "eu_ai_act": audit.get("compliance", {}).get("eu_ai_act_passed", "—") if audit else "—",
+         "agent_opinion": audit.get("agent_opinion", "—")[:100] + "..."},
     )
 
     _trace_block(
-        "Guardrail Runner (0 tokens)",
+        "Guardrail Runner Agent",
         "PASS" if len(warnings) < 5 else "WARNINGS",
         {"report": f"{len(report)} chars", "state_keys": "all"},
-        f"6 modules checked: Input Validation, Output Enforcement, Hallucination Detection, "
-        f"Bias/Fairness (60 terms, 3 severity tiers), Cascade Guard, Content Safety. "
-        f"All zero LLM tokens. {len(warnings)} warnings raised.",
-        {"warnings": len(warnings)},
+        "6 modules checked: Input Validation, Output Enforcement, Hallucination Detection, "
+        "Bias/Fairness (60 terms), Cascade Guard, Content Safety. Deterministic + Mini Moonshot (PII/Injection).",
+        {"warnings": len(warnings), "moonshot_checks": "PII + Injection"},
         warnings=warnings[:5] if warnings else None,
     )
 
@@ -1553,7 +1618,7 @@ def _build_css(fs: int = 16) -> str:
         display:flex; align-items:center; justify-content:space-between;
         border-radius:0 0 8px 8px; margin-bottom:6px; gap:8px; flex-wrap:wrap;
         border:1px solid var(--border);
-        position:sticky; top:0; z-index:999;
+        position:relative; z-index:999;
     }}
     .top-ribbon .ribbon-item {{
         display:inline-flex; align-items:center; gap:4px;
@@ -1799,15 +1864,15 @@ def _phase_email_report(state: Dict[str, Any]):
     }
     with dc1:
         st.download_button("Download JSON Report", json.dumps(full_json, indent=2, default=str),
-                          f"risk_assessment_{slug}.json", "application/json", use_container_width=True)
+                          f"risk_assessment_{slug}.json", "application/json", width="stretch")
     with dc2:
         st.download_button("Download Markdown Report", report,
-                          f"risk_assessment_{slug}.md", "text/markdown", use_container_width=True)
+                          f"risk_assessment_{slug}.md", "text/markdown", width="stretch")
     with dc3:
         # CSV summary
         csv_data = f"Company,Score,Rating,Date\n{company},{score},{rating},{datetime.now().strftime('%Y-%m-%d')}\n"
         st.download_button("Download CSV Summary", csv_data,
-                          f"risk_summary_{slug}.csv", "text/csv", use_container_width=True)
+                          f"risk_summary_{slug}.csv", "text/csv", width="stretch")
 
     # ── Email Follow-Up ──
     st.markdown("### Email Follow-Up")
@@ -1880,7 +1945,7 @@ def _hitl_gate(title: str, message: str, gate_key: str,
     cols = st.columns(len(options))
     for i, opt in enumerate(options):
         with cols[i]:
-            if st.button(opt, key=f"gate_{gate_key}_{i}", use_container_width=True,
+            if st.button(opt, key=f"gate_{gate_key}_{i}", width="stretch",
                          type="primary" if i == 0 else "secondary"):
                 st.session_state[f"gate_{gate_key}"] = opt
                 return opt
@@ -1943,7 +2008,7 @@ def _loan_simulation(state: Dict[str, Any]):
             f"+{_fmt(loan)}",
         ],
     })
-    st.dataframe(comparison, use_container_width=True, hide_index=True)
+    st.dataframe(comparison, width="stretch", hide_index=True)
 
     # Risk assessment shift
     risk_shift = 0
@@ -2138,11 +2203,24 @@ def _render_sidebar(state: Dict[str, Any]):
     sb.caption("WORKFLOW")
     mode_keys = list(_WORKFLOW_MODES.keys())
     mode_labels = [_WORKFLOW_MODES[k]["label"] for k in mode_keys]
-    current_idx = mode_keys.index(st.session_state.get("workflow_mode", "deep_dive"))
+    
+    # Initialize from state if possible
+    if "workflow_mode" not in st.session_state:
+        st.session_state["workflow_mode"] = "deep_dive"
+        
+    current_idx = mode_keys.index(st.session_state["workflow_mode"])
     selected = sb.radio("Mode", mode_labels, index=current_idx, key="mode_radio",
                          label_visibility="collapsed")
+    
     sel_key = mode_keys[mode_labels.index(selected)]
-    st.session_state["workflow_mode"] = sel_key
+    
+    # Trigger Mode Change Reset
+    if sel_key != st.session_state["workflow_mode"]:
+        st.session_state["workflow_mode"] = sel_key
+        st.session_state["selected_model"] = _WORKFLOW_MODES[sel_key].get("default_model", "gpt-4o-mini")
+        st.session_state["reviewer_rounds"] = _WORKFLOW_MODES[sel_key].get("reviewer_rounds", 3)
+        st.rerun()
+
     mode = _WORKFLOW_MODES[sel_key]
     sb.caption(mode["desc"][:80])
 
@@ -2150,11 +2228,15 @@ def _render_sidebar(state: Dict[str, Any]):
 
     # ── Model + Rounds ──
     sb.caption("MODEL")
-    default_model_idx = _AVAILABLE_MODELS.index(mode.get("default_model", "gpt-4o-mini")) \
-        if mode.get("default_model") in _AVAILABLE_MODELS else 0
-    sb.selectbox("LLM", _AVAILABLE_MODELS, index=default_model_idx, key="selected_model",
-                  label_visibility="collapsed")
-    sb.slider("Reviewer rounds", 1, 5, mode.get("reviewer_rounds", 3), key="reviewer_rounds")
+    
+    # Ensure keys are in session state to avoid conflict warnings
+    if "selected_model" not in st.session_state:
+        st.session_state["selected_model"] = mode.get("default_model", "gpt-4o-mini")
+    if "reviewer_rounds" not in st.session_state:
+        st.session_state["reviewer_rounds"] = mode.get("reviewer_rounds", 3)
+        
+    sb.selectbox("LLM", _AVAILABLE_MODELS, key="selected_model", label_visibility="collapsed")
+    sb.slider("Reviewer rounds", 1, 5, key="reviewer_rounds")
 
     # ── Auto-run (skip HITL gates) ──
     sb.checkbox("Auto-run (skip review gates)", key="auto_run",
@@ -2183,13 +2265,13 @@ def _render_sidebar(state: Dict[str, Any]):
     # ── Actions ──
     ac1, ac2 = sb.columns(2)
     with ac1:
-        if st.button("Reset", use_container_width=True, key="sb_reset"):
+        if st.button("Reset", width="stretch", key="sb_reset"):
             for k in list(st.session_state.keys()):
                 if k.startswith(("state", "scored", "composite", "gate_", "loan_")):
                     del st.session_state[k]
             st.rerun()
     with ac2:
-        if has_company and st.button("Re-run", use_container_width=True, key="sb_rerun"):
+        if has_company and st.button("Re-run", width="stretch", key="sb_rerun"):
             st.session_state["scored"] = False
             _phase_collect(state.get("company_name", ""), None, {})
             st.rerun()
@@ -2239,10 +2321,26 @@ def _tab_testing(state: Dict[str, Any]):
             st.success(f"{label}: ALL {passed} tests PASSED")
         else:
             st.error(f"{label}: {failed} failed, {errors} errors out of {total} tests")
-        col_p, col_f, col_e = st.columns(3)
-        col_p.metric("Passed", passed)
-        col_f.metric("Failed", failed)
-        col_e.metric("Errors", errors)
+        # st.metric can sometimes cause UI jumps/conflicts inside status expanders
+        # Use a more stable horizontal layout with custom HTML badges
+        st.markdown(
+            f"""
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <div style="flex: 1; padding: 10px; background: #065F4620; border: 1px solid #065F46; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.8em; color: #34D399; font-weight: 600;">PASSED</div>
+                    <div style="font-size: 1.5em; font-weight: 700; color: #FFFFFF;">{passed}</div>
+                </div>
+                <div style="flex: 1; padding: 10px; background: #991B1B20; border: 1px solid #991B1B; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.8em; color: #F87171; font-weight: 600;">FAILED</div>
+                    <div style="font-size: 1.5em; font-weight: 700; color: #FFFFFF;">{failed}</div>
+                </div>
+                <div style="flex: 1; padding: 10px; background: #4B556320; border: 1px solid #4B5563; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.8em; color: #9CA3AF; font-weight: 600;">ERRORS</div>
+                    <div style="font-size: 1.5em; font-weight: 700; color: #FFFFFF;">{errors}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True
+        )
         if failed > 0 or errors > 0:
             st.markdown("**Failure details:**")
             st.code(result.stdout[-3000:] if len(result.stdout) > 3000 else result.stdout)
@@ -2281,12 +2379,12 @@ def _tab_testing(state: Dict[str, Any]):
     with btn_g1:
         run_all_guards = st.button("Run All Guardrails (pytest)",
                                     type="primary", key="run_all_guardrails",
-                                    use_container_width=True)
+                                    width="stretch")
     with btn_g2:
         has_live_data = bool(state.get("company_name") and _GUARDRAIL_AVAILABLE)
         run_live = st.button("Run Live Check (current state)",
                               key="run_live_guard",
-                              use_container_width=True,
+                              width="stretch",
                               disabled=not has_live_data)
         if not has_live_data:
             st.caption("Requires an active assessment and guardrail modules installed.")
@@ -2294,14 +2392,19 @@ def _tab_testing(state: Dict[str, Any]):
     # Run All Guardrails via pytest
     if run_all_guards:
         with st.status("Running guardrail test suite...", expanded=True) as status:
-            result = subprocess.run(
-                [sys.executable, "-m", "pytest", "tests/test_guardrails/", "-v", "--tb=short"],
-                capture_output=True, text=True, cwd=_ROOT, timeout=60)
-            _render_pytest_results(result, "Guardrail Suite")
-            if result.returncode == 0:
-                status.update(label="All guardrail tests PASSED", state="complete")
-            else:
-                status.update(label="Some guardrail tests FAILED", state="error")
+            # Use relative path for robustness across environments
+            try:
+                result = subprocess.run(
+                    [sys.executable, "-m", "pytest", "tests/test_guardrails", "-v", "--tb=short"],
+                    capture_output=True, text=True, cwd=_ROOT, timeout=60, check=False)
+                _render_pytest_results(result, "Guardrail Suite")
+                if result.returncode == 0:
+                    status.update(label="All guardrail tests PASSED", state="complete")
+                else:
+                    status.update(label="Some guardrail tests FAILED", state="error")
+            except Exception as e:
+                st.error(f"Failed to run tests: {str(e)}")
+                status.update(label="Test Execution Failed", state="error")
 
     # Run Live Guardrail Check on current state
     if run_live and has_live_data:
@@ -2321,8 +2424,9 @@ def _tab_testing(state: Dict[str, Any]):
             # Report validation
             report = state.get("final_report", "")
             if report:
-                cleaned, summary = runner.validate_final_report(report, state)
-                checks_passed = summary.get("checks_passed", 0)
+                cleaned, results = runner.validate_final_report(report, state)
+                summary = results.get("summary", {})
+                checks_passed = summary.get("passed_count", 0)
                 total_checks = summary.get("total_checks", 0)
                 if checks_passed == total_checks:
                     st.success(f"Report Validation: {checks_passed}/{total_checks} checks passed")
@@ -2390,7 +2494,7 @@ def _tab_testing(state: Dict[str, Any]):
     # Run button
     any_selected = any(selected_evals.values())
     run_evals = st.button("Run Selected Evals", type="primary", key="run_selected_evals",
-                           use_container_width=True, disabled=not any_selected)
+                           width="stretch", disabled=not any_selected)
     if not any_selected:
         st.caption("Check at least one eval suite above to enable this button.")
 
@@ -2557,6 +2661,33 @@ At each gate you can: **Approve & Continue**, **Reject & Stop**, or **Redo This 
 
 def render_hitl():
     st.set_page_config(page_title="G5-AAFS | UBS Credit Risk", page_icon="🏦", layout="wide")
+    
+    # --- GLOBAL CSS RESET FOR ICON OVERLAYS ---
+    st.markdown("""
+        <style>
+            /* Suppress native tooltips (arrow_right, etc.) by disabling pointer events on icon containers */
+            [data-testid="stStatusIcon"], [data-testid="stExpanderIcon"], [data-testid="stExpanderIconError"] {
+                pointer-events: none !important;
+                user-select: none !important;
+            }
+            
+            /* Hide ONLY the specific numeric/text tooltips if they still appear */
+            [title="arrow_right"], [title="chevron-right"], [title="Check"], [title="Error"] {
+                display: none !important;
+                visibility: hidden !important;
+            }
+            
+            /* Hide any text content (material ligatures) that might bleed out */
+            [data-testid="stStatusIcon"] { font-size: 0 !important; }
+            [data-testid="stStatusIcon"] svg { width: 1.2rem; height: 1.2rem; }
+            
+            /* Stabilize status labels */
+            .stStatus label { margin-left: 0 !important; }
+            
+            /* Fix for the yellowish banner pushing the layout */
+            section[data-testid="stMain"] { padding-top: 2rem !important; }
+        </style>
+    """, unsafe_allow_html=True)
 
     # Session defaults
     defaults = {"state": {}, "scored": False, "composite_score": None,
@@ -2612,22 +2743,22 @@ def render_hitl():
     # Compact controls row
     qc = st.columns([1, 1, 1, 1, 1, 5])
     with qc[0]:
-        if st.button("A-", key="fs_down", use_container_width=True):
+        if st.button("A-", key="fs_down", width="stretch"):
             st.session_state["font_size"] = max(12, st.session_state.get("font_size", 16) - 1)
             st.rerun()
     with qc[1]:
-        if st.button("A+", key="fs_up", use_container_width=True):
+        if st.button("A+", key="fs_up", width="stretch"):
             st.session_state["font_size"] = min(22, st.session_state.get("font_size", 16) + 1)
             st.rerun()
     with qc[2]:
-        if st.button("Reset", key="ribbon_reset", use_container_width=True):
+        if st.button("Reset", key="ribbon_reset", width="stretch"):
             for k in list(st.session_state.keys()):
                 if k not in ("font_size", "run_history"):
                     del st.session_state[k]
             st.rerun()
     with qc[3]:
         hist_n = len(st.session_state.get("run_history", []))
-        if st.button(f"History ({hist_n})", key="ribbon_history", use_container_width=True):
+        if st.button(f"History ({hist_n})", key="ribbon_history", width="stretch"):
             st.session_state["_jump_to_history"] = True
             st.rerun()
     with qc[4]:

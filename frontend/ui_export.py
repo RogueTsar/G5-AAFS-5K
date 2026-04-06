@@ -197,12 +197,12 @@ def render_export_panel(state: Dict[str, Any]):
     # Select all / deselect all
     ac1, ac2 = st.columns(2)
     with ac1:
-        if st.button("Select All", key="exp_sel_all", use_container_width=True):
+        if st.button("Select All", key="exp_sel_all", width="stretch"):
             for key in sections.values():
                 st.session_state[f"exp_{key}"] = True
             st.rerun()
     with ac2:
-        if st.button("Deselect All", key="exp_desel_all", use_container_width=True):
+        if st.button("Deselect All", key="exp_desel_all", width="stretch"):
             for key in sections.values():
                 st.session_state[f"exp_{key}"] = False
             st.rerun()
@@ -250,7 +250,7 @@ def render_export_panel(state: Dict[str, Any]):
 
         st.download_button(f"Download {fmt} Report",
                           report, f"risk_assessment_{company}.{ext}",
-                          mime, use_container_width=True, type="primary")
+                          mime, width="stretch", type="primary")
     else:
         st.warning("Select at least one section to export.")
 

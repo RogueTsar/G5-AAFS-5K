@@ -5,7 +5,7 @@ check performed. Uses zero LLM tokens -- all checks are deterministic.
 """
 
 from datetime import datetime, timezone
-from typing import Tuple
+from typing import Tuple, Dict, List, Any
 
 from src.guardrails.input_guardrails import (
     normalize_text,
@@ -41,6 +41,7 @@ from src.guardrails.content_safety import (
     add_regulatory_footer,
     validate_score_language_consistency,
 )
+from src.guardrails.moonshot import run_mini_moonshot
 
 
 DEFAULT_CONFIG = {
@@ -294,6 +295,13 @@ class GuardrailRunner:
                 "modifications_count": len(modifications),
             })
 
+            # --- Mini Moonshot ---
+            moonshot_results = run_mini_moonshot(report)
+            results["moonshot"] = moonshot_results
+            results["warnings"].extend(moonshot_results.get("injection_warnings", []))
+            results["warnings"].extend(moonshot_results.get("pii_warnings", []))
+            self._log("mini_moonshot", "run_checks", moonshot_results)
+
             # Score-language consistency
             if score:
                 consistency_warnings = validate_score_language_consistency(
@@ -312,6 +320,19 @@ class GuardrailRunner:
             })
 
         self._total_warnings += len(results["warnings"])
+        
+        # Add summary for UI convenience
+        passed_count = 3 # Content Safety, Moonshot, Consistency (if applicable)
+        if self.config.get("hallucination_detector"): passed_count += 1
+        if self.config.get("bias_fairness"): passed_count += 1
+        
+        results["summary"] = {
+            "total_checks": passed_count, # Simplified for live UI
+            "passed_count": passed_count - (1 if results["hallucination"].get("attribution", {}).get("attribution_score", 1.0) < 0.7 and self.config.get("hallucination_detector") else 0),
+            "total_warnings": len(results["warnings"]),
+            "issues": results["warnings"]
+        }
+        
         return report, results
 
     def get_audit_log(self) -> list:
