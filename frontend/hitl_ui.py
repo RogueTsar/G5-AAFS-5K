@@ -2421,7 +2421,7 @@ def render_hitl():
         f'</div>', unsafe_allow_html=True)
 
     # Compact controls row
-    qc = st.columns([1, 1, 1, 1, 6])
+    qc = st.columns([1, 1, 1, 1, 1, 5])
     with qc[0]:
         if st.button("A-", key="fs_down", use_container_width=True):
             st.session_state["font_size"] = max(12, st.session_state.get("font_size", 16) - 1)
@@ -2437,6 +2437,11 @@ def render_hitl():
                     del st.session_state[k]
             st.rerun()
     with qc[3]:
+        hist_n = len(st.session_state.get("run_history", []))
+        if st.button(f"History ({hist_n})", key="ribbon_history", use_container_width=True):
+            st.session_state["_jump_to_history"] = True
+            st.rerun()
+    with qc[4]:
         st.markdown(f'<span style="font-size:.65rem;color:var(--muted)">{st.session_state.get("font_size",16)}px</span>',
                     unsafe_allow_html=True)
 
