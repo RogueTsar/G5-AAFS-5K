@@ -1080,18 +1080,26 @@ def _pipeline_view(state: Dict[str, Any]):
 
     # Progress bar
     completed = sum(1 for _, _, key, _ in steps if _step_has_data(state, key))
-    st.progress(completed / len(steps))
-    st.markdown(f"**{completed}/{len(steps)} stages completed**")
+    pct = int(completed / len(steps) * 100)
+    st.markdown(
+        f'<div style="display:flex;align-items:center;gap:10px;margin:4px 0">'
+        f'<div style="flex:1;background:#252A36;border-radius:3px;height:6px">'
+        f'<div style="background:#34D399;width:{pct}%;height:100%;border-radius:3px"></div></div>'
+        f'<span style="font-size:.8rem;color:var(--text);font-weight:600">{completed}/{len(steps)}</span>'
+        f'</div>', unsafe_allow_html=True)
 
     for i, (num, title, key, render_fn) in enumerate(steps):
         has_data = _step_has_data(state, key)
-        icon = "white_check_mark" if has_data else "hourglass_flowing_sand"
+        status_dot = "#34D399" if has_data else "#FBBF24"
         color = _STEP_COLORS[i % len(_STEP_COLORS)]
 
         st.markdown(
-            f'<div style="border-left:4px solid {color};padding:2px 0 2px 12px;'
-            f'margin:4px 0"><b>:{icon}: {num}: {title}</b></div>',
-            unsafe_allow_html=True)
+            f'<div style="border-left:4px solid {color};padding:4px 0 4px 12px;'
+            f'margin:3px 0;display:flex;align-items:center;gap:8px">'
+            f'<span style="width:8px;height:8px;border-radius:50%;background:{status_dot};'
+            f'display:inline-block;flex-shrink:0"></span>'
+            f'<b style="font-size:.88rem;color:var(--text)">{num}: {title}</b>'
+            f'</div>', unsafe_allow_html=True)
 
         show = st.checkbox(f"Show {num}", value=(i == 0 and has_data),
                             key=f"pipe_show_{i}")
