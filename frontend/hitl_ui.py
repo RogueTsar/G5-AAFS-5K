@@ -2672,9 +2672,9 @@ def render_hitl():
                 mode_key = st.session_state.get("workflow_mode", "deep_dive")
                 company = state.get("company_name", "Company")
                 scenarios = {
-                    "exploratory": f"**Scenario**: Sarah Lim (RM, UBS Singapore) is preparing for an initial client call with **{company}**. She needs a quick risk snapshot to identify red flags before the meeting. Light-touch data collection, fast model.",
-                    "deep_dive": f"**Scenario**: The annual credit review for **{company}** is due. The credit committee requires a comprehensive multi-source risk assessment with full documentation for the compliance package. All agents active, multiple reviewer rounds.",
-                    "loan_simulation": f"**Scenario**: The lending team is evaluating a new facility request from **{company}**. The committee needs to understand how the proposed loan would impact the borrower's key financial ratios and overall risk profile.",
+                    "exploratory": f"Sarah Lim (RM, UBS Singapore) is preparing for an initial client call with {company}. She needs a quick risk snapshot to identify red flags before the meeting. Light-touch data collection, fast model.",
+                    "deep_dive": f"The annual credit review for {company} is due. The credit committee requires a comprehensive multi-source risk assessment with full documentation for the compliance package. All agents active, multiple reviewer rounds.",
+                    "loan_simulation": f"The lending team is evaluating a new facility request from {company}. The committee needs to understand how the proposed loan would impact the borrower's key financial ratios and overall risk profile.",
                 }
                 st.markdown(
                     f'<div class="dash-card" style="border-left:4px solid {_UBS_RED};background:#0E1726;color:white">'

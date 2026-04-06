@@ -153,6 +153,14 @@ def flag_fabricated_metrics(report: str, financial_data: list) -> list:
         elif isinstance(item, (int, float)):
             known_values.add(str(item))
 
+    # System-generated numbers that are always valid (not hallucinations)
+    # Risk scores, thresholds, percentage labels used by the scoring system
+    system_numbers = {
+        "0", "33", "34", "50", "66", "67", "100",  # score thresholds/defaults
+        "0.0", "33.0", "50.0", "67.0", "100.0",
+    }
+    known_values.update(system_numbers)
+
     # Extract numeric claims from report
     # Patterns: $1,234.56, 12.5%, 1,234, plain numbers
     patterns = [

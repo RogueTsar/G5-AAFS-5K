@@ -157,7 +157,13 @@ class GuardrailRunner:
                     "warnings": enforcer_warnings,
                 })
             elif agent_name == "risk_scoring":
-                output, enforcer_warnings = enforce_risk_score(output)
+                # risk_scoring_agent returns {"risk_score": {...}} — unwrap for enforcer
+                inner = output.get("risk_score", output)
+                if isinstance(inner, dict) and "score" in inner:
+                    inner, enforcer_warnings = enforce_risk_score(inner)
+                    output["risk_score"] = inner
+                else:
+                    output, enforcer_warnings = enforce_risk_score(output)
                 all_warnings.extend(enforcer_warnings)
                 self._log("output_enforcer", "enforce_risk_score", {
                     "agent": agent_name,

@@ -15,8 +15,9 @@ def search_company_news(company_name: str, api_key: str = None) -> List[Dict[str
         
     try:
         url = "https://newsapi.org/v2/everything"
+        # Use simple query — strict phrase match returns 0 for many companies
         params = {
-            "q": f'+"{company_name}" AND (business OR financial OR stock OR earnings OR market)',
+            "q": f'{company_name} AND (business OR financial OR earnings OR market)',
             "language": "en",
             "sortBy": "relevancy",
             "pageSize": 5,
