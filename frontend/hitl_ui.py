@@ -97,11 +97,13 @@ def _risk_gauge(score: float, mx: float = 100):
 
 
 def _badge(text: str, ok: bool = True):
-    bg = "#d4edda" if ok else "#f8d7da"
-    bd = "#c3e6cb" if ok else "#f5c6cb"
+    bg = "#065F4620" if ok else "#991B1B20"
+    bd = "#065F46" if ok else "#991B1B"
+    fg = "#34D399" if ok else "#F87171"
     st.markdown(
-        f'<span style="display:inline-block;padding:5px 12px;background:{bg};'
-        f'border:1px solid {bd};border-radius:16px;font-weight:600;font-size:.85em">'
+        f'<span style="display:inline-block;padding:4px 10px;background:{bg};'
+        f'border:1px solid {bd};border-radius:12px;font-weight:600;font-size:.78em;'
+        f'color:{fg}">'
         f'{text}</span>', unsafe_allow_html=True)
 
 
@@ -1117,25 +1119,69 @@ def _step_has_data(state: Dict, key: str) -> bool:
     return True
 
 
+# ── Agent Trace Block (lab-level traceability) ──
+
+def _trace_block(title: str, status: str, inputs: Dict, process: str,
+                 outputs: Dict, warnings: List = None):
+    """Render a lab-style agent trace block with full I/O visibility."""
+    ok = status.lower() in ("success", "pass", "complete", "done")
+    color = "#34D399" if ok else "#F87171" if "fail" in status.lower() else "#FBBF24"
+    st.markdown(
+        f'<div style="border:1px solid var(--border);border-radius:8px;'
+        f'margin:6px 0;overflow:hidden">'
+        f'<div style="background:{"#065F4615" if ok else "#991B1B15"};'
+        f'padding:8px 14px;border-bottom:1px solid var(--border);'
+        f'display:flex;justify-content:space-between;align-items:center">'
+        f'<span style="font-weight:700;font-size:.88rem;color:var(--text)">{title}</span>'
+        f'<span style="font-size:.72rem;font-weight:600;color:{color};'
+        f'background:{color}15;padding:2px 8px;border-radius:4px">{status}</span>'
+        f'</div></div>', unsafe_allow_html=True)
+    # Input
+    if inputs:
+        st.markdown(f'<div style="font-size:.72rem;color:var(--muted);padding:2px 0">'
+                    f'<b>INPUT</b></div>', unsafe_allow_html=True)
+        for k, v in inputs.items():
+            val = str(v)[:200] if v is not None else "—"
+            st.markdown(f'<code style="font-size:.7rem;color:var(--text)">{k}: {val}</code>',
+                        unsafe_allow_html=True)
+    # Process
+    if process:
+        st.markdown(f'<div style="font-size:.72rem;color:var(--muted);padding:2px 0">'
+                    f'<b>PROCESS</b></div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:.75rem;color:var(--text);padding:2px 8px;'
+                    f'background:var(--surface);border-radius:4px">{process}</div>',
+                    unsafe_allow_html=True)
+    # Output
+    if outputs:
+        st.markdown(f'<div style="font-size:.72rem;color:var(--muted);padding:2px 0">'
+                    f'<b>OUTPUT</b></div>', unsafe_allow_html=True)
+        for k, v in outputs.items():
+            val = str(v)[:300] if v is not None else "—"
+            st.markdown(f'<code style="font-size:.7rem;color:var(--text)">{k}: {val}</code>',
+                        unsafe_allow_html=True)
+    # Warnings
+    if warnings:
+        for w in warnings:
+            st.markdown(f'<span style="font-size:.7rem;color:#FBBF24">Warning: {w}</span>',
+                        unsafe_allow_html=True)
+
+
 # ── Step 1: Input ──
 
 def _pipe_step_input(state: Dict):
     company = state.get("company_name", "—")
     info = state.get("company_info", {})
-    docs = state.get("uploaded_docs", [])
-    xbrl = [d for d in state.get("doc_extracted_text", []) if d.get("type") == "XBRL_STRUCTURED"]
-
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        _metric("Company", company, color="blue")
-    with c2:
-        _metric("Entity Type", info.get("entity_type", "—"), color="blue")
-    with c3:
-        _metric("Documents Uploaded", len(docs) or len(state.get("doc_extracted_text", [])), color="blue")
-
-    if xbrl:
-        st.success(f"XBRL structured data detected — {xbrl[0].get('xbrl_parsed', {}).get('metadata', {}).get('total_facts', 0)} facts extracted (0 LLM tokens)")
-    _badge("Input Validation Passed")
+    docs = state.get("doc_extracted_text", [])
+    has_data = bool(company and company != "—")
+    _trace_block(
+        "Input Validation Agent",
+        "SUCCESS" if has_data else "WAITING",
+        {"company_name": company, "uploaded_docs": f"{len(docs)} documents"},
+        "Validates company name, classifies entity type, checks for injection patterns. "
+        "XBRL files get deterministic structured extraction (0 LLM tokens).",
+        {"company_info": info, "doc_count": len(docs),
+         "xbrl_found": len([d for d in docs if d.get("type") == "XBRL_STRUCTURED"])},
+    )
 
 
 # ── Step 2: Source Discovery ──
@@ -1143,22 +1189,22 @@ def _pipe_step_input(state: Dict):
 def _pipe_step_discovery(state: Dict):
     queries = state.get("search_queries", {})
     aliases = state.get("company_aliases", [])
-
+    has_queries = bool(queries)
+    _trace_block(
+        "Discovery Agent",
+        "SUCCESS" if has_queries else "EMPTY",
+        {"company_name": state.get("company_name", "—")},
+        "Uses LLM (with_structured_output) to generate targeted search queries per data source. "
+        "Produces queries for: news, social, reviews, financials. ~200 tokens.",
+        {"queries_generated": {k: len(v) if isinstance(v, list) else 1 for k, v in queries.items()},
+         "aliases": aliases or "none",
+         "total_sources": len(queries)},
+    )
     if queries:
-        st.markdown("#### Search Queries Generated")
         for source, q_list in queries.items():
-            if isinstance(q_list, list):
-                st.markdown(f"**{source.title()}**: {', '.join(q_list[:3])}")
-            else:
-                st.markdown(f"**{source.title()}**: {q_list}")
-
-    if aliases:
-        st.markdown(f"**Aliases resolved**: {', '.join(aliases)}")
-
-    # Source count
-    total_sources = len(queries)
-    _metric("Data Sources Planned", total_sources, color="blue")
-    _badge("Source Discovery Complete")
+            qs = q_list if isinstance(q_list, list) else [q_list]
+            st.markdown(f'<code style="font-size:.7rem;color:var(--muted)">{source}: {", ".join(str(q)[:60] for q in qs[:3])}</code>',
+                        unsafe_allow_html=True)
 
 
 # ── Step 3: Data Collection ──
@@ -1171,29 +1217,29 @@ def _pipe_step_collection(state: Dict):
     press = state.get("press_release_analysis", {})
     xbrl = [d for d in state.get("doc_extracted_text", []) if d.get("type") == "XBRL_STRUCTURED"]
 
-    st.markdown("#### Collection Summary (Parallel Fan-Out)")
-
-    agents = [
-        ("News Agent", len(news), "NewsAPI + Tavily", "green" if news else "grey"),
-        ("Social Agent", len(social), "Tavily social", "green" if social else "grey"),
-        ("Review Agent", len(reviews), "Tavily reviews", "green" if reviews else "grey"),
-        ("Financial Agent", len(financial), "yfinance + ACRA", "green" if financial else "grey"),
-        ("Press Agent", len(press.get("events", [])), "Directed newsroom", "green" if press.get("events") else "grey"),
-        ("Document Processor", len(xbrl), "XBRL parser (0 tokens)", "green" if xbrl else "grey"),
+    agents_data = [
+        ("News Agent", news, "NewsAPI /v2/everything", "Searches for company news articles. Max 5 items. Dedup by URL."),
+        ("Social Agent", social, "Tavily (social media)", "Searches social platforms for sentiment. Max 5 posts. Dedup by snippet."),
+        ("Review Agent", reviews, "Tavily (reviews)", "Collects employee/customer reviews. Max 5. Dedup by snippet."),
+        ("Financial Agent", financial, "yfinance + Tavily", "Fetches financial metrics (D/E, margins, revenue) via yfinance. Ticker lookup via 10-entry map + Yahoo search fallback."),
+        ("Press Release Agent", press.get("events", []) if isinstance(press, dict) else [], "Tavily (directed)", "5 targeted queries for M&A, workforce, earnings, partnerships, risk events. Regex categorization + 1 LLM call for CorporateTrajectory."),
+        ("Document Processor", xbrl, "Marcus's XBRL parser", "Parses ACRA BizFinx XBRL instance documents. 0 LLM tokens. Deterministic extraction."),
     ]
 
-    cols = st.columns(3)
-    for i, (name, count, source, color) in enumerate(agents):
-        with cols[i % 3]:
-            _metric(name, f"{count} items", delta=source, color=color)
+    for name, items, api, process in agents_data:
+        count = len(items) if isinstance(items, list) else 0
+        status = "SUCCESS" if count > 0 else "EMPTY (no data returned)"
+        _trace_block(name, status,
+                     {"query_source": "state['search_queries']"},
+                     process,
+                     {"items_collected": count},
+                     warnings=[f"0 items — API may have returned empty for this company"] if count == 0 else None)
 
-    # Sentiment overview across all text sources
+    # Sentiment
     all_text = news + social
     if all_text:
-        st.markdown("#### Aggregate Sentiment (FinBERT)")
         sc = _sentiment_counts(all_text)
-        chart_data = pd.DataFrame({"Count": sc}, index=["positive", "negative", "neutral"])
-        st.bar_chart(chart_data)
+        st.bar_chart(pd.DataFrame({"Count": sc}, index=["positive", "negative", "neutral"]))
 
 
 # ── Step 4: Cleaning & Entity Resolution ──
@@ -1201,28 +1247,34 @@ def _pipe_step_collection(state: Dict):
 def _pipe_step_cleaning(state: Dict):
     cleaned = state.get("cleaned_data", [])
     resolved = state.get("resolved_entities", {})
-
-    c1, c2 = st.columns(2)
-    with c1:
-        _metric("Cleaned Records", len(cleaned) if cleaned else "N/A", color="blue")
-        if resolved:
-            primary = resolved.get("primary", "—")
-            st.markdown(f"**Primary entity**: {primary}")
-    with c2:
-        # Source credibility — check cleaned_data items for credibility_weight
-        cleaned_items = state.get("cleaned_data", [])
-        tiered = [d for d in cleaned_items if d.get("credibility_weight")]
-        if tiered:
-            avg_cred = sum(d["credibility_weight"] for d in tiered) / len(tiered)
-            high_tier = sum(1 for d in tiered if d.get("source_tier", "").startswith("tier_1") or d.get("source_tier", "").startswith("tier_2"))
-            _metric("Avg Source Credibility", f"{avg_cred:.2f}", color="green" if avg_cred > 0.7 else "orange")
-            _metric("High-Tier Sources", f"{high_tier}/{len(tiered)}", color="green")
-        else:
-            _metric("Source Credibility", "Not yet computed", color="grey")
-
-    _badge("Entity Resolution Complete")
-    if cleaned:
-        _badge(f"FinBERT Enrichment: {len(cleaned)} records")
+    _trace_block(
+        "Data Cleaning + FinBERT Enrichment",
+        "SUCCESS" if cleaned else "EMPTY",
+        {"raw_items": "news + social + review + financial + docs merged"},
+        "Merges all collection outputs into one list. Runs ProsusAI/finbert sentiment "
+        "analysis on each item (lazy-loaded, ~500MB model). Truncates text at 2000 chars. "
+        "Items without extractable text get no finbert_sentiment key.",
+        {"cleaned_records": len(cleaned)},
+    )
+    _trace_block(
+        "Entity Resolution Agent",
+        "SUCCESS" if resolved else "SKIPPED",
+        {"cleaned_data": f"{len(cleaned)} items"},
+        "Uses LLM with_structured_output(EntityResolutionOutput) to verify each item is relevant "
+        "to the target company. MUTATES cleaned_data — irrelevant items are permanently removed. "
+        "Index-alignment: result.verifications[i] maps to cleaned_data[i].",
+        {"primary_name": resolved.get("primary", "—"),
+         "aliases": resolved.get("discovered_aliases", resolved.get("aliases", []))},
+    )
+    _trace_block(
+        "Source Credibility Agent (0 tokens)",
+        "SUCCESS" if cleaned else "SKIPPED",
+        {"cleaned_data": f"{len(cleaned)} items"},
+        "Hardcoded 4-tier credibility weights. Tier 1 (institutional): 0.90-0.95, "
+        "Tier 2 (media): 0.80-0.85, Tier 3 (contextual): 0.50-0.60, Tier 4 (social): 0.35-0.40. "
+        "Domain matching on URL. 0 LLM tokens.",
+        {"tiered_items": len([d for d in cleaned if d.get("credibility_weight")])},
+    )
 
 
 # ── Step 5: Risk & Strength Extraction ──
@@ -1230,18 +1282,28 @@ def _pipe_step_cleaning(state: Dict):
 def _pipe_step_extraction(state: Dict):
     risks = state.get("extracted_risks", [])
     strengths = state.get("extracted_strengths", [])
+    _trace_block(
+        "Risk Extraction Agent (LLM)",
+        "SUCCESS" if risks or strengths else "EMPTY",
+        {"cleaned_data": f"{len(state.get('cleaned_data', []))} items with FinBERT sentiment"},
+        "Role: 'objective corporate analyst'. Uses with_structured_output(RiskExtractionOutput). "
+        "Treats finbert_sentiment as expert anchor. Negative sentiment → risk, Positive → strength. "
+        "Co-extracts risks AND strengths in single compound LLM call. ~500 tokens.",
+        {"risks": len(risks), "strengths": len(strengths),
+         "risk_types": list(set(r.get("type", "?") for r in risks)),
+         "strength_types": list(set(s.get("type", "?") for s in strengths))},
+        warnings=["0 risks and 0 strengths — LLM may have returned empty"] if not risks and not strengths else None,
+    )
+    # Show each signal
+    for r in risks:
+        st.markdown(f'<div style="font-size:.75rem;color:#F87171;padding:1px 8px">'
+                    f'RISK [{r.get("type","?")}]: {r.get("description","")}</div>',
+                    unsafe_allow_html=True)
+    for s in strengths:
+        st.markdown(f'<div style="font-size:.75rem;color:#34D399;padding:1px 8px">'
+                    f'STRENGTH [{s.get("type","?")}]: {s.get("description","")}</div>',
+                    unsafe_allow_html=True)
 
-    c1, c2 = st.columns(2)
-    with c1:
-        _metric("Risk Signals", len(risks), color="red")
-        for r in risks:
-            st.markdown(f"- **{r.get('type', '?')}**: {r.get('description', '')}")
-    with c2:
-        _metric("Strength Signals", len(strengths), color="green")
-        for s in strengths:
-            st.markdown(f"- **{s.get('type', '?')}**: {s.get('description', '')}")
-
-    # Risk type distribution
     if risks:
         type_counts = {}
         for r in risks:
@@ -1260,73 +1322,106 @@ def _pipe_step_scoring(state: Dict):
     conf = score_data.get("confidence_score", score_data.get("confidence", 0))
     conf_level = score_data.get("confidence_level", "—")
 
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        _metric("Risk Score", f"{score}/100", color="red" if score >= 67 else "orange" if score >= 34 else "green")
-    with c2:
-        _metric("Rating", rating, color="red" if rating == "High" else "orange" if rating == "Medium" else "green")
-    with c3:
-        _metric("Confidence", f"{conf*100:.0f}%" if isinstance(conf, float) else str(conf), color="blue")
-    with c4:
-        _metric("Confidence Level", conf_level, color="green" if conf_level == "High" else "orange")
+    _trace_block(
+        "Risk Scoring Agent (LLM)",
+        "SUCCESS" if score > 0 else "DEFAULT",
+        {"risks": len(state.get("extracted_risks", [])),
+         "strengths": len(state.get("extracted_strengths", []))},
+        "Role: 'neutral, objective credit analyst'. Uses with_structured_output(RiskScoreOutput). "
+        "Instruction: 'BE NEUTRAL: Use FinBERT scores as objective anchor.' "
+        "Output enforcer validates: score 0-100, rating Low/Med/High, consistency check. "
+        "If LLM returns invalid rating, enforcer derives from score (score is authoritative).",
+        {"score": f"{score}/100", "rating": rating,
+         "confidence": f"{conf*100:.0f}%" if isinstance(conf, float) else str(conf),
+         "confidence_level": conf_level},
+        warnings=["Score defaulted to 50 — LLM may have failed"] if score == 50 and rating == "Medium" else None,
+    )
 
     _risk_gauge(score)
 
-    st.caption("Score methodology: LLM-structured output validated by output_enforcer guardrail. "
-               "Confidence from source diversity + sentiment agreement + data coverage.")
+    _trace_block(
+        "Confidence Calibration Agent (0 tokens)",
+        "SUCCESS" if conf_level != "—" else "SKIPPED",
+        {"risk_score": score},
+        "Formula: 0.30*data_coverage + 0.20*source_diversity + 0.30*sentiment_agreement + 0.20*high_tier_ratio. "
+        "Thresholds: >=0.7 High, >=0.4 Medium, <0.4 Low. Augments risk_score dict with confidence_level/score/breakdown.",
+        {"confidence_level": conf_level,
+         "confidence_score": f"{conf*100:.0f}%" if isinstance(conf, float) else str(conf)},
+    )
 
 
 # ── Step 7: Explainability ──
 
 def _pipe_step_explain(state: Dict):
     explanations = state.get("explanations", [])
-
-    if explanations:
-        for exp in explanations:
-            metric = exp.get("metric", "—")
-            reason = exp.get("reason", "—")
-            st.markdown(
-                f'<div style="border-left:3px solid #9467bd;padding:8px 12px;margin:4px 0;'
-                f'background:#f8f4ff;border-radius:4px">'
-                f'<b>{metric}</b><br/><span style="color:#555">{reason}</span></div>',
-                unsafe_allow_html=True)
-    else:
-        st.info("Explanations will appear after risk scoring completes.")
-
-    _badge("Explainability Agent Complete")
+    _trace_block(
+        "Explainability Agent (LLM)",
+        "SUCCESS" if explanations else "EMPTY",
+        {"score": state.get("risk_score", {}).get("score", "?"),
+         "risks": len(state.get("extracted_risks", [])),
+         "strengths": len(state.get("extracted_strengths", []))},
+        "Role: 'objective auditor'. Generates 2-3 explanations showing tug-of-war between "
+        "risks and strengths. Instruction: 'BE BALANCED'. Uses with_structured_output(ExplainabilityOutput). "
+        "Output enforcer injects placeholder if 0 valid explanations.",
+        {"explanations": len(explanations)},
+    )
+    for exp in explanations:
+        st.markdown(
+            f'<div style="border-left:2px solid #6B4C9A;padding:6px 10px;margin:3px 0;'
+            f'background:var(--surface);border-radius:4px;font-size:.8rem">'
+            f'<b style="color:var(--text)">{exp.get("metric", "—")}</b><br/>'
+            f'<span style="color:var(--muted)">{exp.get("reason", "—")}</span></div>',
+            unsafe_allow_html=True)
 
 
 # ── Step 8: Final Report ──
 
 def _pipe_step_report(state: Dict):
     report = state.get("final_report", "")
-
-    # Guardrail badges
-    st.markdown("#### Compliance Checks")
-    gc = st.columns(5)
-    with gc[0]: _badge("Input Validated")
-    with gc[1]: _badge("Bias Check Passed")
-    with gc[2]: _badge("Hallucination Check")
-    with gc[3]: _badge("MAS FEAT Compliant")
-    with gc[4]: _badge("EU AI Act Compliant")
-
     warnings = state.get("guardrail_warnings", [])
-    if warnings:
-        st.warning(f"{len(warnings)} guardrail warnings raised")
-        for w in warnings:
-            st.markdown(f"- {w}")
-
-    # Report preview
-    if report:
-        st.markdown("#### Report Preview")
-        st.markdown(report)
-    else:
-        st.info("Final report will appear after all agents complete.")
-
-    # Audit trail
     audit = state.get("audit_trail", {})
+
+    _trace_block(
+        "Reviewer Agent (LLM)",
+        "SUCCESS" if report else "EMPTY",
+        {"score": state.get("risk_score", {}).get("score", "?"),
+         "risks": len(state.get("extracted_risks", [])),
+         "strengths": len(state.get("extracted_strengths", []))},
+        "Uses SystemMessage + HumanMessage (NOT structured output — free-form Markdown). "
+        "Produces 4-section report: Company+Score, Red Flags, Green Flags, Executive Summary. "
+        "Only analysis agent that uses raw invoke() instead of with_structured_output().",
+        {"report_length": f"{len(report)} chars" if report else "empty"},
+    )
+
+    _trace_block(
+        "Audit Trail Agent (0 tokens)",
+        "SUCCESS" if audit else "SKIPPED",
+        {"pipeline_state": "full state dict"},
+        "Checks which agents executed (inference-based: non-empty output fields). "
+        "Validates MAS FEAT (5 required fields) and EU AI Act (4 required fields). "
+        "Tags with pipeline_version='1.0.0' and run_id.",
+        {"agents_executed": audit.get("agents_executed", []) if audit else "—",
+         "mas_feat": audit.get("compliance", {}).get("mas_feat_passed", "—") if audit else "—",
+         "eu_ai_act": audit.get("compliance", {}).get("eu_ai_act_passed", "—") if audit else "—"},
+    )
+
+    _trace_block(
+        "Guardrail Runner (0 tokens)",
+        "PASS" if len(warnings) < 5 else "WARNINGS",
+        {"report": f"{len(report)} chars", "state_keys": "all"},
+        f"6 modules checked: Input Validation, Output Enforcement, Hallucination Detection, "
+        f"Bias/Fairness (60 terms, 3 severity tiers), Cascade Guard, Content Safety. "
+        f"All zero LLM tokens. {len(warnings)} warnings raised.",
+        {"warnings": len(warnings)},
+        warnings=warnings[:5] if warnings else None,
+    )
+
+    if report:
+        st.markdown("#### Report")
+        st.markdown(report)
+
     if audit:
-        if st.checkbox("Show Audit Trail", key="show_audit"):
+        if st.checkbox("Show Audit Trail JSON", key="show_audit"):
             st.json(audit)
 
 
