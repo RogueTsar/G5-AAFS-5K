@@ -265,6 +265,8 @@ def audit_agent(state: AgentState) -> Dict[str, Any]:
     # --- LLM-powered quality assessment (single call, ~300 tokens) ---
     llm_assessment = _run_llm_compliance_assessment(state, checklist_compliance)
 
+    guardrail_summary = state.get("guardrail_summary", {})
+
     # Build final audit trail, merging checklist + LLM results
     audit_trail = {
         "run_id": run_id,
