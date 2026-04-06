@@ -46,10 +46,21 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
                 raw_xml = content.decode("utf-8", errors="ignore")
                 try:
                     xbrl_data = parse_xbrl(raw_xml)
+                    # Build a text summary string from parsed data for downstream agents
+                    summary_parts = []
+                    ei = xbrl_data.get("entity_info", {})
+                    if ei.get("company_name"):
+                        summary_parts.append(f"Company: {ei['company_name']}")
+                    for section in ["balance_sheet", "income_statement", "cash_flow", "ratios"]:
+                        sect_data = xbrl_data.get(section, {})
+                        for k, v in sect_data.items():
+                            if v is not None:
+                                summary_parts.append(f"{k}: {v}")
+                    text_summary = "\n".join(summary_parts) if summary_parts else raw_xml[:2000]
                     extracted_results.append({
                         "filename": filename,
-                        "text": raw_xml,
-                        "type": doc_type,
+                        "text": text_summary,
+                        "type": "XBRL_STRUCTURED",
                         "xbrl_parsed": xbrl_data,
                     })
                     log_agent_action("document_processing_agent", f"Successfully parsed XBRL: {filename} ({len(raw_xml)} chars)")
