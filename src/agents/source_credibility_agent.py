@@ -8,7 +8,7 @@ Assigns credibility_weight (0-1) and source_tier with reasoning.
 
 from typing import Dict, Any, List
 from src.core.state import AgentState
-from src.core.llm import get_llm
+from src.core.llm import get_llm, sanitize_for_prompt
 from src.core.logger import log_agent_action
 
 AGENT_NAME = "source_credibility_agent"
@@ -68,17 +68,34 @@ def source_credibility_agent(state: AgentState) -> Dict[str, Any]:
     tier_counts = {}
     eval_details = []
 
-    if llm and len(cleaned_data) <= 25:
-        # LLM-powered batch evaluation
+    # Separate known-domain items (skip LLM) from unknown ones (need LLM)
+    known_items = []  # (index, item, weight, tier, reason)
+    unknown_items = []  # (index, item)
+    for i, item in enumerate(cleaned_data):
+        url = item.get("url", "N/A")
+        domain = _get_domain(url)
+        matched = False
+        for known_domain, weight in _DOMAIN_HINTS.items():
+            if known_domain in domain:
+                tier = "tier_1" if weight >= 0.90 else "tier_2" if weight >= 0.75 else "tier_3" if weight >= 0.50 else "tier_4"
+                known_items.append((i, item, weight, tier, f"Known domain: {known_domain}"))
+                matched = True
+                break
+        if not matched:
+            unknown_items.append((i, item))
+
+    if llm and unknown_items and len(unknown_items) <= 25:
+        # LLM only evaluates unknown-domain sources (saves tokens)
+        safe_company = sanitize_for_prompt(company, max_length=100)
         source_summaries = []
-        for i, item in enumerate(cleaned_data[:25]):
+        for idx, (i, item) in enumerate(unknown_items):
             url = item.get("url", "N/A")
             source_type = item.get("source_type", "unknown")
-            title = str(item.get("title", item.get("snippet", "")))[:80]
+            title = sanitize_for_prompt(str(item.get("title", item.get("snippet", ""))), max_length=80)
             domain = _get_domain(url)
-            source_summaries.append(f"{i+1}. [{source_type}] {domain} — {title}")
+            source_summaries.append(f"{idx+1}. [{source_type}] {domain} — {title}")
 
-        prompt = f"""You are a credit risk analyst evaluating source reliability for {company}.
+        prompt = f"""You are a credit risk analyst evaluating source reliability for {safe_company}.
 
 Rate each source on a scale of 0.0 to 1.0 for credibility in credit risk assessment:
 - 0.90-1.00: Tier 1 (regulatory filings, official financial data, central bank reports)
@@ -114,34 +131,46 @@ Example:
                     except (ValueError, IndexError):
                         continue
 
-            log_agent_action(AGENT_NAME, f"LLM evaluated {len(scores)}/{len(cleaned_data)} sources")
+            log_agent_action(AGENT_NAME, f"LLM evaluated {len(scores)}/{len(unknown_items)} unknown-domain sources")
 
-            for i, item in enumerate(cleaned_data):
-                if i in scores:
-                    weight, tier, reason = scores[i]
+            # Build index map: unknown_items index -> original cleaned_data index
+            llm_results = {}
+            for idx, (orig_i, item) in enumerate(unknown_items):
+                if idx in scores:
+                    llm_results[orig_i] = scores[idx]
                 else:
-                    weight, tier, reason = _fallback_score(
+                    llm_results[orig_i] = _fallback_score(
                         item.get("source_type", ""), item.get("url", ""))
-
-                annotated = {**item, "credibility_weight": weight, "source_tier": tier,
-                             "credibility_reason": reason}
-                updated_data.append(annotated)
-                tier_counts[tier] = tier_counts.get(tier, 0) + 1
-                eval_details.append({"source": _get_domain(item.get("url", "")),
-                                     "weight": weight, "tier": tier, "reason": reason})
 
         except Exception as e:
             log_agent_action(AGENT_NAME, f"LLM evaluation failed: {e}, using fallback")
-            for item in cleaned_data:
-                weight, tier, reason = _fallback_score(
+            llm_results = {}
+            for orig_i, item in unknown_items:
+                llm_results[orig_i] = _fallback_score(
                     item.get("source_type", ""), item.get("url", ""))
-                annotated = {**item, "credibility_weight": weight, "source_tier": tier,
-                             "credibility_reason": reason}
-                updated_data.append(annotated)
-                tier_counts[tier] = tier_counts.get(tier, 0) + 1
+
+        # Merge known + LLM-evaluated results in original order
+        all_results = {}
+        for orig_i, item, weight, tier, reason in known_items:
+            all_results[orig_i] = (weight, tier, reason)
+        all_results.update(llm_results)
+
+        for i, item in enumerate(cleaned_data):
+            weight, tier, reason = all_results.get(i, _fallback_score(
+                item.get("source_type", ""), item.get("url", "")))
+            annotated = {**item, "credibility_weight": weight, "source_tier": tier,
+                         "credibility_reason": reason}
+            updated_data.append(annotated)
+            tier_counts[tier] = tier_counts.get(tier, 0) + 1
+
     else:
-        # Fallback: rule-based (when LLM unavailable or too many items)
-        for item in cleaned_data:
+        # Fallback: all known-domain items resolved, unknown items get rule-based
+        for orig_i, item, weight, tier, reason in known_items:
+            annotated = {**item, "credibility_weight": weight, "source_tier": tier,
+                         "credibility_reason": reason}
+            updated_data.append(annotated)
+            tier_counts[tier] = tier_counts.get(tier, 0) + 1
+        for orig_i, item in unknown_items:
             weight, tier, reason = _fallback_score(
                 item.get("source_type", ""), item.get("url", ""))
             annotated = {**item, "credibility_weight": weight, "source_tier": tier,

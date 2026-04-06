@@ -11,7 +11,7 @@ from collections import Counter
 from datetime import datetime, timezone
 
 from src.core.state import AgentState
-from src.core.llm import get_llm
+from src.core.llm import get_llm, sanitize_for_prompt, extract_json_from_llm
 from src.core.logger import log_agent_action
 
 AGENT_NAME = "confidence_agent"
@@ -135,8 +135,9 @@ def _build_data_summary(state: AgentState, cleaned_data: List[Dict[str, Any]]) -
     missing = [f for f in DATA_SOURCE_FIELDS if not state.get(f)]
     missing_str = ", ".join(missing) if missing else "none"
 
+    safe_company = sanitize_for_prompt(company, max_length=100)
     return (
-        f"Company: {company}\n"
+        f"Company: {safe_company}\n"
         f"Sources ({len(cleaned_data)} items): {source_summary}\n"
         f"Date range: {freshness}\n"
         f"Sentiments: {sent_summary}\n"
@@ -176,15 +177,7 @@ def _llm_confidence_assessment(
     try:
         response = llm.invoke(prompt)
         content = response.content if hasattr(response, "content") else str(response)
-        content = content.strip()
-
-        # Strip markdown code fences if present
-        if content.startswith("```"):
-            content = content.split("\n", 1)[-1]
-        if content.endswith("```"):
-            content = content.rsplit("```", 1)[0]
-        content = content.strip()
-
+        content = extract_json_from_llm(content)
         parsed = json.loads(content)
         llm_score = float(parsed.get("score", math_score))
         llm_score = min(1.0, max(0.0, llm_score))

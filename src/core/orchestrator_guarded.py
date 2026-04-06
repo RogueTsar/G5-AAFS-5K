@@ -66,6 +66,7 @@ from src.agents.confidence_agent import confidence_agent
 from src.agents.audit_agent import audit_agent
 from src.agents.industry_context_agent import industry_context_agent
 from src.agents.press_release_agent import press_release_agent
+from src.agents.explainer_agent import explainer_agent
 
 # -- Guardrails --------------------------------------------------------------
 from src.guardrails.guardrail_runner import GuardrailRunner
@@ -111,6 +112,7 @@ class GuardedAgentState(TypedDict):
     industry_context: Dict[str, Any]
     press_release_analysis: Dict[str, Any]
     audit_trail: Dict[str, Any]
+    explainer_analysis: Dict[str, Any]
     guardrail_warnings: Annotated[List[str], operator.add]
 
 
@@ -235,6 +237,7 @@ def create_guarded_workflow():
     workflow.add_node("source_credibility", source_credibility_agent)
     workflow.add_node("confidence", confidence_agent)
     workflow.add_node("audit", audit_agent)
+    workflow.add_node("explainer", explainer_agent)
     workflow.add_node("industry_context", industry_context_agent)
 
     # -- Edges ---------------------------------------------------------------
@@ -274,7 +277,8 @@ def create_guarded_workflow():
     workflow.add_edge("guarded_risk_scoring", "confidence")
     workflow.add_edge("confidence", "guarded_explainability")
     workflow.add_edge("guarded_explainability", "guarded_reviewer")
-    workflow.add_edge("guarded_reviewer", "audit")
+    workflow.add_edge("guarded_reviewer", "explainer")
+    workflow.add_edge("explainer", "audit")
     workflow.add_edge("audit", END)
 
     # -- Compile -------------------------------------------------------------

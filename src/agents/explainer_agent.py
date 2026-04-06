@@ -16,7 +16,7 @@ import re
 import traceback
 from typing import Any, Dict, List, Optional
 
-from src.core.llm import get_llm
+from src.core.llm import get_llm, sanitize_for_prompt
 from src.core.logger import log_agent_action
 from src.core.state import AgentState
 
@@ -79,7 +79,7 @@ def _count_sources(state: AgentState) -> Dict[str, int]:
 
 def _build_pipeline_summary(state: AgentState) -> str:
     """Compact text digest of the full pipeline output for the LLM prompt."""
-    company = state.get("company_name", "Unknown")
+    company = sanitize_for_prompt(state.get("company_name", "Unknown"), max_length=100)
     risks = state.get("extracted_risks", [])
     strengths = state.get("extracted_strengths", [])
     risk_score = state.get("risk_score", {})
@@ -411,7 +411,7 @@ def explainer_agent(state: AgentState) -> Dict[str, Any]:
         committee_questions - questions a credit committee would still ask
         overall_quality_score - 0-100 pipeline quality estimate
     """
-    company = state.get("company_name", "Unknown")
+    company = sanitize_for_prompt(state.get("company_name", "Unknown"), max_length=100)
     log_agent_action("explainer_agent", f"Starting deep analysis for {company}")
 
     # ----- Try to get LLM ---------------------------------------------------
@@ -428,7 +428,7 @@ def explainer_agent(state: AgentState) -> Dict[str, Any]:
             f"Static analysis found {len(result['issues'])} issues "
             f"(LLM unavailable)"
         )
-        return result
+        return {"explainer_analysis": result}
 
     # ----- Build context -----------------------------------------------------
     summary = _build_pipeline_summary(state)
@@ -547,4 +547,4 @@ def explainer_agent(state: AgentState) -> Dict[str, Any]:
         },
     )
 
-    return result
+    return {"explainer_analysis": result}

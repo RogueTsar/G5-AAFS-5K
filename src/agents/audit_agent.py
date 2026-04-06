@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List
 from collections import Counter
 from src.core.state import AgentState
-from src.core.llm import get_llm
+from src.core.llm import get_llm, sanitize_for_prompt, extract_json_from_llm
 from src.core.logger import log_agent_action
 
 AGENT_NAME = "audit_agent"
@@ -174,7 +174,8 @@ def _run_llm_compliance_assessment(state: AgentState, checklist_compliance: dict
     context = _build_compliance_context(state)
     company = state.get("company_name", "unknown")
 
-    prompt = f"""You are a regulatory compliance auditor. Assess this AI due-diligence pipeline output for {company}.
+    safe_company = sanitize_for_prompt(company, max_length=100)
+    prompt = f"""You are a regulatory compliance auditor. Assess this AI due-diligence pipeline output for {safe_company}.
 
 PIPELINE OUTPUT SUMMARY:
 {context}
@@ -201,14 +202,8 @@ Respond in EXACTLY this JSON format (no markdown):
         response = llm.invoke(prompt)
         content = response.content if hasattr(response, "content") else str(response)
 
-        # Parse the JSON response -- strip markdown fences if present
-        content = content.strip()
-        if content.startswith("```"):
-            content = content.split("\n", 1)[1] if "\n" in content else content[3:]
-        if content.endswith("```"):
-            content = content[:-3]
-        content = content.strip()
-
+        # Parse the JSON response robustly
+        content = extract_json_from_llm(content)
         parsed = json.loads(content)
 
         result = {
