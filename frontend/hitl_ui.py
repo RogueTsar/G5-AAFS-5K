@@ -1430,10 +1430,19 @@ def _pipe_step_report(state: Dict):
 # ===========================================================================
 
 _UBS_LOGO_SVG = (
-    '<svg viewBox="0 0 80 28" style="height:1.6em;vertical-align:middle">'
-    '<rect width="80" height="28" rx="3" fill="#EC0000"/>'
-    '<text x="40" y="20" text-anchor="middle" fill="white" '
-    'font-family="Arial Black,sans-serif" font-size="18" font-weight="900">UBS</text>'
+    '<svg viewBox="0 0 120 40" style="height:2em;vertical-align:middle">'
+    # 3 crossed keys (simplified)
+    '<g transform="translate(20,20)" stroke="#CCC" stroke-width="1.5" fill="none">'
+    '<line x1="0" y1="-12" x2="0" y2="12"/>'
+    '<line x1="-10" y1="-8" x2="10" y2="8"/>'
+    '<line x1="10" y1="-8" x2="-10" y2="8"/>'
+    '<circle cx="0" cy="12" r="2.5" fill="#CCC"/>'
+    '<circle cx="-10" cy="8" r="2.5" fill="#CCC"/>'
+    '<circle cx="10" cy="8" r="2.5" fill="#CCC"/>'
+    '</g>'
+    '<text x="48" y="26" fill="#EC0000" '
+    'font-family="Helvetica Neue,Arial,sans-serif" font-size="22" font-weight="700" '
+    'letter-spacing="2">UBS</text>'
     '</svg>'
 )
 
@@ -2066,8 +2075,12 @@ def _render_sidebar(state: Dict[str, Any]):
     has_score = st.session_state.get("scored", False)
 
     # ── Logo ──
-    sb.markdown(f'<div style="text-align:center;padding:6px 0 4px 0">{_UBS_LOGO_SVG}</div>',
-                unsafe_allow_html=True)
+    sb.markdown(
+        f'<div style="text-align:center;padding:10px 0 6px 0;border-bottom:1px solid #252A36">'
+        f'{_UBS_LOGO_SVG}'
+        f'<div style="font-size:.58rem;color:#555;margin-top:2px;letter-spacing:.1em">'
+        f'CREDIT RISK WORKSTATION</div>'
+        f'</div>', unsafe_allow_html=True)
 
     # ── Next Step + Progress ──
     step_text = "Enter company" if not has_company else "Review & Score" if not has_score else "Export"
