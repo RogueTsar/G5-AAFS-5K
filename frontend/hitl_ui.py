@@ -2002,9 +2002,38 @@ def _dashboard_view(state: Dict[str, Any]):
         with c4: _badge("MAS FEAT")
         with c5: _badge("EU AI Act")
         if warnings:
-            st.warning(f"{len(warnings)} guardrail warnings")
+            # Categorize and explain warnings
+            critical = []
+            info_only = []
             for w in warnings:
-                st.markdown(f"- {w}")
+                ws = str(w)
+                if "Unverified number" in ws or "Unverified percentage" in ws:
+                    info_only.append(ws)
+                elif "Missing score" in ws or "Invalid rating" in ws or "empty" in ws.lower():
+                    critical.append(ws)
+                else:
+                    info_only.append(ws)
+            if critical:
+                st.markdown(f'<div style="background:#991B1B20;border:1px solid #991B1B;'
+                            f'border-radius:6px;padding:8px 12px;margin:4px 0">'
+                            f'<b style="color:#F87171">CRITICAL ({len(critical)})</b> — '
+                            f'Agent output issues. Suggestion: re-run with more data sources or check API keys.'
+                            f'</div>', unsafe_allow_html=True)
+                for w in critical:
+                    st.markdown(f'<span style="font-size:.78rem;color:#F87171">- {w}</span>',
+                                unsafe_allow_html=True)
+            if info_only:
+                show_info = st.checkbox(f"Show {len(info_only)} informational warnings",
+                                         key="show_info_warnings")
+                if show_info:
+                    st.caption("These are hallucination detector flags — numbers in the report "
+                               "that weren't found in source financial data. Often false positives "
+                               "(e.g., the risk score itself). Review if numbers seem fabricated.")
+                    for w in info_only[:10]:
+                        st.markdown(f'<span style="font-size:.72rem;color:#FBBF24">- {w}</span>',
+                                    unsafe_allow_html=True)
+                    if len(info_only) > 10:
+                        st.caption(f"... and {len(info_only) - 10} more")
         else:
             st.success("All guardrails passed — 0 warnings")
         st.markdown('</div>', unsafe_allow_html=True)
