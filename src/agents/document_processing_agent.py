@@ -4,6 +4,7 @@ from pypdf import PdfReader
 from typing import Dict, Any, List
 from src.core.state import AgentState
 from src.core.logger import log_agent_action
+from src.mcp_tools.xbrl_parser import parse_xbrl
 
 def document_processing_agent(state: AgentState) -> Dict[str, Any]:
     """
@@ -40,30 +41,26 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
                     text += f"--- Sheet: {sheet_name} ---\n"
                     text += df.to_csv(index=False) + "\n"
             
+            elif file_ext in ["xbrl", "xml"]:
+                doc_type = "XBRL"
+                raw_xml = content.decode("utf-8", errors="ignore")
+                try:
+                    xbrl_data = parse_xbrl(raw_xml)
+                    extracted_results.append({
+                        "filename": filename,
+                        "text": raw_xml,
+                        "type": doc_type,
+                        "xbrl_parsed": xbrl_data,
+                    })
+                    log_agent_action("document_processing_agent", f"Successfully parsed XBRL: {filename} ({len(raw_xml)} chars)")
+                    continue
+                except Exception as parse_err:
+                    log_agent_action("document_processing_agent", f"XBRL parse failed for {filename}, falling back to raw text: {parse_err}")
+                    text = raw_xml
+
             elif file_ext in ["txt"]:
                 doc_type = "TXT"
                 text = content.decode("utf-8", errors="ignore")
-
-            elif file_ext in ["xbrl", "xml"]:
-                doc_type = "XBRL"
-                raw_text = content.decode("utf-8", errors="ignore")
-                try:
-                    from src.utils.xbrl_parser import parse_xbrl_instance, format_xbrl_summary
-                    parsed = parse_xbrl_instance(raw_text)
-                    if parsed.get("metadata", {}).get("total_facts", 0) > 0:
-                        text = format_xbrl_summary(parsed)
-                        extracted_results.append({
-                            "filename": filename,
-                            "text": text,
-                            "type": "XBRL_STRUCTURED",
-                            "xbrl_parsed": parsed,
-                        })
-                        log_agent_action("document_processing_agent", f"XBRL structured extraction: {parsed['metadata']['total_facts']} facts from {filename}")
-                        continue
-                    else:
-                        text = raw_text
-                except Exception:
-                    text = raw_text
 
             elif file_ext == "xsd":
                 doc_type = "XSD_SCHEMA"
@@ -94,4 +91,7 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
                 "type": "Error"
             })
 
-    return {"doc_extracted_text": extracted_results}
+    # Separate out parsed XBRL data for the visual display
+    xbrl_parsed = [r["xbrl_parsed"] for r in extracted_results if "xbrl_parsed" in r]
+
+    return {"doc_extracted_text": extracted_results, "xbrl_parsed_data": xbrl_parsed}

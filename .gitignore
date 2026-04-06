@@ -53,3 +53,7 @@ htmlcov/
 # OS
 Thumbs.db
 AAFS.env
+
+#xbrl
+*.xbrl
+sample_xbrl/

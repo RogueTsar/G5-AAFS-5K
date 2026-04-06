@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/dev/G5-AAFS-5K -name *.py -type f)",
+      "Bash(xargs python3:*)",
+      "Bash(ls -la /c/dev/G5-AAFS-5K/src/agents/*.py)",
+      "Bash(python3 -c \"import sys; sys.path.insert\\(0, ''.''\\); from src.agents import xbrl_agent; print\\(xbrl_agent.__file__\\)\")",
+      "Bash(xargs ls:*)",
+      "Bash(xargs grep:*)",
+      "Bash(cat /c/dev/G5-AAFS-5K/src/mcp_tools/__pycache__/*.pyc)",
+      "Bash(grep -r \"xbrl\\\\|XBRL\" /c/dev/G5-AAFS-5K --include=*.py --include=*.md)",
+      "Bash(grep -r \"structured_llm\\\\|json\\\\|parse\" /c/dev/G5-AAFS-5K/src/agents/*.py)",
+      "Bash(python -c \":*)",
+      "Bash(source project_venv/Scripts/activate)"
+    ]
+  }
+}

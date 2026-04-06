@@ -21,19 +21,45 @@ def reviewer_agent(state: AgentState) -> dict:
     prompt = f"""
     You are a Senior Risk Analyst formatting a final executive report for {company}.
     
-    Use the following analytics output to write a professional, concise Markdown report:
-    Risk Score: {json.dumps(score_info, indent=2)}
-    Extracted Risks: {json.dumps(risks, indent=2)}
-    Strengths & Mitigating Factors: {json.dumps(strengths, indent=2)}
-    Explanations: {json.dumps(explanations, indent=2)}
+    Use the following analytics output to write a professional, high-impact Markdown report:
+    - Risk Score: {json.dumps(score_info, indent=2)}
+    - Extracted Risks: {json.dumps(risks, indent=2)}
+    - Strengths & Mitigations: {json.dumps(strengths, indent=2)}
+    - Detailed Explanations: {json.dumps(explanations, indent=2)}
     
-    The report should:
-    1. Start with the company name and primary score (0-100).
-    2. Provide a section for 'Red Flags (Risks)'.
-    3. Provide a section for 'Green Flags (Strengths & Mitigations)'.
-    4. Finish with a balanced 'Executive Summary' that explains how the strengths offset some of the risks.
+    REPORT STRUCTURE REQUIREMENTS:
+    1. **Title**: Main heading with company name using the Markdown `#` symbol (e.g. `# [Company Name] Risk Report`).
+    2. **Executive Summary**: A high-level overview of the risk profile. Use `## Executive Summary`. Includes the 'Overall Risk Score'.
+    3. **Key Metrics Table**: Create a Markdown table with 'Metric', 'Rating', and 'Score'.
+       **CRITICAL: STICK TO THE NUMERICAL SCORES (0-100) FROM THE BREAKDOWN.** 
+       Do NOT use raw metrics (like 2.164 or 25%) here. Only use the 0-100 values.
+       
+       MAPPING FOR CATEGORIES:
+       - 'Overall Risk Score' ➔ use the main 'score' and 'rating'.
+       - 'Financial Metrics & Docs' ➔ use 'structured' score.
+       - 'Market News & Sentiment' ➔ use 'news' score.
+       - 'Employee/Customer Feedback' ➔ use 'review' score.
+       - 'Social Media Momentum' ➔ use 'social' score.
+       
+       RATING LOGIC (IF NOT PROVIDED):
+       - < 40: Low
+       - 40 - 70: Medium
+       - > 70: High
+       
+    4. **Risk Profile Details**:
+        - Use `### Risks` for potential issues. 
+          **CRITICAL: Order these by 'impact', placing 'High' significance risks at the top.**
+          Include the impact label (e.g., "[High] Traditional Risk: ...") in the bullet point.
+        - Use `### Strengths` for positive/mitigating factors. 
+          **CRITICAL: Order these by 'impact', placing 'High' significance strengths at the top.**
+          Include the impact label in the bullet point.
+    5. **Analyst Conclusion**: A final synthesized view on the outlook.
     
-    Make it sleek, neutral, and easy for executives to digest.
+    STYLING:
+    - Use bold text for key terms.
+    - **CRITICAL: Prioritize Analyst Overrides.** If a risk or strength has `"priority": true` or `"source": "Analyst Input"`, it was manually provided by an expert. You MUST list these at the very top of their sections and prioritize their findings when writing the Executive Summary.
+    - Keep it professional, data-driven, and objective.
+    - Avoid flowery language; focus on clarity.
     """
     
     messages = [
