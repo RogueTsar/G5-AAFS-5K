@@ -6,6 +6,8 @@ from src.core.state import AgentState
 from src.core.logger import log_agent_action
 from src.mcp_tools.xbrl_parser import parse_xbrl
 
+_xbrl_cache: list = []
+
 def document_processing_agent(state: AgentState) -> Dict[str, Any]:
     """
     Parses uploaded documents and extracts text for analysis.
@@ -46,23 +48,25 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
                 raw_xml = content.decode("utf-8", errors="ignore")
                 try:
                     xbrl_data = parse_xbrl(raw_xml)
-                    # Build a text summary string from parsed data for downstream agents
+                    # Build a plain text summary for downstream agents (must be str, not dict)
                     summary_parts = []
                     ei = xbrl_data.get("entity_info", {})
                     if ei.get("company_name"):
                         summary_parts.append(f"Company: {ei['company_name']}")
                     for section in ["balance_sheet", "income_statement", "cash_flow", "ratios"]:
                         sect_data = xbrl_data.get(section, {})
-                        for k, v in sect_data.items():
-                            if v is not None:
-                                summary_parts.append(f"{k}: {v}")
+                        if isinstance(sect_data, dict):
+                            for k, v in sect_data.items():
+                                if v is not None and not isinstance(v, dict):
+                                    summary_parts.append(f"{k}: {v}")
                     text_summary = "\n".join(summary_parts) if summary_parts else raw_xml[:2000]
+                    # Store text only in doc_extracted_text (no nested dicts)
                     extracted_results.append({
                         "filename": filename,
                         "text": text_summary,
                         "type": "XBRL_STRUCTURED",
-                        "xbrl_parsed": xbrl_data,
                     })
+                    _xbrl_cache.append(xbrl_data)
                     log_agent_action("document_processing_agent", f"Successfully parsed XBRL: {filename} ({len(raw_xml)} chars)")
                     continue
                 except Exception as parse_err:
@@ -96,7 +100,4 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
                 "type": "Error"
             })
 
-    # Separate out parsed XBRL data for the visual display
-    xbrl_parsed = [r["xbrl_parsed"] for r in extracted_results if "xbrl_parsed" in r]
-
-    return {"doc_extracted_text": extracted_results, "xbrl_parsed_data": xbrl_parsed}
+    return {"doc_extracted_text": extracted_results, "xbrl_parsed_data": _xbrl_cache}

@@ -1937,7 +1937,10 @@ def _render_sidebar(state: Dict[str, Any]):
     sb.markdown(f'<div class="next-step-box">{step_text}</div>', unsafe_allow_html=True)
     steps = sum([bool(has_company), bool(state.get("news_data") or state.get("doc_extracted_text")),
                  bool(has_score), bool(state.get("final_report"))])
-    sb.progress(steps / 4)
+    pct = int(steps / 4 * 100)
+    sb.markdown(f'<div style="background:#252A36;border-radius:3px;height:4px;margin:4px 0">'
+                f'<div style="background:#EC0000;width:{pct}%;height:100%;border-radius:3px"></div>'
+                f'</div>', unsafe_allow_html=True)
 
     # ── Timer / Cost (if run) ──
     elapsed = st.session_state.get("last_elapsed", 0)
