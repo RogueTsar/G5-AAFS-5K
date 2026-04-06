@@ -2171,13 +2171,13 @@ def _tab_testing(state: Dict[str, Any]):
     gw = state.get("guardrail_warnings", [])
     if gw:
         st.markdown("#### Flagged Warnings")
-        for severity, msg in gw:
-            if severity == "high":
-                st.markdown(f":red_circle: **HIGH** -- {msg}")
-            elif severity == "medium":
-                st.markdown(f":large_orange_circle: **MEDIUM** -- {msg}")
+        for w in gw:
+            if isinstance(w, str):
+                st.markdown(f"- {w}")
+            elif isinstance(w, (list, tuple)) and len(w) >= 2:
+                st.markdown(f"- **{w[0]}**: {w[1]}")
             else:
-                st.markdown(f":large_yellow_circle: **LOW** -- {msg}")
+                st.markdown(f"- {str(w)}")
 
     # =====================================================================
     # SECTION 2: EVALUATION SUITE
