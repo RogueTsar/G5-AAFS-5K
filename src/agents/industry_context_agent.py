@@ -96,10 +96,12 @@ def _build_text_blob(items: List[Dict[str, Any]]) -> str:
     """Concatenate title/snippet/text fields from a list of data items."""
     parts = []
     for item in items:
-        parts.append(item.get("title", ""))
-        parts.append(item.get("snippet", ""))
-        parts.append(item.get("text", ""))
-        parts.append(item.get("content", ""))
+        for key in ("title", "snippet", "text", "content"):
+            val = item.get(key, "")
+            if isinstance(val, str):
+                parts.append(val)
+            elif val is not None:
+                parts.append(str(val))
     return " ".join(parts)
 
 
