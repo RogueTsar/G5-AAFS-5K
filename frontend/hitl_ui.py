@@ -2902,40 +2902,68 @@ def render_hitl():
 
             with tabs[2]:  # Pipeline Trace
                 _pipeline_view(state)
-                # Explainer Agent — analyze any agent output
+
                 st.markdown("---")
                 st.markdown("### Explain Agent Output")
-                st.caption("Paste any agent output excerpt to check for reasoning errors, "
-                           "oversimplification, or epistemic issues.")
-                excerpt = st.text_area("Paste excerpt to analyze", height=100,
-                                       key="explainer_input",
-                                       placeholder="Paste agent output text here...")
+                st.caption(
+                    "Paste any agent output excerpt to check for reasoning errors, "
+                    "oversimplification, or epistemic issues."
+                )
+
+                excerpt = st.text_area(
+                    "Paste excerpt to analyze",
+                    height=220,
+                    placeholder="Paste any agent output excerpt here...",
+                    key="explainer_excerpt",
+                )
+
                 if st.button("Analyze Reasoning", key="run_explainer", type="primary"):
-                    if excerpt.strip():
-                        with st.status("Running explainer agent...") as status:
+                    if not excerpt.strip():
+                        st.warning("Paste some text first.")
+                    else:
+                        from src.agents.explainer_agent import explainer_agent
+
+                        current_state = st.session_state.get("state", {})
+
+                        with st.status("Running explainer agent...", expanded=False) as status:
                             try:
-                                from src.agents.explainer_agent import explainer_agent
-                                result = explainer_agent(state, excerpt.strip())
-                                issues = result.get("explainer_issues", [])
-                                if issues:
-                                    for iss in issues:
-                                        sev = iss.get("severity", "LOW")
-                                        sev_color = "#EC0000" if sev == "HIGH" else "#D4760A" if sev == "MEDIUM" else "#00875A"
-                                        st.markdown(
-                                            f'<div class="metric-card" style="border-left-color:{sev_color}">'
-                                            f'<div class="mc-label">{iss.get("category", "?")} — {sev}</div>'
-                                            f'<div style="font-size:.85rem;color:var(--text)">'
-                                            f'<b>Original:</b> {iss.get("original_text", "")}<br/>'
-                                            f'<b>Issue:</b> {iss.get("correction", "")}'
-                                            f'</div></div>', unsafe_allow_html=True)
-                                else:
-                                    st.success("No reasoning issues found.")
-                                status.update(label=result.get("explainer_summary", "Done"), state="complete")
+                                result = explainer_agent(state=current_state, excerpt=excerpt)
+                                st.session_state["explainer_result"] = result
+                                status.update(label=result.get("summary", "Done"), state="complete")
                             except Exception as e:
                                 st.error(f"Explainer failed: {e}")
                                 status.update(label="Failed", state="error")
+
+                result = st.session_state.get("explainer_result")
+                if result:
+                    issues = result.get("issues", [])
+
+                    if issues:
+                        for iss in issues:
+                            sev = iss.get("severity", "LOW").upper()
+                            sev_color = (
+                                "#EC0000" if sev == "HIGH"
+                                else "#B91C1C" if sev == "CRITICAL"
+                                else "#D4760A" if sev == "MEDIUM"
+                                else "#00875A"
+                            )
+
+                            st.markdown(
+                                f'''
+                                <div class="metric-card" style="border-left-color:{sev_color}">
+                                    <div class="mc-label">{iss.get("category", "?")} — {sev}</div>
+                                    <div style="font-size:.85rem;color:var(--text)">
+                                        <b>{iss.get("title", "Issue")}</b><br/>
+                                        {iss.get("detail", "")}<br/><br/>
+                                        <b>Original:</b> {iss.get("original_text", "—")}<br/>
+                                        <b>Suggested fix:</b> {iss.get("correction", "—")}
+                                    </div>
+                                </div>
+                                ''',
+                                unsafe_allow_html=True,
+                            )
                     else:
-                        st.warning("Paste some text first.")
+                        st.success(result.get("summary", "No reasoning issues found."))
 
             with tabs[3]:  # Loan Simulation
                 if st.session_state.get("workflow_mode") == "loan_simulation":
