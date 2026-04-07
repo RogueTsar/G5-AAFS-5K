@@ -1999,8 +1999,7 @@ def _loan_simulation(state: Dict[str, Any]):
         return
 
     p = xbrl_docs[0].get("xbrl_parsed", {})
-    bs = p.get("balance_sheet", {})
-    inc = p.get("income_statement", {})
+    summary = p.get("summary", {})
     ratios = p.get("computed_ratios", {})
 
     loan = st.number_input("Hypothetical Loan Amount (SGD)", min_value=0,
@@ -2009,14 +2008,15 @@ def _loan_simulation(state: Dict[str, Any]):
     interest_rate = st.slider("Assumed Interest Rate (%)", 1.0, 15.0, 5.0, 0.5,
                               key="loan_rate") / 100
 
-    # Recalculate
-    new_liab = (bs.get("liabilities") or 0) + loan
-    new_equity = bs.get("equity") or 1
+    # Recalculate using flat summary values (not nested row lists)
+    new_liab = (summary.get("liabilities") or 0) + loan
+    new_equity = summary.get("equity") or 1
     new_de = new_liab / new_equity if new_equity else 99
-    new_cl = (bs.get("current_liabilities") or 0) + loan * 0.3  # 30% short-term
-    new_cr = (bs.get("current_assets") or 0) / new_cl if new_cl else 0
+    curr_liab = (summary.get("liabilities") or 0) * 0.4  # estimate current portion
+    new_cl = curr_liab + loan * 0.3  # 30% short-term
+    new_cr = (summary.get("assets") or 0) / new_cl if new_cl else 0
     annual_interest = loan * interest_rate
-    ebit = inc.get("profit_loss_before_tax", 0)
+    ebit = summary.get("profit") or 0
     old_interest = (ebit / ratios.get("interest_coverage", 1)) if ratios.get("interest_coverage") else 0
     new_ic = ebit / (old_interest + annual_interest) if (old_interest + annual_interest) > 0 else None
 
@@ -2027,7 +2027,7 @@ def _loan_simulation(state: Dict[str, Any]):
                     "New Annual Interest Cost", "Total Liabilities"],
         "Before": [_fmt(ratios.get("debt_to_equity")), _fmt(ratios.get("current_ratio")),
                     _fmt(ratios.get("interest_coverage")),
-                    _fmt(old_interest), _fmt(bs.get("liabilities"))],
+                    _fmt(old_interest), _fmt(summary.get("liabilities"))],
         "After Loan": [f"{new_de:.2f}", f"{new_cr:.2f}",
                        _fmt(new_ic) if new_ic else "N/A",
                        _fmt(old_interest + annual_interest), _fmt(new_liab)],
