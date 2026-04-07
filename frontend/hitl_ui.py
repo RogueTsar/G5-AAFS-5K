@@ -434,39 +434,70 @@ def _render_xbrl_structured(p: Dict[str, Any]):
         for f in flags:
             st.error(f"Risk Flag: {f}")
 
-    # Key ratios at a glance
-    st.markdown("#### Key Ratios")
+    # Key ratios at a glance (Dynamic Headers)
+    st.markdown("#### Key Financial Ratios")
     rc = st.columns(5)
-    ratio_items = [
-        ("Current Ratio", ratios.get("current_ratio"), "green" if (ratios.get("current_ratio") or 0) >= 1 else "red"),
-        ("Debt / Equity", ratios.get("debt_to_equity"), "green" if (ratios.get("debt_to_equity") or 99) <= 2 else "orange"),
-        ("NPL Ratio", f"{(ratios.get('npl_ratio') or 0)*100:.2f}%", "green" if (ratios.get("npl_ratio") or 0) < 0.05 else "red"),
-        ("Profit Margin", f"{(ratios.get('profit_margin') or 0)*100:.1f}%", "green" if (ratios.get("profit_margin") or 0) > 0 else "red"),
-        ("Coverage", ratios.get("coverage_ratio"), "green" if (ratios.get("coverage_ratio") or 0) >= 1 else "orange"),
+    
+    # Priority ratios we'd LIKE to show
+    priority_ratios = [
+        ("Current Ratio", ratios.get("current_ratio"), 1.0, "x", False),
+        ("Debt / Equity", ratios.get("debt_to_equity"), 2.0, "x", True),
+        ("NPL Ratio", ratios.get("npl_ratio"), 0.05, "%", True),
+        ("Profit Margin", ratios.get("profit_margin"), 0.0, "%", False),
+        ("Equity Ratio", ratios.get("equity_ratio"), 0.3, "%", False),
     ]
-    for i, (lbl, val, col) in enumerate(ratio_items):
-        with rc[i]:
-            _metric(lbl, _fmt(val) if val is not None else "—", color=col)
+    
+    # Render ratios. 
+    idx = 0
+    for lbl, val, threshold, unit, inverse in priority_ratios:
+        if idx >= 5: break
+        with rc[idx]:
+            if val is not None:
+                # Color logic
+                is_ok = (val <= threshold) if inverse else (val >= threshold)
+                color = "green" if is_ok else "red"
+                # Formatting
+                disp_val = f"{val*100:.1f}%" if unit == "%" else f"{val:.2f}x"
+                _metric(lbl, disp_val, color=color)
+            else:
+                _metric(lbl, "—", color="grey")
+        idx += 1
 
     # Balance sheet table
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("#### Balance Sheet")
-        bs_rows = [(k.replace("_", " ").title(), _fmt(v)) for k, v in bs.items() if v is not None]
-        if bs_rows:
-            st.dataframe(pd.DataFrame(bs_rows, columns=["Item", "Value"]),
-                         width="stretch", hide_index=True)
+        # Flattened BS for display: collect 'total' rows or main categories
+        bs_display = []
+        for cat in ["current_assets", "noncurrent_assets", "total_assets", 
+                    "current_liabilities", "noncurrent_liabilities", "total_liabilities", "equity"]:
+            rows = bs.get(cat, [])
+            for r in rows:
+                if r.get("is_total") or r.get("concept") == "Assets":
+                    bs_display.append({"Item": r["label"], "Value": _fmt(r["current"])})
+        
+        if bs_display:
+            st.dataframe(pd.DataFrame(bs_display), width="stretch", hide_index=True)
+        else:
+            st.caption("Detailed Balance Sheet in Tab 1")
+            
     with c2:
         st.markdown("#### Income Statement")
-        inc_rows = [(k.replace("_", " ").title(), _fmt(v)) for k, v in inc.items() if v is not None]
-        if inc_rows:
-            st.dataframe(pd.DataFrame(inc_rows, columns=["Item", "Value"]),
-                         width="stretch", hide_index=True)
+        # Extract main IS items
+        is_display = []
+        for r in inc:
+            if r.get("concept") in ["Revenue", "GrossProfit", "ProfitLoss", "ProfitLossBeforeTaxation"]:
+                is_display.append({"Item": r["label"], "Value": _fmt(r["current"])})
+        
+        if is_display:
+            st.dataframe(pd.DataFrame(is_display), width="stretch", hide_index=True)
+        else:
+            st.caption("Detailed Income Statement in Tab 2")
 
     # Cash flow
-    if any(v is not None for v in cf.values()):
+    if any(r.get("current") is not None for r in cf):
         st.markdown("#### Cash Flow")
-        cf_data = {k.replace("_", " ").title(): v for k, v in cf.items() if v is not None}
+        cf_data = {r["label"]: r.get("current") for r in cf if r.get("current") is not None}
         st.bar_chart(pd.DataFrame({"Amount": cf_data}).T)
 
 

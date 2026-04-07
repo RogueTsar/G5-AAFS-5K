@@ -20,6 +20,7 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
 
     log_agent_action("document_processing_agent", f"Processing {len(uploaded_docs)} uploaded documents.")
     extracted_results = []
+    all_xbrl_parsed = []
 
     for doc in uploaded_docs:
         filename = doc.get("filename", "unknown")
@@ -48,31 +49,32 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
                 raw_xml = content.decode("utf-8", errors="ignore")
                 try:
                     xbrl_data = parse_xbrl(raw_xml)
-                    # Build a plain text summary for downstream agents (must be str, not dict)
+                    # Build a plain text summary for downstream agents
                     summary_parts = []
                     ei = xbrl_data.get("entity_info", {})
                     if ei.get("company_name"):
                         summary_parts.append(f"Company: {ei['company_name']}")
-                    for section in ["balance_sheet", "income_statement", "cash_flow", "ratios"]:
-                        sect_data = xbrl_data.get(section, {})
-                        if isinstance(sect_data, dict):
-                            for k, v in sect_data.items():
-                                if v is not None and not isinstance(v, dict):
-                                    summary_parts.append(f"{k}: {v}")
+                    
+                    # Add ratios and key metrics to summary
+                    ratios = xbrl_data.get("computed_ratios", {})
+                    if ratios:
+                        summary_parts.append("Key Ratios: " + ", ".join([f"{k}: {v}" for k, v in ratios.items() if v is not None]))
+
                     text_summary = "\n".join(summary_parts) if summary_parts else raw_xml[:2000]
-                    # Store text only in doc_extracted_text (no nested dicts)
+                    # NEST IT: for hitl_ui.py rendering
                     extracted_results.append({
                         "filename": filename,
                         "text": text_summary,
                         "type": "XBRL_STRUCTURED",
+                        "xbrl_parsed": xbrl_data
                     })
-                    _xbrl_cache.append(xbrl_data)
-                    log_agent_action("document_processing_agent", f"Successfully parsed XBRL: {filename} ({len(raw_xml)} chars)")
+                    all_xbrl_parsed.append(xbrl_data)
+                    log_agent_action("document_processing_agent", f"Successfully parsed XBRL: {filename}")
                     continue
                 except Exception as parse_err:
-                    log_agent_action("document_processing_agent", f"XBRL parse failed for {filename}, falling back to raw text: {parse_err}")
+                    log_agent_action("document_processing_agent", f"XBRL parse failed for {filename}: {parse_err}")
                     text = raw_xml
-
+            
             elif file_ext in ["txt"]:
                 doc_type = "TXT"
                 text = content.decode("utf-8", errors="ignore")
@@ -83,7 +85,7 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
             
             else:
                 doc_type = "Unknown"
-                text = content.decode("utf-8", errors="ignore")[:1000] # Partial read for safety
+                text = content.decode("utf-8", errors="ignore")[:1000]
                 
             extracted_results.append({
                 "filename": filename,
@@ -100,4 +102,4 @@ def document_processing_agent(state: AgentState) -> Dict[str, Any]:
                 "type": "Error"
             })
 
-    return {"doc_extracted_text": extracted_results, "xbrl_parsed_data": _xbrl_cache}
+    return {"doc_extracted_text": extracted_results, "xbrl_parsed_data": all_xbrl_parsed}

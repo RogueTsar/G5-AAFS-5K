@@ -394,11 +394,59 @@ def parse_xbrl(xml_content: str) -> Dict[str, Any]:
     income_statement = _build_statement(INCOME_STATEMENT, duration_current, duration_prior)
     cash_flow = _build_statement(CASH_FLOW, duration_current, duration_prior)
 
+    # --- Compute Key Ratios & Flat Summary ---
+    def _get_val(stmt, label, period="current"):
+        if isinstance(stmt, list):
+            for row in stmt:
+                if row["label"] == label or row["concept"] == label:
+                    return row.get(period)
+        elif isinstance(stmt, dict):
+            # bs is a dict of lists
+            for key, rows in stmt.items():
+                v = _get_val(rows, label, period)
+                if v is not None: return v
+        return None
+
+    rev = _get_val(income_statement, "Revenue")
+    prof = _get_val(income_statement, "ProfitLoss")
+    assets = _get_val(balance_sheet, "Assets")
+    liab = _get_val(balance_sheet, "Liabilities")
+    equity = _get_val(balance_sheet, "Equity")
+    curr_assets = _get_val(balance_sheet, "CurrentAssets")
+    curr_liab = _get_val(balance_sheet, "CurrentLiabilities")
+    npl = _get_val(balance_sheet, "sg-ssa:LoansAndAdvancesToExhibitedByCreditQualityPass") # example fallback
+    
+
+    # Ratios
+    ratios = {}
+    if curr_assets and curr_liab and curr_liab != 0:
+        ratios["current_ratio"] = curr_assets / curr_liab
+    if liab and equity and equity != 0:
+        ratios["debt_to_equity"] = liab / equity
+    if prof and rev and rev != 0:
+        ratios["profit_margin"] = prof / rev
+    if equity and assets and assets != 0:
+        ratios["equity_ratio"] = equity / assets
+
+
+
+    # Map to UI expectations in hitl_ui.py
+    # hitl_ui uses: current_ratio, debt_to_equity, npl_ratio, profit_margin, coverage_ratio
+    # If missing, we'll leave them for hitl_ui to handle.
+
     return {
         "entity_info": entity_info,
         "balance_sheet": balance_sheet,
         "income_statement": income_statement,
         "cash_flow": cash_flow,
+        "computed_ratios": ratios,
+        "summary": {
+            "revenue": rev,
+            "profit": prof,
+            "assets": assets,
+            "liabilities": liab,
+            "equity": equity,
+        },
         "periods": {
             "current": current_year,
             "prior": prior_year,

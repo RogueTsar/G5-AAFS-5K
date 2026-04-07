@@ -266,16 +266,20 @@ PIPELINE OUTPUT SUMMARY
 ========================
 {summary}
 
+{excerpt_block}
+
 YOUR TASK
 =========
-Analyze the pipeline output for quality issues across six dimensions.  For \
+Analyze the {focus} for quality issues across six dimensions.  For \
 EACH issue found, output a JSON object on its own line with these exact keys:
   "category": one of {categories}
   "severity": one of CRITICAL / HIGH / MEDIUM / LOW
   "title": short title (< 80 chars)
   "detail": 1-3 sentence explanation
+  "original_text": specific snippet from the focus text that has the issue
+  "correction": recommended rewrite or better reasoning
   "affected_agents": list of agent names involved
-  "recommendation": actionable next step
+  "recommendation": actionable next step (e.g. adjust scoring)
 
 Dimension definitions:
 1. CONTRADICTION -- logical conflicts between different agents (e.g., risk \
@@ -353,14 +357,17 @@ def _parse_analysis_response(content: str) -> tuple[List[Dict[str, Any]], List[s
                 sev = obj.get("severity", "MEDIUM").upper()
                 if sev not in _SEVERITY_LEVELS:
                     sev = "MEDIUM"
+                
                 issues.append({
                     "id": f"llm-{cat.lower()}-{len(issues)+1}",
                     "category": cat,
                     "severity": sev,
                     "title": str(obj.get("title", "Unnamed issue"))[:120],
-                    "detail": str(obj.get("detail", ""))[:500],
+                    "detail": str(obj.get("detail", obj.get("original_text", "")))[:500],
+                    "original_text": str(obj.get("original_text", obj.get("title", "")))[:200],
+                    "correction": str(obj.get("correction", obj.get("recommendation", "")))[:400],
                     "affected_agents": obj.get("affected_agents", []),
-                    "recommendation": str(obj.get("recommendation", ""))[:300],
+                    "recommendation": str(obj.get("recommendation", obj.get("correction", "")))[:300],
                 })
         except json.JSONDecodeError:
             # Not a JSON line — skip silently
@@ -401,8 +408,12 @@ def _estimate_quality_score(issues: List[Dict[str, Any]]) -> int:
 # ---------------------------------------------------------------------------
 
 
-def explainer_agent(state: AgentState) -> Dict[str, Any]:
-    """Deep meta-analysis of the full pipeline output.
+def explainer_agent(state: AgentState, excerpt: Optional[str] = None) -> Dict[str, Any]:
+    """Deep meta-analysis of the full pipeline output or a specific excerpt.
+
+    Args:
+        state: The full agent state.
+        excerpt: Optional specific text to analyze (from UI).
 
     Returns a dict with:
         issues              - list of categorised findings (for UI cards)
@@ -442,9 +453,14 @@ def explainer_agent(state: AgentState) -> Dict[str, Any]:
                       for s in strengths[:6]]
 
     # ===== PASS 1: Deep analysis (LLM call 1) ===============================
+    excerpt_block = f"SPECIFIC EXCERPT TO ANALYZE:\n{excerpt}\n" if excerpt else ""
+    focus = "provided excerpt" if excerpt else "pipeline output"
+
     analysis_prompt = _ANALYSIS_PROMPT_TEMPLATE.format(
         company=company,
         summary=summary,
+        excerpt_block=excerpt_block,
+        focus=focus,
         categories=" / ".join(_ANALYSIS_CATEGORIES),
     )
 
