@@ -3,18 +3,84 @@ Scoring module for the G5-AAFS credit risk evaluation framework.
 
 Compares actual pipeline output against ground truth data from
 synthetic_companies.json, computing precision, recall, score accuracy,
-and other quality metrics.
+and other quality metrics. Includes LLM-as-judge semantic scoring
+for cases where fuzzy string matching is insufficient.
 """
 
+import json
 import difflib
 from typing import Optional
+
+from src.core.llm import get_llm, extract_json_from_llm
 
 
 # Threshold for fuzzy string matching of risk signals
 FUZZY_MATCH_THRESHOLD = 0.65
 
 
-def score_against_ground_truth(actual: dict, expected: dict) -> dict:
+def llm_semantic_score(
+    actual_signals: list[str],
+    expected_signals: list[str],
+    context: str = "",
+) -> dict:
+    """Use LLM to judge semantic equivalence between extracted and expected signals.
+
+    Unlike fuzzy matching, this catches paraphrased meanings
+    (e.g., "high leverage" matches "debt-to-equity ratio of 3.5x").
+
+    Returns dict with semantic_precision, semantic_recall, matched_pairs,
+    reasoning, and llm_available flag.
+    """
+    llm = get_llm(temperature=0.0)
+    if not llm or not actual_signals or not expected_signals:
+        return {
+            "llm_available": llm is not None,
+            "semantic_precision": 0.0,
+            "semantic_recall": 0.0,
+            "matched_pairs": [],
+            "reasoning": "LLM unavailable or empty signals",
+        }
+
+    from langchain_core.messages import SystemMessage, HumanMessage
+
+    actual_text = "\n".join(f"  {i+1}. {s}" for i, s in enumerate(actual_signals[:15]))
+    expected_text = "\n".join(f"  {i+1}. {s}" for i, s in enumerate(expected_signals[:15]))
+
+    prompt = (
+        "You are evaluating a credit risk assessment pipeline.\n\n"
+        f"EXTRACTED SIGNALS (from pipeline):\n{actual_text}\n\n"
+        f"EXPECTED SIGNALS (ground truth):\n{expected_text}\n\n"
+        "For each expected signal, determine if any extracted signal captures "
+        "the same semantic meaning, even if worded differently.\n\n"
+        "Return JSON:\n"
+        '{\n'
+        '  "matched_pairs": [{"expected_idx": 1, "extracted_idx": 2, "reason": "..."}],\n'
+        '  "semantic_precision": <float 0-1>,\n'
+        '  "semantic_recall": <float 0-1>,\n'
+        '  "reasoning": "brief overall assessment"\n'
+        '}'
+    )
+
+    try:
+        response = llm.invoke([
+            SystemMessage(content="You are a precise evaluator. Return only valid JSON."),
+            HumanMessage(content=prompt),
+        ])
+        raw = extract_json_from_llm(response.content)
+        result = json.loads(raw)
+        result["llm_available"] = True
+        return result
+    except Exception:
+        return {
+            "llm_available": True,
+            "semantic_precision": 0.0,
+            "semantic_recall": 0.0,
+            "matched_pairs": [],
+            "reasoning": "LLM scoring failed",
+        }
+
+
+def score_against_ground_truth(actual: dict, expected: dict, use_llm: bool = True) -> dict:
     """Compare actual pipeline output against ground truth.
 
     Evaluates three dimensions:
@@ -86,6 +152,14 @@ def score_against_ground_truth(actual: dict, expected: dict) -> dict:
         + 0.20 * risk_prec,
         4,
     )
+
+    # --- LLM semantic scoring (supplementary, not replacing fuzzy scores) ---
+    if use_llm:
+        llm_result = llm_semantic_score(
+            actual_risk_signals, expected_risk_signals
+        )
+        if llm_result.get("llm_available"):
+            result["llm_semantic_scores"] = llm_result
 
     return result
 

@@ -3,6 +3,7 @@ Report generation module for the G5-AAFS credit risk evaluation framework.
 
 Produces both human-readable Markdown reports (suitable for UBS presentation)
 and machine-readable JSON reports from evaluation metrics and per-company details.
+Includes LLM-generated executive insights and recommendations.
 """
 
 import json
@@ -10,6 +11,7 @@ from datetime import datetime
 from typing import Optional
 
 from eval.metrics import EvalMetrics
+from src.core.llm import get_llm, extract_json_from_llm
 
 
 def generate_markdown_report(
@@ -251,7 +253,77 @@ def generate_markdown_report(
         "For questions, contact the G5-AAFS development team.*"
     )
 
+    # --- AI-Generated Insights ---
+    llm_insights = generate_llm_insights(metrics, details, config)
+    if llm_insights:
+        lines.append("")
+        lines.append("## AI-Generated Insights")
+        lines.append("")
+        lines.append(llm_insights)
+        lines.append("")
+
     return "\n".join(lines)
+
+
+def generate_llm_insights(
+    metrics: EvalMetrics,
+    details: list[dict],
+    config: Optional[dict] = None,
+) -> str:
+    """Use LLM to generate executive insights and recommendations.
+
+    Analyzes the eval metrics and per-company results to produce:
+    1. An executive summary paragraph
+    2. Top 3 areas of concern
+    3. Top 3 recommendations for improvement
+    4. Compliance risk narrative
+
+    Returns markdown text, or empty string if LLM unavailable.
+    """
+    llm = get_llm(temperature=0.3)
+    if not llm:
+        return ""
+
+    from langchain_core.messages import SystemMessage, HumanMessage
+
+    # Build a concise summary for the LLM
+    metrics_summary = (
+        f"Score Accuracy: {metrics.score_accuracy:.1%}, "
+        f"Precision: {metrics.precision:.1%}, "
+        f"Recall: {metrics.recall:.1%}, "
+        f"Entity Attribution: {metrics.entity_attribution:.1%}, "
+        f"Bias Pass Rate: {metrics.bias_pass_rate:.1%}, "
+        f"Avg Latency: {metrics.avg_latency_seconds:.1f}s, "
+        f"Companies Evaluated: {len(details)}"
+    )
+
+    # Identify failures for context
+    failures = [d for d in details if not d.get("score_in_range") or not d.get("rating_match")]
+    failure_summary = ""
+    if failures:
+        failure_names = [d.get("company_name", "?") for d in failures[:5]]
+        failure_summary = f"\nFailed companies (sample): {', '.join(failure_names)}"
+
+    prompt = (
+        "You are a senior credit risk evaluation analyst at UBS. "
+        "Based on these pipeline evaluation results, provide actionable insights.\n\n"
+        f"METRICS:\n{metrics_summary}{failure_summary}\n\n"
+        "Write in markdown format:\n"
+        "1. **Executive Summary** (2-3 sentences on overall pipeline health)\n"
+        "2. **Top Concerns** (bullet list, max 3 items)\n"
+        "3. **Recommendations** (bullet list, max 3 items)\n"
+        "4. **Compliance Risk** (1-2 sentences on regulatory readiness)\n\n"
+        "Be specific and reference the metrics. Keep it under 300 words total."
+    )
+
+    try:
+        response = llm.invoke([
+            SystemMessage(content="You are a senior credit risk analyst. Write concise, professional insights."),
+            HumanMessage(content=prompt),
+        ])
+        return response.content.strip()
+    except Exception:
+        return "*LLM insights generation failed. Review metrics manually.*"
 
 
 def generate_json_report(

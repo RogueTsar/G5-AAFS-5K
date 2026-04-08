@@ -17,10 +17,11 @@ Multi-agent pipeline for credit risk assessment. Enter a company, system collect
 | **Loan Simulation** | Client requesting new facility | Enter hypothetical loan amount. See how D/E ratio, coverage, and risk score shift instantly. |
 
 **Key differentiators**:
-- **Zero-token guardrails**: 6 safety modules (bias detection, hallucination check, cascade prevention) that cost $0 to run
+- **Hybrid guardrails**: 6 safety modules with deterministic regex checks + LLM-powered deep analysis (hallucination verification, compliance evaluation)
 - **ACRA XBRL parsing**: Deterministic extraction of 57 credit-risk elements from Singapore financial filings — no LLM needed
 - **Human-in-the-Loop gates**: Analyst must approve at every critical decision point (after data collection, before scoring, before export)
-- **IMDA AI governance**: Compliant with AI Verify (7 principles), Project Moonshot, MAS FEAT, EU AI Act
+- **IMDA AI governance**: Compliant with AI Verify (7 principles), Project Moonshot (25 red-team tests), MAS FEAT, EU AI Act
+- **LLM-as-Judge evaluation**: Semantic signal matching, report quality scoring, and AI-generated eval insights
 - **Run history & comparison**: Compare assessments side-by-side to see how different configs affect the score
 
 ---
@@ -87,38 +88,44 @@ Click to generate the weighted composite score. See per-domain sub-scores with m
 ## Architecture
 
 ```
-[INPUT] → [DOCUMENT PROCESSOR (XBRL 0-token)] + [DISCOVERY]
-                                                      |
-                                          Fan-out (parallel):
-                              [NEWS] [SOCIAL] [REVIEW] [FINANCIAL] [PRESS]
-                                                      |
-                                          Fan-in:
-                              [DATA CLEANING + FinBERT] → [ENTITY RESOLUTION]
-                                                      |
-                              [SOURCE CREDIBILITY (0-token)] + [INDUSTRY CONTEXT]
-                                                      |
-                              [RISK EXTRACTION] → [RISK SCORING] → [CONFIDENCE (0-token)]
-                                                      |
-                              [EXPLAINABILITY] → [REVIEWER] → [AUDIT TRAIL (0-token)]
-                                                      |
-                                            ┌─────────────────┐
-                                            │  GUARDRAIL LAYER │ (wraps every agent, 0 tokens)
-                                            │  Input Validator  │
-                                            │  Output Enforcer  │
-                                            │  Hallucination    │
-                                            │  Bias/Fairness    │
-                                            │  Cascade Guard    │
-                                            │  Content Safety   │
-                                            └─────────────────┘
+[INPUT] → [DOCUMENT PROCESSOR (XBRL)] + [DISCOVERY]
+                                              |
+                                  Fan-out (5 parallel agents):
+                     [NEWS] [SOCIAL] [REVIEW] [FINANCIAL] [PRESS RELEASE]
+                                              |
+                                  Fan-in (6 sources):
+                     [DATA CLEANING + FinBERT]
+                              |
+               ┌──────────────┴──────────────┐
+     [SOURCE CREDIBILITY (LLM)]    [INDUSTRY CONTEXT (LLM)]
+               └──────────────┬──────────────┘
+                    [ENTITY RESOLUTION]
+                              |
+                    [RISK EXTRACTION] → [RISK SCORING] → [CONFIDENCE (LLM)]
+                              |
+                    [EXPLAINABILITY] → [REVIEWER] → [EXPLAINER (LLM)]
+                              |
+                    [AUDIT TRAIL (LLM)]
+                              |
+              ┌───────────────────────────────┐
+              │      GUARDRAIL LAYER          │
+              │  Input Validator (regex)       │
+              │  Output Enforcer (schema)      │
+              │  Cascade Guard (error prop.)   │
+              │  Hallucination (fuzzy + LLM)   │
+              │  Bias/Fairness (regex + LLM)   │
+              │  Content Safety (regex)        │
+              └───────────────────────────────┘
 ```
 
 ### Cost per Assessment
 | Mode | LLM Calls | Estimated Cost |
 |------|-----------|---------------|
-| Exploratory | ~4 | ~$0.005 |
-| Deep Dive | ~8 | ~$0.03 |
-| Loan Simulation | ~6 | ~$0.01 |
-| Guardrails overhead | 0 | $0.00 |
+| Exploratory | ~6 | ~$0.008 |
+| Deep Dive | ~12 | ~$0.04 |
+| Loan Simulation | ~8 | ~$0.015 |
+| Guardrails (deterministic) | 0 | $0.00 |
+| Guardrails (LLM deep checks) | ~2 | ~$0.003 |
 
 ---
 
@@ -145,40 +152,44 @@ Click to generate the weighted composite score. See per-domain sub-scores with m
 │   │   ├── llm.py                  # LLM client
 │   │   └── logger.py
 │   │
-│   ├── agents/                     # 14 agent implementations
+│   ├── agents/                     # 19 agents (14 original + 5 augmented)
 │   │   ├── input_agent.py
 │   │   ├── discovery_agent.py
 │   │   ├── collection_agents.py    # news, social, review, financial
 │   │   ├── document_processing_agent.py
+│   │   ├── document_metrics_agent.py
 │   │   ├── processing_agents.py    # cleaning + entity resolution
 │   │   ├── analysis_agents.py      # risk extraction, scoring, explainability
 │   │   ├── reviewer_agent.py
-│   │   ├── press_release_agent.py
-│   │   ├── industry_context_agent.py
-│   │   ├── source_credibility_agent.py  # 0 tokens
-│   │   ├── confidence_agent.py          # 0 tokens
-│   │   └── audit_agent.py              # 0 tokens
+│   │   ├── press_release_agent.py  # LLM: corporate event analysis
+│   │   ├── industry_context_agent.py  # LLM: sector inference
+│   │   ├── source_credibility_agent.py  # LLM + rule-based fallback
+│   │   ├── confidence_agent.py          # LLM + quantitative metrics
+│   │   ├── audit_agent.py              # LLM: compliance quality assessment
+│   │   └── explainer_agent.py          # LLM: pipeline audit + devil's advocate
 │   │
-│   ├── guardrails/                 # 6 modules, ALL 0 LLM tokens
-│   │   ├── guardrail_runner.py
-│   │   ├── input_guardrails.py
-│   │   ├── output_enforcer.py
-│   │   ├── hallucination_detector.py
-│   │   ├── bias_fairness.py
-│   │   ├── cascade_guard.py
-│   │   └── content_safety.py
+│   ├── guardrails/                 # 6 modules: regex base + LLM deep checks
+│   │   ├── guardrail_runner.py     # Orchestrator with LLM deep check toggle
+│   │   ├── input_guardrails.py     # Regex: injection, sanitization
+│   │   ├── output_enforcer.py      # Schema enforcement, score clamping
+│   │   ├── hallucination_detector.py  # Fuzzy match + LLM verification
+│   │   ├── bias_fairness.py        # Regex + LLM compliance evaluation
+│   │   ├── cascade_guard.py        # Error propagation prevention
+│   │   └── content_safety.py       # Language softening, disclaimers
 │   │
 │   └── utils/
 │       └── xbrl_parser.py          # ACRA BizFinx (57 elements, stdlib only)
 │
-├── eval/                           # Evaluation framework
-│   ├── metrics.py, scorer.py, report_generator.py
+├── eval/                           # Evaluation framework (fuzzy + LLM scoring)
+│   ├── metrics.py                  # EvalMetrics with LLM semantic fields
+│   ├── scorer.py                   # Fuzzy match + LLM-as-judge scoring
+│   └── report_generator.py         # Markdown/JSON + LLM-generated insights
 │
-├── tests/                          # 134 tests, 0 API calls
+├── tests/                          # ~160 tests
 │   ├── datasets/                   # 4 synthetic test datasets
 │   ├── fixtures/                   # 10 mock company responses
 │   ├── test_guardrails/            # 5 test files
-│   └── test_evals/                 # 4 test files
+│   └── test_evals/                 # 6 test files (incl. Moonshot + LLM Judge)
 │
 └── docs/
     └── GUARDRAILS_AND_EVALS.md     # Technical documentation
@@ -190,12 +201,12 @@ Click to generate the weighted composite score. See per-domain sub-scores with m
 
 | Framework | Status | Implementation |
 |-----------|--------|---------------|
-| **MAS FEAT** (Fairness) | PASS | 50+ proxy variable detection, no demographic scoring |
-| **MAS FEAT** (Ethics) | PASS | Content safety filter, regulatory disclaimer |
-| **MAS FEAT** (Accountability) | PASS | Full audit trail per agent decision |
+| **MAS FEAT** (Fairness) | PASS | 50+ proxy variable detection + LLM tone bias analysis |
+| **MAS FEAT** (Ethics) | PASS | Content safety filter, regulatory disclaimer, LLM compliance audit |
+| **MAS FEAT** (Accountability) | PASS | Full audit trail per agent decision (LLM quality assessment) |
 | **MAS FEAT** (Transparency) | PASS | Per-factor explainability, visible scoring rationale |
 | **IMDA AI Verify** | 7/7 | All principles addressed |
-| **Project Moonshot** | PASS | 15 prompt injection tests, 10 spoofing tests |
+| **Project Moonshot** | PASS | 25 red-team tests (adversarial, toxicity, bias, hallucination probes) |
 | **EU AI Act** (High-Risk) | 7/7 | Risk management, data governance, human oversight |
 
 ---
@@ -205,11 +216,17 @@ Click to generate the weighted composite score. See per-domain sub-scores with m
 ```bash
 pip install -r requirements-dev.txt
 
-# Guardrail tests (0 API calls, instant)
+# Guardrail tests (deterministic, instant)
 pytest tests/test_guardrails/ -v
 
-# Eval tests (0 API calls)
+# Eval tests (deterministic suites)
 pytest tests/test_evals/ -v
+
+# Project Moonshot red-team suite (deterministic, ~25 tests)
+pytest tests/test_evals/test_moonshot.py -v
+
+# LLM-as-Judge suite (requires OPENAI_API_KEY, auto-skips without it)
+pytest tests/test_evals/test_llm_judge.py -v
 
 # Full suite
 pytest tests/ -v --ignore=tests/test_graph.py --ignore=tests/test_input.py

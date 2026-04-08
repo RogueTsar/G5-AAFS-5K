@@ -12,8 +12,9 @@ import functools
 from typing import Callable, Any
 
 
-# Pricing per 1M tokens (USD) as of 2024
+# Pricing per 1M tokens (USD)
 MODEL_PRICING = {
+    "gpt-5-nano": {"input": 0.10, "output": 0.40},
     "gpt-4o-mini": {"input": 0.15, "output": 0.60},
     "gpt-4o": {"input": 2.50, "output": 10.00},
     "gpt-4-turbo": {"input": 10.00, "output": 30.00},
@@ -56,6 +57,8 @@ class EvalMetrics:
     score_accuracy: float = 0.0
     bias_pass_rate: float = 0.0
     confidence_calibration: float = 0.0
+    llm_semantic_precision: float = 0.0
+    llm_semantic_recall: float = 0.0
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
 
     def to_dict(self) -> dict:
@@ -75,6 +78,8 @@ class EvalMetrics:
             "score_accuracy": self.score_accuracy,
             "bias_pass_rate": self.bias_pass_rate,
             "confidence_calibration": self.confidence_calibration,
+            "llm_semantic_precision": self.llm_semantic_precision,
+            "llm_semantic_recall": self.llm_semantic_recall,
             "timestamp": self.timestamp,
         }
 

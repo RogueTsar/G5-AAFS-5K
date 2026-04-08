@@ -2,11 +2,16 @@
 
 Detects protected class proxy variables, filters biased content, and
 checks compliance with MAS FEAT principles and EU AI Act requirements.
-All checks are pure regex/string-based with zero LLM tokens.
+Deterministic checks use regex/string matching. LLM-powered compliance
+evaluation adds nuanced assessment of tone, transparency quality, and
+meaningful human oversight framing.
 """
 
+import json
 import re
 from typing import Tuple
+
+from src.core.llm import get_llm, sanitize_for_prompt, extract_json_from_llm
 
 
 # --- Protected class terms organized by category and severity ---
@@ -248,3 +253,78 @@ def check_eu_ai_act_compliance(report: str) -> dict:
         "transparency_statement": transparency_statement,
         "no_protected_terms": no_protected_terms,
     }
+
+
+def llm_evaluate_compliance(
+    report: str,
+    framework: str = "both",
+) -> dict:
+    """Use LLM to evaluate nuanced compliance aspects beyond regex detection.
+
+    Assesses whether the report's tone implies bias, whether explanations
+    are genuinely transparent (not just boilerplate), and whether human
+    oversight framing is meaningful vs. perfunctory.
+
+    Args:
+        report: The final credit risk report text.
+        framework: "mas_feat", "eu_ai_act", or "both".
+
+    Returns:
+        Dict with issues, suggestions, overall_compliant, and per-framework
+        assessments. Returns {"llm_available": False} if no LLM.
+    """
+    llm = get_llm(temperature=0.0)
+    if not llm or not report:
+        return {"llm_available": False}
+
+    from langchain_core.messages import SystemMessage, HumanMessage
+
+    # Truncate report to avoid token overflow
+    report_excerpt = report[:5000]
+
+    framework_instructions = ""
+    if framework in ("mas_feat", "both"):
+        framework_instructions += (
+            "\n\nMAS FEAT Assessment:\n"
+            "- Fairness: Does the tone or framing imply bias even without explicit protected terms?\n"
+            "- Ethics: Is data provenance genuinely cited, or is it boilerplate?\n"
+            "- Accountability: Is human oversight framing meaningful, or perfunctory legalese?\n"
+            "- Transparency: Are methodology explanations clear and actionable?"
+        )
+    if framework in ("eu_ai_act", "both"):
+        framework_instructions += (
+            "\n\nEU AI Act Assessment:\n"
+            "- Is there genuine transparency about AI limitations?\n"
+            "- Is the human oversight statement meaningful or token compliance?\n"
+            "- Are there implicit geographic or demographic biases in the analysis framing?"
+        )
+
+    prompt = (
+        "You are a regulatory compliance auditor specializing in AI governance "
+        "for financial services. Evaluate this credit risk report for compliance quality.\n\n"
+        f"REPORT:\n{report_excerpt}\n"
+        f"{framework_instructions}\n\n"
+        "Return JSON with:\n"
+        '{\n'
+        '  "overall_compliant": true/false,\n'
+        '  "compliance_score": 0-100,\n'
+        '  "issues": ["issue1", ...],\n'
+        '  "suggestions": ["suggestion1", ...],\n'
+        '  "tone_assessment": "neutral/biased/borderline",\n'
+        '  "transparency_quality": "genuine/boilerplate/missing",\n'
+        '  "oversight_quality": "meaningful/perfunctory/missing"\n'
+        '}'
+    )
+
+    try:
+        response = llm.invoke([
+            SystemMessage(content="You are a regulatory compliance auditor. Return only valid JSON."),
+            HumanMessage(content=prompt),
+        ])
+        raw = extract_json_from_llm(response.content)
+        result = json.loads(raw)
+        result["llm_available"] = True
+        result["framework"] = framework
+        return result
+    except Exception:
+        return {"llm_available": True, "error": "LLM compliance evaluation failed"}

@@ -26,6 +26,7 @@ from src.guardrails.hallucination_detector import (
     check_entity_attribution,
     verify_company_in_output,
     flag_fabricated_metrics,
+    llm_verify_claims,
 )
 
 from src.guardrails.bias_fairness import (
@@ -34,6 +35,7 @@ from src.guardrails.bias_fairness import (
     generate_fairness_disclaimer,
     check_mas_feat_compliance,
     check_eu_ai_act_compliance,
+    llm_evaluate_compliance,
 )
 
 from src.guardrails.cascade_guard import (

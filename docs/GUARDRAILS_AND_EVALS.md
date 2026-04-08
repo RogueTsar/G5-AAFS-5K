@@ -157,7 +157,7 @@
 
 ## Guardrail Reference (Role 8)
 
-All guardrail modules use **zero LLM tokens** — they are deterministic, auditable, and add no cost to the pipeline.
+All guardrail modules use **deterministic regex/rule checks** as their base layer (zero LLM cost). An optional **LLM deep check** layer adds semantic hallucination verification and nuanced compliance evaluation when `llm_deep_checks` is enabled (default: ON).
 
 ### Module Summary
 
@@ -230,7 +230,7 @@ check_eu_ai_act_compliance(report) → {human_oversight, data_provenance, ...}
 
 ## New Agents
 
-### Source Credibility Agent (0 LLM tokens)
+### Source Credibility Agent (LLM + rule-based fallback)
 
 **File**: `src/agents/source_credibility_agent.py`
 
@@ -243,7 +243,7 @@ Assigns credibility weights to each data item based on source type and URL domai
 | Tier 3 — Contextual | Glassdoor, LinkedIn, reviews | 0.50-0.60 |
 | Tier 4 — Low Signal | Reddit, Twitter/X, social media | 0.35-0.40 |
 
-### Confidence Calibration Agent (0 LLM tokens)
+### Confidence Calibration Agent (LLM + quantitative metrics)
 
 **File**: `src/agents/confidence_agent.py`
 
@@ -260,7 +260,7 @@ Output: `confidence_level` ∈ {"High" (≥0.7), "Medium" (0.4-0.7), "Low" (<0.4
 
 **Why this matters**: "72/100 risk, Low confidence" ≠ "72/100 risk, High confidence"
 
-### Audit Trail Agent (0 LLM tokens)
+### Audit Trail Agent (LLM compliance quality assessment)
 
 **File**: `src/agents/audit_agent.py`
 
@@ -270,7 +270,7 @@ Produces structured JSON audit trail for regulatory compliance:
 - Data source counts and tier distribution
 - MAS FEAT and EU AI Act compliance status
 
-### Industry Context Agent (0 LLM tokens)
+### Industry Context Agent (LLM + keyword fallback)
 
 **File**: `src/agents/industry_context_agent.py`
 
@@ -435,16 +435,20 @@ pytest tests/test_evals/test_synthetic_suite.py -v --live -k "Apple"
 
 | Component | LLM Calls | Estimated Cost |
 |-----------|-----------|----------------|
-| 6 guardrail modules | 0 | $0.00 |
-| Source credibility agent | 0 | $0.00 |
-| Confidence agent | 0 | $0.00 |
-| Audit agent | 0 | $0.00 |
-| Industry context agent | 0 (keyword-based) | $0.00 |
+| 6 guardrail modules (deterministic) | 0 | $0.00 |
+| Guardrail LLM deep checks (optional) | ~2 | ~$0.003 |
+| Source credibility agent | 1 (+ rule fallback) | ~$0.001 |
+| Confidence agent | 1 (+ quantitative) | ~$0.001 |
+| Audit agent | 1 | ~$0.001 |
+| Industry context agent | 1 (+ keyword fallback) | ~$0.001 |
 | Press release agent | 1 per run | ~$0.001 |
+| Explainer agent | 2 (audit + devil's advocate) | ~$0.002 |
 | Guardrail unit tests | 0 | $0.00 |
+| Moonshot red-team tests | 0 | $0.00 |
+| LLM-as-Judge eval suite | ~10 | ~$0.01 |
 | Full eval suite (mock) | 0 | $0.00 |
 | Full eval suite (live, 30 companies) | ~120 | ~$0.05 |
-| **Total guardrail overhead per run** | **0** | **$0.00** |
+| **Total guardrail overhead per run** | **~2** | **~$0.003** |
 
 ---
 
@@ -542,6 +546,8 @@ tests/
     test_distress_backtest.py
     test_behavioral.py
     test_safety_evals.py
+    test_moonshot.py                   # Project Moonshot red-team (25 tests, 0 LLM)
+    test_llm_judge.py                  # LLM-as-Judge semantic eval (~10 tests)
 
 eval/
   __init__.py

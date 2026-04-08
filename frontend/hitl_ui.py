@@ -2322,13 +2322,71 @@ def _tab_testing(state: Dict[str, Any]):
             report = state.get("final_report", "")
             if report:
                 cleaned, summary = runner.validate_final_report(report, state)
-                checks_passed = summary.get("checks_passed", 0)
-                total_checks = summary.get("total_checks", 0)
+
+                # Compute check counts from the actual results structure
+                total_checks = 0
+                checks_passed = 0
+                issues = []
+
+                # Hallucination checks
+                hall = summary.get("hallucination", {})
+                if "company_found" in hall:
+                    total_checks += 1
+                    if hall["company_found"]:
+                        checks_passed += 1
+                    else:
+                        issues.append("Company name not found in report")
+                if "attribution" in hall:
+                    total_checks += 1
+                    attr_score = hall["attribution"].get("attribution_score", 0)
+                    if attr_score >= 0.5:
+                        checks_passed += 1
+                    else:
+                        issues.append(f"Low attribution score: {attr_score:.2f}")
+                if "fabricated_metrics" in hall:
+                    total_checks += 1
+                    fab_count = len(hall["fabricated_metrics"])
+                    if fab_count == 0:
+                        checks_passed += 1
+                    else:
+                        issues.append(f"{fab_count} unverified metric(s) flagged")
+
+                # Bias/fairness checks
+                bf = summary.get("bias_fairness", {})
+                if "proxy_variables" in bf:
+                    total_checks += 1
+                    if len(bf["proxy_variables"]) == 0:
+                        checks_passed += 1
+                    else:
+                        issues.append(f"{len(bf['proxy_variables'])} protected class term(s)")
+
+                # Compliance checks
+                comp = summary.get("compliance", {})
+                for fw_name, fw_results in comp.items():
+                    if isinstance(fw_results, dict):
+                        for check_name, passed in fw_results.items():
+                            if isinstance(passed, bool):
+                                total_checks += 1
+                                if passed:
+                                    checks_passed += 1
+                                else:
+                                    issues.append(f"{fw_name}: {check_name} failed")
+
+                # Content safety
+                cs = summary.get("content_safety", {})
+                if "modifications" in cs:
+                    total_checks += 1
+                    mod_count = len(cs["modifications"])
+                    if mod_count == 0:
+                        checks_passed += 1
+                    else:
+                        issues.append(f"{mod_count} content modification(s) applied")
+
                 if checks_passed == total_checks:
                     st.success(f"Report Validation: {checks_passed}/{total_checks} checks passed")
                 else:
                     st.warning(f"Report Validation: {checks_passed}/{total_checks} checks passed")
-                    for issue in summary.get("issues", []):
+                    for issue in issues:
                         live_warnings.append(("high", f"Report: {issue}"))
             else:
                 st.info("No final report generated yet -- skipping report validation.")

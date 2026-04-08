@@ -1,12 +1,17 @@
 """Hallucination detection guardrails.
 
 Uses difflib fuzzy matching and regex to verify that agent outputs
-are grounded in source data rather than fabricated.
+are grounded in source data rather than fabricated. Optionally uses
+LLM as a second-pass verifier for claims that fail fuzzy matching
+(reduces false negatives from overly strict string comparison).
 """
 
+import json
 import re
 import difflib
 from typing import Tuple
+
+from src.core.llm import get_llm, sanitize_for_prompt, extract_json_from_llm
 
 
 def _fuzzy_match_against_sources(
@@ -48,20 +53,73 @@ def _extract_source_texts(source_data: list) -> list:
     return texts
 
 
+def llm_verify_claims(
+    claims: list[str],
+    source_texts: list[str],
+    company_name: str,
+) -> dict:
+    """Use LLM to verify whether ungrounded claims are supported by source data.
+
+    This is a second-pass verifier for claims that failed fuzzy matching.
+    The LLM can catch semantic equivalence that string matching misses
+    (e.g., "high leverage" vs "debt-to-equity ratio of 3.5x").
+
+    Returns dict with verified/unverified lists and llm_available flag.
+    """
+    llm = get_llm(temperature=0.0)
+    if not llm or not claims:
+        return {"verified": [], "unverified": claims, "llm_available": llm is not None}
+
+    from langchain_core.messages import SystemMessage, HumanMessage
+
+    # Truncate sources to avoid token overflow
+    source_summary = "\n".join(source_texts[:20])[:4000]
+    claims_text = "\n".join(f"- {c}" for c in claims[:15])
+    safe_name = sanitize_for_prompt(company_name)
+
+    prompt = (
+        f"You are a fact-checking assistant for credit risk assessments about {safe_name}.\n\n"
+        f"SOURCE DOCUMENTS:\n{source_summary}\n\n"
+        f"CLAIMS TO VERIFY:\n{claims_text}\n\n"
+        "For each claim, determine if it is reasonably supported by the source documents. "
+        "A claim is 'verified' if the sources contain evidence that supports or implies it, "
+        "even if not stated in identical words.\n\n"
+        'Return JSON: {"verified": ["claim1", ...], "unverified": ["claim2", ...]}'
+    )
+
+    try:
+        response = llm.invoke([
+            SystemMessage(content="You are a precise fact-checker. Return only valid JSON."),
+            HumanMessage(content=prompt),
+        ])
+        raw = extract_json_from_llm(response.content)
+        result = json.loads(raw)
+        return {
+            "verified": result.get("verified", []),
+            "unverified": result.get("unverified", claims),
+            "llm_available": True,
+        }
+    except Exception:
+        return {"verified": [], "unverified": claims, "llm_available": True}
+
+
 def check_entity_attribution(
     company_name: str,
     risks: list,
     strengths: list,
     source_data: list,
+    use_llm: bool = True,
 ) -> dict:
     """Verify that risk and strength descriptions are grounded in source data.
 
     Uses difflib.SequenceMatcher with threshold 0.4 for fuzzy matching.
+    When use_llm=True (default), sends fuzzy-match failures to LLM for
+    semantic verification as a second pass, recovering false negatives.
+
     Returns a dict with grounded/ungrounded lists and an attribution score.
     """
     source_texts = _extract_source_texts(source_data)
     if not source_texts:
-        # No sources means nothing can be grounded
         return {
             "grounded_risks": [],
             "ungrounded_risks": list(risks),
@@ -87,6 +145,43 @@ def check_entity_attribution(
             grounded_strengths.append(strength)
         else:
             ungrounded_strengths.append(strength)
+
+    # LLM second-pass: verify claims that failed fuzzy matching
+    if use_llm and (ungrounded_risks or ungrounded_strengths):
+        all_ungrounded_descs = []
+        risk_descs = []
+        strength_descs = []
+        for r in ungrounded_risks:
+            d = r.get("description", "") if isinstance(r, dict) else str(r)
+            all_ungrounded_descs.append(d)
+            risk_descs.append(d)
+        for s in ungrounded_strengths:
+            d = s.get("description", "") if isinstance(s, dict) else str(s)
+            all_ungrounded_descs.append(d)
+            strength_descs.append(d)
+
+        llm_result = llm_verify_claims(all_ungrounded_descs, source_texts, company_name)
+        verified_set = set(llm_result.get("verified", []))
+
+        # Move LLM-verified items from ungrounded to grounded
+        if verified_set:
+            still_ungrounded_risks = []
+            for r in ungrounded_risks:
+                d = r.get("description", "") if isinstance(r, dict) else str(r)
+                if d in verified_set:
+                    grounded_risks.append(r)
+                else:
+                    still_ungrounded_risks.append(r)
+            ungrounded_risks = still_ungrounded_risks
+
+            still_ungrounded_strengths = []
+            for s in ungrounded_strengths:
+                d = s.get("description", "") if isinstance(s, dict) else str(s)
+                if d in verified_set:
+                    grounded_strengths.append(s)
+                else:
+                    still_ungrounded_strengths.append(s)
+            ungrounded_strengths = still_ungrounded_strengths
 
     total = len(risks) + len(strengths)
     grounded_count = len(grounded_risks) + len(grounded_strengths)

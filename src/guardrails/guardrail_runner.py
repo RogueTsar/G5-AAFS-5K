@@ -30,7 +30,9 @@ from src.guardrails.bias_fairness import (
     check_mas_feat_compliance,
     check_eu_ai_act_compliance,
     generate_fairness_disclaimer,
+    llm_evaluate_compliance,
 )
+from src.guardrails.hallucination_detector import llm_verify_claims
 from src.guardrails.cascade_guard import (
     validate_agent_output as cascade_validate,
     should_abort_pipeline,
@@ -50,6 +52,7 @@ DEFAULT_CONFIG = {
     "bias_fairness": True,
     "cascade_guard": True,
     "content_safety": True,
+    "llm_deep_checks": True,
 }
 
 
@@ -310,6 +313,24 @@ class GuardrailRunner:
             self._log("content_safety", "regulatory_footer", {
                 "added": True,
             })
+
+        # --- LLM deep checks (optional, on by default) ---
+        if self.config.get("llm_deep_checks", True):
+            try:
+                # LLM compliance evaluation
+                llm_comp = llm_evaluate_compliance(report)
+                if llm_comp.get("llm_available"):
+                    results["compliance"]["llm_evaluation"] = llm_comp
+                    llm_issues = llm_comp.get("issues", [])
+                    for issue in llm_issues:
+                        results["warnings"].append(f"LLM compliance: {issue}")
+                    self._log("llm_deep_checks", "compliance_evaluation", {
+                        "overall_compliant": llm_comp.get("overall_compliant"),
+                        "compliance_score": llm_comp.get("compliance_score"),
+                        "issues_count": len(llm_issues),
+                    })
+            except Exception as exc:
+                self._log("llm_deep_checks", "error", {"error": str(exc)})
 
         self._total_warnings += len(results["warnings"])
         return report, results

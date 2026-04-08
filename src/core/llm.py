@@ -18,8 +18,9 @@ def get_llm(temperature: float = 0.0) -> Optional[ChatOpenAI]:
         print("Warning: OPENAI_API_KEY not found in environment variables.")
         return None
 
+    model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
     return ChatOpenAI(
-        model="gpt-4o-mini",
+        model=model,
         temperature=temperature,
         api_key=api_key,
         request_timeout=LLM_TIMEOUT,
