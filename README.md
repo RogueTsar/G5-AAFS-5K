@@ -64,8 +64,8 @@ The analyst reviews findings by data domain, adjusts scoring weights, approves o
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/RogueTsar/AAFS.git
-cd AAFS
+git clone https://github.com/marcus159260/G5-AAFS-5K.git
+cd G5-AAFS-5K
 
 # 2. Install dependencies
 pip install -r requirements.txt
