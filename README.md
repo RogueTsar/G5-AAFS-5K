@@ -233,11 +233,7 @@ pytest tests/ -v --ignore=tests/test_graph.py --ignore=tests/test_input.py
 ```
 
 ---
-
-## Team
-
-| Role | Scope |
-|------|-------|
+Newest adds
 | R8 — Guardrails | 6 zero-token safety modules, regulatory compliance |
 | R9 — Evaluation | 134 tests, 4 datasets, eval framework, safety evals |
 
