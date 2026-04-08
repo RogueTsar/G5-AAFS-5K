@@ -79,55 +79,8 @@ streamlit run app.py
 17. **AI Governance tab** → Check IMDA AI Verify, MAS FEAT, EU AI Act compliance
 18. **Export & Email tab** → Select sections to include → Choose format → Download
 19. **Email** → Fill recipient, subject auto-populated → Click "Open in Email Client"
-20. **History** → Assessment auto-saved. Run again with different weights to compare.
 
 **Time**: ~5 minutes | **Cost**: ~$0.03
-
----
-
-## Workflow 3: Loan Simulation (Facility What-If)
-
-**Scenario**: Client requesting a $50M loan. Committee needs impact analysis.
-
-### Steps:
-1. **Run Full Assessment first** (Workflow 2 above) — need baseline data
-2. **Sidebar** → Switch to **Loan Simulation (What-If)**
-3. **Loan Simulation tab** → Enter loan amount: $50,000,000
-4. **Set interest rate** → Slider to assumed rate (e.g. 5%)
-5. **See impact table**:
-   - Debt/Equity ratio: before vs after
-   - Current Ratio: before vs after
-   - Interest Coverage: before vs after
-   - New annual interest cost
-   - Total liabilities change
-6. **See score shift** → Original score vs simulated score with delta
-7. **Risk gauge** → Visual bar showing new risk level
-8. **Decision** → If score stays below threshold, recommend approval
-
-**Time**: ~30 seconds (no re-run needed) | **Cost**: $0
-
----
-
-## Feature: Run History & Comparison
-
-### Save an assessment:
-- Assessments auto-save after scoring (in Credit Assessment tab)
-- History count shown in top ribbon
-
-### Compare two runs:
-1. Go to **History & Compare** tab
-2. See table of all saved runs (company, score, rating, mode, model)
-3. Filter by company name using search box
-4. Click any run to expand full details
-5. **Comparison tool** below:
-   - Select Assessment A and Assessment B from dropdowns
-   - See side-by-side: score delta, weight diff, risk signal diff, config diff
-   - Green = improvement (lower risk), Red = deterioration
-
-### Use case: "How did changing weights affect the score?"
-1. Run company with Basel IRB weights → save
-2. Run same company with MAS FEAT weights → save
-3. Compare the two → see exactly which domain weight changes drove the score difference
 
 ---
 
@@ -255,7 +208,7 @@ For batch processing or when you trust the pipeline:
 
 | Control | What It Does |
 |---------|-------------|
-| **Workflow** | Quick Screen / Full Assessment / Loan Simulation |
+| **Workflow** | Quick Screen / Full Assessment |
 | **Model** | gpt-4o-mini (fast) / gpt-4o (stronger) / gpt-4-turbo / claude-sonnet-4-5 |
 | **Rounds** | How many times reviewer critiques the report (1-5) |
 | **Auto-run** | Skip HITL approval gates |
@@ -272,12 +225,8 @@ For batch processing or when you trust the pipeline:
 | **Dashboard** | Scenario briefing + 4 metric panels | Quick overview |
 | **Credit Assessment** | 6 domain tabs + weight sliders + scoring | Main workflow |
 | **Pipeline Trace** | 8-step agent trace + explainer | Audit trail |
-| **Loan Simulation** | What-if loan calculator | Facility requests |
 | **AI Governance** | IMDA / MAS / EU compliance | Regulatory review |
-| **History & Compare** | Saved runs + side-by-side diff | Compare configs |
 | **Export & Email** | Selective export + email composer | Final deliverable |
-| **Testing** | Guardrail + eval run buttons | Quality assurance |
-| **User Guide** | Workflows, settings, scoring, roles | Onboarding |
 
 ---
 

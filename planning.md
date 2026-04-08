@@ -71,12 +71,12 @@
 | Commit | What Changed | Why |
 |--------|-------------|-----|
 | `ae47fc3` | Harmonized enterprise app — UBS styling, IMDA governance, sidebar workflow | Merge eval branch features with main, add enterprise look |
-| `1cb1145` | Enterprise UBS workstation — workflow modes, HITL gates, dashboard, loan sim | 3 workflow modes (Exploratory/Deep Dive/Loan Sim), HITL decision gates, toggleable dashboard, loan simulation |
+| `1cb1145` | Enterprise UBS workstation — workflow modes, HITL gates, dashboard | 2 workflow modes (Exploratory/Deep Dive), HITL decision gates, toggleable dashboard |
 | `da14557` | Flatten folder structure — remove G5-AAFS-5K-main/ nesting | Files were nested under G5-AAFS-5K-main/ subfolder, causing confusion on GitHub |
 | `7edb342` | Rewrite README for compliance analyst audience | Old README described non-existent file structure and had undone TODOs |
 | `435ab7a` | Restore main branch features, fix XBRL parser, restore app.py | Marcus's XBRL parser (src/mcp_tools/xbrl_parser.py), xbrl_display.py, document_metrics_agent.py were missing |
 | `a1b3c84` | Add run history/comparison + selective export modules | ui_history.py: save runs, compare side-by-side. ui_export.py: choose sections to export |
-| `9b9156c` | Wire all UI modules, eval/guardrail buttons, user guide, demo toggle | Connected ui_history, ui_export into main app. Added Testing tab with pytest buttons |
+| `9b9156c` | Wire all UI modules, eval/guardrail buttons, demo toggle | Connected ui_history, ui_export into main app |
 | `03f509d` | app.py now launches HITL workstation | Was launching blank original UI instead of feature-rich HITL workstation |
 | `3d229e6` | 121-point validation suite + deployment env support | test_app_validation.py: file existence, syntax, imports, keys, env, datasets, guardrails, orchestrators |
 | `ef2b18f` | Remove double render_hitl() call | `if __name__` + `else` both called render_hitl(), causing duplicate widget keys |

@@ -8,20 +8,18 @@ Multi-agent pipeline for credit risk assessment. Enter a company, system collect
 
 **For a compliance analyst at UBS**: You enter a company name, optionally upload their ACRA filing (XBRL), and the system runs 14+ AI agents in parallel to collect financial data, news, social sentiment, press releases, and industry context. You review all findings by data domain, set your own scoring weights using established frameworks (Basel IRB, Altman Z-Score, S&P, Moody's KMV), and generate a risk assessment with full audit trail.
 
-**Three workflow modes** for different scenarios:
+**Two workflow modes** for different scenarios:
 
 | Mode | When to Use | What Happens |
-|------|------------|--------------|
+|------|------------|---------------|
 | **Exploratory** | Initial call with new prospect | Quick 5-min snapshot. Skips social/press agents. Fast model. 1 reviewer round. |
 | **Deep Dive** | Annual review for established client | Full pipeline, all agents, all data sources. Stronger model. 3 reviewer rounds. |
-| **Loan Simulation** | Client requesting new facility | Enter hypothetical loan amount. See how D/E ratio, coverage, and risk score shift instantly. |
 
 **Key differentiators**:
 - **Zero-token guardrails**: 6 safety modules (bias detection, hallucination check, cascade prevention) that cost $0 to run
 - **ACRA XBRL parsing**: Deterministic extraction of 57 credit-risk elements from Singapore financial filings — no LLM needed
 - **Human-in-the-Loop gates**: Analyst must approve at every critical decision point (after data collection, before scoring, before export)
 - **IMDA AI governance**: Compliant with AI Verify (7 principles), Project Moonshot, MAS FEAT, EU AI Act
-- **Run history & comparison**: Compare assessments side-by-side to see how different configs affect the score
 
 ---
 
@@ -55,7 +53,7 @@ Opens at **http://localhost:8501**. Demo mode runs with mock data and costs noth
 ## App Walkthrough (for UBS analysts)
 
 ### Step 1: Choose Your Workflow
-In the **sidebar**, select your scenario: Exploratory, Deep Dive, or Loan Simulation. Each pre-configures the agent pipeline, model, and reviewer depth. You can override any setting.
+In the **sidebar**, select your scenario: Exploratory or Deep Dive. Each pre-configures the agent pipeline, model, and reviewer depth. You can override any setting.
 
 ### Step 2: Enter Company & Upload Documents
 Type the company name. Optionally upload ACRA BizFinx XBRL filings (.xbrl, .xml), financial reports (.pdf, .xlsx), or taxonomy schemas (.xsd). XBRL uploads get instant structured extraction preview.
@@ -78,7 +76,6 @@ Click to generate the weighted composite score. See per-domain sub-scores with m
 ### Step 6: Export & Follow Up
 - **Dashboard**: Toggle metric panels (Collection, Analysis, Guardrails, Data Quality, Performance)
 - **Pipeline Trace**: Inspect what each agent did, step by step
-- **Loan Simulation**: Enter hypothetical loan amount, see ratio impact
 - **AI Governance**: IMDA AI Verify, Project Moonshot, MAS FEAT, EU AI Act compliance status
 - **Report & Email**: Download JSON/Markdown/CSV, send via email
 
@@ -117,7 +114,7 @@ Click to generate the weighted composite score. See per-domain sub-scores with m
 |------|-----------|---------------|
 | Exploratory | ~4 | ~$0.005 |
 | Deep Dive | ~8 | ~$0.03 |
-| Loan Simulation | ~6 | ~$0.01 |
+
 | Guardrails overhead | 0 | $0.00 |
 
 ---
