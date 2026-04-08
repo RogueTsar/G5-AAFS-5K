@@ -7,9 +7,10 @@ from typing import Optional
 LLM_TIMEOUT = 30
 
 
-def get_llm(temperature: float = 0.0) -> Optional[ChatOpenAI]:
+def get_llm(temperature: float = 0.0, model: Optional[str] = None) -> Optional[ChatOpenAI]:
     """
-    Returns an instance of ChatOpenAI configured with gpt-4o-mini.
+    Returns an instance of ChatOpenAI.
+    Model priority: explicit arg > Streamlit sidebar > OPENAI_MODEL env > gpt-4o-mini.
     Returns None if the API key is not found.
     Includes a 30-second request timeout to prevent indefinite hangs.
     """
@@ -18,7 +19,16 @@ def get_llm(temperature: float = 0.0) -> Optional[ChatOpenAI]:
         print("Warning: OPENAI_API_KEY not found in environment variables.")
         return None
 
-    model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+    if not model:
+        # Try Streamlit session state (sidebar selection)
+        try:
+            import streamlit as st
+            model = st.session_state.get("selected_model")
+        except Exception:
+            pass
+    if not model:
+        model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+
     return ChatOpenAI(
         model=model,
         temperature=temperature,
